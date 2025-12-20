@@ -14,7 +14,7 @@ const sidebarItems = [
   
 ];
 
-const SideBarMenu = ()=>{
+export function sideBarMenu (){
     {
         sidebarItems.map((item)=>(
           <Link href={item.href} key={item.title} className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 p-2 md:px-2 rounded-sm hover:bg-skyLight">
@@ -22,6 +22,4 @@ const SideBarMenu = ()=>{
               </Link>
         ))
     }
-}
-
-export default SideBarMenu;
+  }
