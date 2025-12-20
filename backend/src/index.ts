@@ -4,16 +4,18 @@ import cors from 'cors';
 import { connectDatabase } from "./config/db";
 import promptRouter from "./routes/prompt.router";
 import modelResponseRoute from "./routes/modelResponse.route";
-
+import dotenv from "dotenv";
+dotenv.config();
 import { initScheduler } from "./services/cronSchedule";
 
 
 
 const app = express();
 
+app.use(cors({origin:["*"]}))
+
 app.use(express.json());
 
-app.use(cors({origin:["*"]}))
 
 
 app.use("/api/prompt", promptRouter);
