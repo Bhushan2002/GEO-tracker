@@ -1,5 +1,5 @@
 import express from "express";
-
+import cors from 'cors';
 
 import { connectDatabase } from "./config/db";
 import promptRouter from "./routes/prompt.router";
@@ -13,6 +13,7 @@ const app = express();
 
 app.use(express.json());
 
+app.use(cors({origin:['http://localhost:3000']}))
 
 
 app.use("/api/prompt", promptRouter);

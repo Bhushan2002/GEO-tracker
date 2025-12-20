@@ -4,6 +4,6 @@ import { getModelResponses } from "../controllers/modelRespons.controller";
 
 const router = Router();
 
-router.get('/modelresponses', getModelResponses);
+router.get('/', getModelResponses);
 
 export default router;

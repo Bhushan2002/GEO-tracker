@@ -26,7 +26,7 @@ export const getPrompts = async (req: Request, res: Response)=>{
     if (!prompts){
       res.status(404).json({message:'unable to fetch prompts'});
     }
-    res.status(200).json({prompts,message: 'successfully fetched'})
+    res.status(200).json(prompts)
   }
   catch(e:any){
     res.status(400).json({message: e.message});

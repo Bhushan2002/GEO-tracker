@@ -1,0 +1,19 @@
+import { Prompt } from "@/types";
+import { api } from "./api";
+
+export const PromptAPI = {
+
+    create(data:{
+        promptText: string,
+        topic?: string;
+        tags?: string[];
+        schedule: string;
+        
+    }){
+        return api.post<Prompt>("/api/prompt", data);
+
+    },
+    getAll(){
+        return api.get<Prompt[]>("/api/prompt/getprompts");
+    }
+}

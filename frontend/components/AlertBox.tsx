@@ -1,56 +1,62 @@
 'use client';
 
+import { PromptAPI } from '@/api/prompt.api';
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { useState } from 'react';
 
-interface AddTopicDialogProps {
+interface AddPromptDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: TopicFormData) => void;
-}
-interface TopicFormData {
-  topic: string;
-  promptsPerTopic: number;
-  ipAddress: string;
-  language: string;
+  onSubmit: (data: PromptFormData) => void;
 }
 
-const countries = [
-  { value: 'uk', label: 'United Kingdom', flag: '🇬🇧' },
-  { value: 'us', label: 'United States', flag: '🇺🇸' },
-  { value: 'ca', label: 'Canada', flag: '🇨🇦' },
-  { value: 'au', label: 'Australia', flag: '🇦🇺' },
-  { value: 'in', label: 'India', flag: '🇮🇳' },
-];
+interface PromptFormData {
+  promptText: string;
+  topic?: string;
+  tags: string[];
+ 
+}
 
-const languages = [
-  { value: 'english', label: 'English' },
-  { value: 'spanish', label: 'Spanish' },
-  { value: 'french', label: 'French' },
-  { value: 'german', label: 'German' },
-  { value: 'hindi', label: 'Hindi' },
-];
-export default function AddTopicDialog({ open, onOpenChange, onSubmit }: AddTopicDialogProps) {
-  const [formData, setFormData] = useState<TopicFormData>({
+export default function AddTopicDialog({ open, onOpenChange, onSubmit }: AddPromptDialogProps) {
+  const [formData, setFormData] = useState<PromptFormData>({
+    promptText: "",
     topic: '',
-    promptsPerTopic: 10,
-    ipAddress: 'uk',
-    language: 'english',
+    tags: [],
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading,setLoading] = useState(false);
+  const [error,setError] = useState<string | null> (null);
+
+  const handleSubmit = async (e:React.FormEvent)=>{
     e.preventDefault();
-    onSubmit(formData);
-    // Reset form
-    setFormData({
-      topic: '',
-      promptsPerTopic: 10,
-      ipAddress: 'uk',
-      language: 'english',
+    setError(null);
+    if(!formData.topic?.trim()){
+      setError("topic is required")
+      return;
+    }
+    try{
+      setLoading(true);
+
+      await PromptAPI.create({
+        promptText: formData.promptText,
+        topic: formData.topic,
+        tags: [...formData.tags],
+        schedule: '*/5 * * * *'
+      });
+      setFormData({
+      promptText:'',
+      topic:'',
+      tags:[]
     });
     onOpenChange(false);
-  };
+    }catch(e: any){
+       setError(e.response?.data?.message || "Failed to create topic");
+    }finally{
+      setLoading(false);
+    }
+    
+  }
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -80,89 +86,36 @@ export default function AddTopicDialog({ open, onOpenChange, onSubmit }: AddTopi
             
             {/* Topic Input */}
             <div>
-              <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="Prompt" className="block text-sm font-medium text-gray-700 mb-2">
+                Prompt
+              </label>
+              <input
+                id="prompt"
+                type="text"
+                placeholder="e.g. what is the best insurance? "
+                value={formData.promptText}
+                onChange={(e) => setFormData({ ...formData, promptText: e.target.value })}
+                className="w-full px-4 py-3 border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
+                required
+              />
+            </div>
+
+            {/* topic */}
+            <div>
+              <label htmlFor="Topic" className="block text-sm font-medium text-gray-700 mb-2">
                 Topic
               </label>
               <input
                 id="topic"
                 type="text"
-                placeholder="e.g. SEO optimization"
+                placeholder="No Topic"
                 value={formData.topic}
                 onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
                 className="w-full px-4 py-3 border border-blue-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
                 required
               />
             </div>
-
-            {/* Prompts per topic */}
-            <div>
-              <label htmlFor="prompts" className="block text-sm font-medium text-gray-700 mb-2">
-                Prompts per topic
-              </label>
-              <input
-                id="prompts"
-                type="number"
-                value={formData.promptsPerTopic}
-                onChange={(e) => setFormData({ ...formData, promptsPerTopic: parseInt(e.target.value) })}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
-                min="1"
-                max="100"
-                required
-              />
-            </div>
-
-            {/* IP Address Dropdown */}
-            <div>
-              <label htmlFor="ip" className="block text-sm font-medium text-gray-700 mb-2">
-                IP address
-              </label>
-              <div className="relative">
-                <select
-                  id="ip"
-                  value={formData.ipAddress}
-                  onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 appearance-none cursor-pointer"
-                >
-                  {countries.map((country) => (
-                    <option key={country.value} value={country.value}>
-                      {country.flag} {country.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Language Dropdown */}
-            <div>
-              <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2">
-                Language
-              </label>
-              <div className="relative">
-                <select
-                  id="language"
-                  value={formData.language}
-                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
-                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 appearance-none cursor-pointer"
-                >
-                  {languages.map((lang) => (
-                    <option key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
+          
             {/* Add Button */}
             <div className="flex justify-end pt-2">
               <button
