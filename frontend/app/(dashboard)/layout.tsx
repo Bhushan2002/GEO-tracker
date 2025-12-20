@@ -1,4 +1,6 @@
+
 import Link from "next/link";
+import SideBarMenu from '../../components/sidebarMenu';
 export default function DashboardLayout({
   children,
 }: Readonly<{
@@ -10,7 +12,7 @@ export default function DashboardLayout({
             <Link href={'/'} className="flex items-center justify-center lg:justify-start gap-2">
             <span className="hidden lg:block text-gray-700 font-semibold  text-xl">GEO Tracker</span>
             </Link>
-            
+            <SideBarMenu/>
         </div>
     </div>
   );
