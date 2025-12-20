@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { createPromprt } from "../controllers/prompt.controller";
+import { createPromprt, getPrompts } from "../controllers/prompt.controller";
 
 
 const router = Router();
 
 router.post('/', createPromprt);
-
+router.get('/getprompts',getPrompts)
 
 
 

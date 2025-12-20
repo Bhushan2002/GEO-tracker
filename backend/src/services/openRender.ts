@@ -1,6 +1,7 @@
 import axios from "axios";
 import { modelNames } from "mongoose";
-
+import dotenv from "dotenv";
+dotenv.config();
 const Models = [
   "openai/gpt-oss-20b:free",
   "meta-llama/llama-3.3-70b-instruct:free",
@@ -8,9 +9,7 @@ const Models = [
 ];
 
 // https://openrouter.ai/api/v1
-export const getOpenRenderResponse = async (
-  promptText: string
-) => {
+export const getOpenRenderResponse = async (promptText: string) => {
   const result = [];
 
   for (const model of Models) {
@@ -21,7 +20,7 @@ export const getOpenRenderResponse = async (
         "https://openrouter.ai/api/v1/chat/completions",
         {
           model,
-          message: [{ role: "user", content: promptText }],
+          messages: [{ role: "user", content: promptText }],
         },
         {
           headers: {
@@ -30,13 +29,15 @@ export const getOpenRenderResponse = async (
           },
         }
       );
+
+   
       result.push({
-        modelNames: model,
-        responseText: res.data.choices[0].message.content,
+        modelName: model,
+        responseText: res.data?.choices?.[0]?.message?.content,
         latencyMs: Date.now() - start,
         tokenUsage: res.data.usage,
       });
-      console.log(res.data.choices[0].message.content);
+    //   console.log('Response', res.data?.choices?.[0]?.message?.content);
     } catch (e: any) {
       result.push({
         modelName: model,

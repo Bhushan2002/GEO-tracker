@@ -20,3 +20,15 @@ export const createPromprt = async (req: Request, res: Response) => {
   }
 };
 
+export const getPrompts = async (req: Request, res: Response)=>{
+  try{
+    const prompts = await Prompt.find();
+    if (!prompts){
+      res.status(404).json({message:'unable to fetch prompts'});
+    }
+    res.status(200).json({prompts,message: 'successfully fetched'})
+  }
+  catch(e:any){
+    res.status(400).json({message: e.message});
+  }
+}

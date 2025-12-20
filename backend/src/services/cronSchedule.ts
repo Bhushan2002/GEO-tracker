@@ -12,12 +12,17 @@ export const initScheduler = async () => {
 
       try {
         const result = await getOpenRenderResponse(prompt.promptText);
-
+        
         for (const res of result) {
           await ModelResponse.create({
             promptRunId: run._id,
-            ...res,
+            responseText: res.responseText,
+            modelName: res.modelName,
+            latencyMs: res.latencyMs,
+            tokenUsage: res.tokenUsage,
+            error: res.error
           });
+          
         }
 
         run.status = "COMPLETED";
