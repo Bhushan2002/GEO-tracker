@@ -14,7 +14,7 @@ import {
 const items  = [
   {
     title: "overview",
-    href : '/overview'
+    href : '/'
   },
   {
     title: "prompt",
