@@ -13,7 +13,7 @@ dotenv_1.default.config();
 const cronSchedule_1 = require("./services/cronSchedule");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:3000", "https://geo-tracker-001.onrender.com", "*"],
+    origin: ["*"],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));

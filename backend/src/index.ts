@@ -14,7 +14,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: ["http://localhost:3000", "https://geo-tracker-001.onrender.com", "*"],
+  origin: ["*"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
