@@ -57,7 +57,7 @@ export function NavBar() {
 
 
   return (
-    <NavigationMenu>
+    <NavigationMenu >
       <NavigationMenuList className="flex-wrap">
         <NavigationMenuItem>
           <NavigationMenuTrigger>Home</NavigationMenuTrigger>

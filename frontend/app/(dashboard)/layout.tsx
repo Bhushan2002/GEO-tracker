@@ -13,9 +13,13 @@ export default function DashboardLayout({
   return (
     <div className="h-screen felx">
       <SidebarProvider>
-        <NavBar />
         <AppSidebar />
-        <main>{children}</main>
+        <main>
+          <div className="pt-2 pl-2">
+
+          {children}
+          </div>
+          </main>
       </SidebarProvider>
     </div>
   );
