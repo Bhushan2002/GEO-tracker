@@ -13,7 +13,7 @@ const app = express();
 
 app.use(express.json());
 
-app.use(cors({origin:['http://localhost:3000' , 'geo-tracker-lpzspiu3q-bhushan-waghodes-projects.vercel.app' , 'geo-tracker-psi.vercel.app']}))
+app.use(cors({origin:['http://localhost:3000'  , 'https://geo-tracker-psi.vercel.app/']}))
 
 
 app.use("/api/prompt", promptRouter);
