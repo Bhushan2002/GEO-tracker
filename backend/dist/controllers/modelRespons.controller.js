@@ -5,6 +5,9 @@ const modelResponse_model_1 = require("../models/modelResponse.model");
 const getModelResponses = async (req, res) => {
     try {
         const modelResponse = await modelResponse_model_1.ModelResponse.find();
+        if (!modelResponse) {
+            return res.status(404).json({ message: "Model Responses not found" });
+        }
         res.status(200).json(modelResponse);
     }
     catch (err) {

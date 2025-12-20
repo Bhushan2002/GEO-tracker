@@ -12,7 +12,12 @@ import { initScheduler } from "./services/cronSchedule";
 
 const app = express();
 
-app.use(cors({origin:["*"]}))
+
+app.use(cors({
+  origin: ["http://localhost:3000", "https://geo-tracker-001.onrender.com", "*"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 
 app.use(express.json());
 
