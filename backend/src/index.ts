@@ -13,10 +13,7 @@ import { initScheduler } from "./services/cronSchedule";
 const app = express();
 
 
-app.use(cors({
-  origin: ["https://geo-tracker-psi.vercel.app"],
-  methods: ["GET", "POST", "PUT", "DELETE"],
-}));
+app.use(cors());
 
 app.use(express.json());
 

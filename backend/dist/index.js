@@ -12,10 +12,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const cronSchedule_1 = require("./services/cronSchedule");
 const app = (0, express_1.default)();
-app.use((0, cors_1.default)({
-    origin: ["https://geo-tracker-psi.vercel.app"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-}));
+app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use("/api/prompt", prompt_router_1.default);
 app.use("/api/modelresponse", modelResponse_route_1.default);

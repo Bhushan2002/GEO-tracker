@@ -4,6 +4,7 @@ import { ModelResponseAPI } from "@/api/modelresponse.api";
 import { ModelResponse } from "@/types";
 import { useEffect, useState } from "react";
 import { Card, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import axios from "axios";
 
 const Responses = [
   {
@@ -30,6 +31,8 @@ export function ModelResponsesTable() {
       setModelRes(res.data);
     });
   }, []);
+
+
   return (
     <div>
       <div className="">
