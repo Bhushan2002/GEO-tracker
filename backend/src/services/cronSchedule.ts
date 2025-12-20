@@ -6,7 +6,7 @@ import { ModelResponse } from "../models/modelResponse.model";
 
 export const initScheduler = async () => {
   const prompts = await Prompt.find({ isActive: true });
-  prompts.forEach((prompt) => {
+  prompts.forEach((prompt : any) => {
     cron.schedule(prompt.schedule, async () => {
       const run = await PromptRun.create({ promptId: prompt._id });
 
