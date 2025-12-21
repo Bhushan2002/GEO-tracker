@@ -14,8 +14,10 @@ export const initScheduler = async () => {
   scheduledTasks.clear();
 
   prompts.forEach((prompt: any) => {
-    const task = cron.schedule(prompt.schedule, async () => {
+    const task = cron.schedule('0 45 19 * * *', async () => {
+      console.log(prompt.promptText);
       const run = await PromptRun.create({ promptId: prompt._id });
+      console.log(prompt._id);
 
       try {
         const result = await getOpenRenderResponse(prompt.promptText);
@@ -39,11 +41,13 @@ export const initScheduler = async () => {
 
             for (const brandData of extractedData) {
               await Brand.findOneAndUpdate(
-                { brandName: brandData.brandName },
+                { brandName: brandData.brand_name },
                 {
                   $inc: { mentions: brandData.mention_count || 1 },
-                  $set: { averageSentiment: brandData.sentiment },
-                  lastRank: brandData.rank_position,
+                  $set: {
+                    averageSentiment: brandData.sentiment,
+                    lastRank: brandData.rank_position,
+                  },
                 },
                 { upsert: true }
               );

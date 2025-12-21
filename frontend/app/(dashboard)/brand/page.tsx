@@ -13,7 +13,9 @@ export default function page() {
      }
   return (
     <div className="flex flex-col max-h-screen">
-      <div className="h-10 w-20  ">
+
+
+      <div className="flex justify-end h-10 w-full pb-4">
         <Button onClick={()=>setDialogOpen(true)}>add prompt</Button>
         <AddTopicDialog 
             open= {dialogOpen}

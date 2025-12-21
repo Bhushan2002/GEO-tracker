@@ -25,15 +25,15 @@ app.use('/api/brands')
 
 const port = process.env.PORT || 9000;
 
-app.listen(port,  () => {
-    console.log(`server is running on ${process.env.PORT}`);
-  });
 
 const wait = async () => {
   
   await connectDatabase();
   await initScheduler();
-  
+  app.listen(port,  () => {
+    console.log(`server is running on ${process.env.PORT}`);
+  });
+
 };
 
 wait();
