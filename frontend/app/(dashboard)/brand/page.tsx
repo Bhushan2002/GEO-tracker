@@ -48,7 +48,7 @@ export default function BrandPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card">
-        <h2 className="text-xl font-bold">Manage Target Brands</h2>
+        <h2 className="text-xl font-bold">Target Brands</h2>
         <form onSubmit={handleAddBrand} className="flex gap-2">
           <Input 
             placeholder="Enter brand name (e.g., Nike)" 
