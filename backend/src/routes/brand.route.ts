@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { getBrand } from "../controllers/brand.controller";
+import { createBrand, getBrand } from "../controllers/brand.controller";
 
 
 
 const router = Router();
 
 router.get('/',getBrand);
-
+router.post('/' , createBrand);
 
 
 export default router;

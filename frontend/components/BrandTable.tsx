@@ -9,6 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "./ui/skeleton";
+
+import { Brand } from '../../backend/src/models/brand.model';
 
 const brandList = [
   {
@@ -37,29 +40,34 @@ const brandList = [
   },
 ];
 
-export function BrandTable() {
+export function BrandTable({ data = [], loading }: { data: any[], loading: boolean }) {
+  if (loading) return <div>Loading brands...</div>;
   return (
-    <div className="w-140 ">
-      <Table>
-        <TableHeader>
+    <Table>
+      <TableHeader>
+        <TableRow >
+          <TableHead>Brand Name</TableHead>
+          <TableHead>Mentions</TableHead>
+          <TableHead>Last Sentiment</TableHead>
+          <TableHead>Current Rank</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.length === 0 ? (
           <TableRow>
-            <TableHead>Brand</TableHead>
-            <TableHead>Visibility</TableHead>
-            <TableHead>Sentiments</TableHead>
-            <TableHead>Position</TableHead>
+            <TableCell colSpan={4} className="text-center">No brands tracked yet.</TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody >
-          {brandList.map((brand) => (
-            <TableRow key={brand.brandName}>
-              <TableCell className="font-medium">{brand.brandName}</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>-</TableCell>
-              <TableCell>-</TableCell>
+        ) : (
+          data.map((brand) => (
+            <TableRow key={brand._id}>
+              <TableCell className="font-medium">{brand.brand_name}</TableCell>
+              <TableCell>{brand.mentions || 0}</TableCell>
+              <TableCell>{brand.averageSentiment || "N/A"}</TableCell>
+              <TableCell>{brand.lastRank || "Unranked"}</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          ))
+        )}
+      </TableBody>
+    </Table>
   );
 }

@@ -1,5 +1,5 @@
 export interface IBrand{
-    brandName: string;
+    brand_name: string;
     mentions: number;
     averageSentiment: string;
     lastRank :  number;

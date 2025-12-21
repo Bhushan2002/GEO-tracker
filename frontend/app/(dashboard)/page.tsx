@@ -1,3 +1,5 @@
+"use client";
+import { brandAPI } from "@/api/brand.api";
 import { BrandTable } from "@/components/BrandTable";
 import DomainTable from "@/components/domain-table";
 import { ModelResponsesTable } from "@/components/ModelResponsesTable";
@@ -5,8 +7,8 @@ import PieChartComponent from "@/components/pieChart";
 import { PromptTable } from "@/components/PromptTable";
 import { VisibilityChart } from "@/components/VisibilityChart";
 import { Separator } from "@radix-ui/react-separator";
-import React from "react";
-
+import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 const data = [
   { name: "ChatGPT", value: 40 },
@@ -16,6 +18,24 @@ const data = [
 ];
 
 export default function Overview() {
+  const [brands, setBrands] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadBrands();
+  }, []);
+
+  const loadBrands = async () => {
+    try {
+      const res = await brandAPI.getBrands();
+      setBrands(res.data);
+    } catch (error) {
+      toast.error("Failed to load brands.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-col">
@@ -27,27 +47,25 @@ export default function Overview() {
           {/* brand table */}
           <div className="ml-3 pt-3  rounded-xl border bg-white shadow">
             <span className="font-medium text-gray-800  ml-5 mt-2">Brand</span>
-            <Separator className="my-5"/>
+            <Separator className="my-5" />
             <hr />
-            <BrandTable />
+            <BrandTable data={brands } loading={isLoading} />
           </div>
         </div>
 
         <div className=" flex flex-row mt-4 space-x-4">
           {/* pie chart */}
           <div className="bg-white border rounded-2xl pt-4 w-150 h-100">
-            
             <PieChartComponent data={data} />
-
           </div>
           {/* domain tables */}
           <div className=" ">
-            <DomainTable/>
+            <DomainTable />
           </div>
         </div>
 
         <div className="h-100 w-310 pt-7">
-          <ModelResponsesTable/>
+          <ModelResponsesTable />
         </div>
       </div>
     </div>

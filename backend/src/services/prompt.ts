@@ -1,61 +1,4 @@
-import axios from "axios";
-import { modelNames } from "mongoose";
-import dotenv from "dotenv";
-import express from "express";
-dotenv.config();
-const Models = [
-  "nex-agi/deepseek-v3.1-nex-n1:free",
-  "nex-agi/deepseek-v3.1-nex-n1:free",
-  "nvidia/nemotron-nano-12b-v2-vl:free",
-  "openai/gpt-oss-20b:free"
-];
-
-// https://openrouter.ai/api/v1
-export const getOpenRenderResponse = async (promptText: string) => {
-  const result = [];
-
-  for (const model of Models) {
-    const start = Date.now();
-
-    try {
-      const res = await axios.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          model,
-          messages: [{ role: "user", content: promptText }],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.OPEN_RENDER_API}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      result.push({
-        modelName: model,
-        responseText: res.data?.choices?.[0]?.message?.content,
-        latencyMs: Date.now() - start,
-        tokenUsage: res.data.usage,
-      });
-      //   console.log('Response', res.data?.choices?.[0]?.message?.content);
-    } catch (e: any) {
-      result.push({
-        modelName: model,
-        error: e.messsage,
-      });
-    }
-  }
-
-  return result;
-};
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-export const extractBrandFromText = async (
- transcript: string, retries = 3
-) => {
-  const extractionModel = "openai/gpt-oss-120b:free";
-
-  const extractionPrompt = `
+export const extractionPrompt = `
   create an ai agent prompt to analyse an ai chat for the AI visibility AEO/GEO tool, to check citation, ranking, sentiment, brand mentions, link mentioned and more from the ai chat. The response output should be in structured json format only.
 Model
 ThinkingThoughts
@@ -264,49 +207,10 @@ Prominence Scoring: Added a 1–10 score to measure not just if a brand was ment
 Link Granularity: Distinguishes between a direct link to a brand's site vs. a third-party citation (essential for GEO optimization).
 Audit Summary: Added a high-level summary for quick dashboarding (e.g., "Total brands detected").
 Share of Voice (SOV) Ranking: The aeo_geo_insights section provides a relative ranking of all brands mentioned based on their influence in the chat.
-
+How to Implement:
+For Devs: Send this as the system message. In the user message, provide the list of brands and the transcript.
+For Direct Use: Copy-paste the entire block into ChatGPT/Claude/Perplexity, fill in the [INSERT LIST] and [PAST CHAT] brackets, and it will return a clean JSON object ready for your database or spreadsheet.
   `;
 const userInput = `
-- **Chat Transcript**: ${transcript}`;
-
-for (let i = 0; i < retries; i++) {
-  try {
-    const res = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: extractionModel, 
-        messages: [
-          { role: "system", content: extractionPrompt },
-          { role: "user", content: extractionPrompt },
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPEN_RENDER_API}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    let content = res.data?.choices?.[0]?.message?.content || "{}";
-
-    // Strip markdown code blocks if the AI includes them
-    content = content
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    return JSON.parse(content);
-  } catch (e: any) {
-      // Handle Rate Limiting (429) with exponential backoff
-      if (e.response?.status === 429 && i < retries - 1) {
-        const waitTime = Math.pow(2, i) * 3000; // Wait 3s, 6s, 12s...
-        console.warn(`Rate limited (429). Retrying in ${waitTime}ms...`);
-        await sleep(waitTime);
-        continue;
-      }
-
-      console.error("Brand extraction failed:", e.message);
-      return { predefined_brand_analysis: [], discovered_competitor_analysis: [] };
-    }
-  }
-};
+- **Predefined Target Brands**: $ {targetBrands.join(", ")}
+- **Chat Transcript**: $ {transcript}`;

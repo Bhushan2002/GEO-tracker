@@ -14,10 +14,10 @@ export const initScheduler = async () => {
   scheduledTasks.clear();
 
   prompts.forEach((prompt: any) => {
-    const task = cron.schedule('0 45 19 * * *', async () => {
-      console.log(prompt.promptText);
+    const task = cron.schedule('0 31 1 * * *', async () => {
+      
       const run = await PromptRun.create({ promptId: prompt._id });
-      console.log(prompt._id);
+
 
       try {
         const result = await getOpenRenderResponse(prompt.promptText);
@@ -32,16 +32,19 @@ export const initScheduler = async () => {
             error: res.error,
           });
           if (res.responseText) {
+
+            await new Promise(resolve => setTimeout(resolve, 9000));
+
             const extractedData = await extractBrandFromText(res.responseText);
 
             const allBrands = [
-              ...(extractedData?.predefiend_brand_analysis || []),
+              ...(extractedData?.predefined_brand_analysis || []),
               ...(extractedData?.discovered_competitor_analysis || []),
             ];
 
-            for (const brandData of extractedData) {
+            for (const brandData of allBrands) {
               await Brand.findOneAndUpdate(
-                { brandName: brandData.brand_name },
+                { brand_name: brandData.brand_name },
                 {
                   $inc: { mentions: brandData.mention_count || 1 },
                   $set: {

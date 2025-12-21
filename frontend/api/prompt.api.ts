@@ -9,10 +9,10 @@ export const PromptAPI = {
         tags?: string[];
         
     }){
-        return api.post<Prompt>("/api/prompt/", data);
+        return api.post<Prompt>("/api/prompt", data);
 
     },
     getAll(){
-        return api.get<Prompt[]>("/api/prompt/getprompts/");
+        return api.get<Prompt[]>("/api/prompt/getprompts");
     }
 }

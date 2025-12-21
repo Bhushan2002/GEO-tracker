@@ -42,8 +42,8 @@ export function ModelResponsesTable() {
         {modelRes.map((response) => (
           response.responseText != null ? <Card key={response._id}>
             <CardHeader>
-              <CardTitle >id: {response._id} </CardTitle>
-              <CardDescription> {new Date(response.createdAt).toLocaleString("en-IN")}</CardDescription>
+              <CardTitle >{response.modelName} </CardTitle>
+              <CardDescription className="font-medium"> {new Date(response.createdAt).toLocaleString("en-IN")}</CardDescription>
               <CardDescription className="text-wrap line-clamp-2">{response.responseText}</CardDescription>
             </CardHeader>
             
