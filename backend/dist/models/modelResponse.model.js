@@ -42,6 +42,7 @@ const modelResponseSchema = new mongoose_1.default.Schema({
         required: true
     },
     modelName: { type: String, required: true },
+    identifiedBrands: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Brand' }],
     responseText: { type: String },
     latencyMs: { type: Number },
     tokenUsage: { type: Object },

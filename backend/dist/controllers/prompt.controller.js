@@ -10,7 +10,6 @@ const createPromprt = async (req, res) => {
             topic,
             tags,
             ipAddress,
-            schedule,
             isActive: true,
         });
         res.status(201).json(prompt);
@@ -24,7 +23,7 @@ const getPrompts = async (req, res) => {
     try {
         const prompts = await prompt_model_1.Prompt.find();
         if (!prompts) {
-            res.status(404).json({ message: 'unable to fetch prompts' });
+            res.status(404).json({ message: "unable to fetch prompts" });
         }
         res.status(200).json(prompts);
     }
