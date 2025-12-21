@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import { IModelResponse } from "../types/modelResponse.type";
+import { ref } from "node:process";
 
 
 const modelResponseSchema = new mongoose.Schema<IModelResponse>(
@@ -10,6 +11,7 @@ const modelResponseSchema = new mongoose.Schema<IModelResponse>(
       required: true
     },
     modelName: { type: String, required: true },
+    identifiedBrands : [{type: Schema.Types.ObjectId, ref: 'Brand'}],
     responseText: {type: String },
     latencyMs: {type: Number},
     tokenUsage: {type: Object},

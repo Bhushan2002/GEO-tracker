@@ -1,18 +1,25 @@
 import { Prompt } from "../models/prompt.model";
-import cron from "node-cron";
+import cron, { schedule, ScheduledTask } from "node-cron";
 import { PromptRun } from "../models/promptRun.Model";
-import { getOpenRenderResponse } from "./openRender";
+import { extractBrandFromText, getOpenRenderResponse } from "./openRender";
 import { ModelResponse } from "../models/modelResponse.model";
+import { Brand } from "../models/brand.model";
+
+const scheduledTasks: Map<string, ScheduledTask> = new Map();
 
 export const initScheduler = async () => {
   const prompts = await Prompt.find({ isActive: true });
-  prompts.forEach((prompt : any) => {
-    cron.schedule(prompt.schedule, async () => {
+
+  scheduledTasks.forEach((task) => task.stop());
+  scheduledTasks.clear();
+
+  prompts.forEach((prompt: any) => {
+    const task = cron.schedule(prompt.schedule, async () => {
       const run = await PromptRun.create({ promptId: prompt._id });
 
       try {
         const result = await getOpenRenderResponse(prompt.promptText);
-        
+
         for (const res of result) {
           await ModelResponse.create({
             promptRunId: run._id,
@@ -20,9 +27,28 @@ export const initScheduler = async () => {
             modelName: res.modelName,
             latencyMs: res.latencyMs,
             tokenUsage: res.tokenUsage,
-            error: res.error
+            error: res.error,
           });
-          
+          if (res.responseText) {
+            const extractedData = await extractBrandFromText(res.responseText);
+
+            const allBrands = [
+              ...(extractedData?.predefiend_brand_analysis || []),
+              ...(extractedData?.discovered_competitor_analysis || []),
+            ];
+
+            for (const brandData of extractedData) {
+              await Brand.findOneAndUpdate(
+                { brandName: brandData.brandName },
+                {
+                  $inc: { mentions: brandData.mention_count || 1 },
+                  $set: { averageSentiment: brandData.sentiment },
+                  lastRank: brandData.rank_position,
+                },
+                { upsert: true }
+              );
+            }
+          }
         }
 
         run.status = "COMPLETED";
@@ -32,5 +58,6 @@ export const initScheduler = async () => {
         await run.save();
       }
     });
+    scheduledTasks.set(prompt._id.toString(), task);
   });
 };

@@ -21,6 +21,7 @@ app.use(express.json());
 
 app.use("/api/prompt", promptRouter);
 app.use("/api/modelresponse", modelResponseRoute);
+app.use('/api/brands')
 
 const port = process.env.PORT || 9000;
 
