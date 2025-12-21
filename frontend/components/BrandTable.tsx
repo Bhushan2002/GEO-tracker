@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "./ui/skeleton";
 
-import { Brand } from '../../backend/src/models/brand.model';
-
 const brandList = [
   {
     brandName: "HSBC",
