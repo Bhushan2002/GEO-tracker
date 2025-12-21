@@ -11,7 +11,7 @@ export const createPromprt = async (req: Request, res: Response) => {
       topic,
       tags,
       ipAddress,
-      schedule,
+
       isActive: true,
     });
     res.status(201).json(prompt);
@@ -20,15 +20,14 @@ export const createPromprt = async (req: Request, res: Response) => {
   }
 };
 
-export const getPrompts = async (req: Request, res: Response)=>{
-  try{
+export const getPrompts = async (req: Request, res: Response) => {
+  try {
     const prompts = await Prompt.find();
-    if (!prompts){
-      res.status(404).json({message:'unable to fetch prompts'});
+    if (!prompts) {
+      res.status(404).json({ message: "unable to fetch prompts" });
     }
-    res.status(200).json(prompts)
+    res.status(200).json(prompts);
+  } catch (e: any) {
+    res.status(400).json({ message: e.message });
   }
-  catch(e:any){
-    res.status(400).json({message: e.message});
-  }
-}
+};

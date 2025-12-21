@@ -7,7 +7,6 @@ export const PromptAPI = {
         promptText: string,
         topic?: string;
         tags?: string[];
-        schedule: string;
         
     }){
         return api.post<Prompt>("/api/prompt/", data);

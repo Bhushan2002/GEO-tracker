@@ -42,7 +42,7 @@ export default function AddTopicDialog({ open, onOpenChange, onSubmit }: AddProm
         promptText: formData.promptText,
         topic: formData.topic,
         tags: [...formData.tags],
-        schedule: '0 23 19 * * *'
+     
       });
       setFormData({
       promptText:'',

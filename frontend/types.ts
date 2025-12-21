@@ -4,10 +4,6 @@ export interface Prompt {
   promptText: string;
   topic?: string;
   tags: string[];
-  schedule: {
-    cronExpression: string;
-    enabled: boolean;
-  };
   createdAt: string;
 }
 
