@@ -52,8 +52,9 @@ export function PromptTable() {
 
 
   return (
+    <div className=" bg-gray-100 rounded-2xl">
+
     <Table>
-      <TableCaption>Prompts</TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead>Prompt</TableHead>
@@ -64,8 +65,8 @@ export function PromptTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-       { Array.isArray(prompts) && prompts.map((prompt) => (
-          <TableRow key={prompt._id}>
+       {prompts.map((prompt) => (
+         <TableRow key={prompt._id}>
             <TableCell className="font-medium max-w-[400px] whitespace-normal">
               {prompt.promptText}
             </TableCell>
@@ -78,16 +79,23 @@ export function PromptTable() {
 {/* 
         {promptList.map((prompt) => (
           <TableRow key={prompt.promptText}>
-            <TableCell className="font-medium max-w-[400px] whitespace-normal">
-              {prompt.promptText}
-            </TableCell>
-            <TableCell className="font-medium">{prompt.visibility}</TableCell>
-            <TableCell>{prompt.sentiment}</TableCell>
-            <TableCell>{prompt.position}</TableCell>
-            <TableCell className="text-right">{prompt.members}</TableCell>
+          <TableCell className="font-medium max-w-[400px] whitespace-normal">
+          {prompt.promptText}
+          </TableCell>
+          <TableCell className="font-medium">{prompt.visibility}</TableCell>
+          <TableCell>{prompt.sentiment}</TableCell>
+          <TableCell>{prompt.position}</TableCell>
+          <TableCell className="text-right">{prompt.members}</TableCell>
           </TableRow>
-        ))} */}
+          ))} */}
       </TableBody>
     </Table>
+</div>
   );
+}
+
+export function promptTable (){
+  return <div>
+
+  </div>
 }

@@ -13,12 +13,17 @@ import {
 
 const items  = [
   {
-    title: "overview",
+    title: "Overview",
     href : '/'
   },
   {
-    title: "prompt",
+    title: "Prompt",
     href : '/prompt'
+  },
+  
+  {
+    title: "Brand",
+    href : '/brand'
   },
   
 ]
@@ -28,14 +33,16 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            AI 
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <a href={item.href}>
-                      <span>{item.title}</span>
+                      <span className="font-medium text-gray-800">{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

@@ -39,29 +39,27 @@ const brandList = [
 
 export function BrandTable() {
   return (
-    <Table>
-      <TableCaption>Prompts</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Brand</TableHead>
-          <TableHead>Visibility</TableHead>
-          <TableHead>Sentiments</TableHead>
-          <TableHead>Position</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {brandList.map((brand) => (
-          <TableRow key={brand.brandName}>
-            <TableCell className="font-medium">
-              {brand.brandName}
-            </TableCell>
-            <TableCell>-</TableCell>
-            <TableCell>-</TableCell>
-            <TableCell>-</TableCell>
-   
+    <div className="w-140 ">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Brand</TableHead>
+            <TableHead>Visibility</TableHead>
+            <TableHead>Sentiments</TableHead>
+            <TableHead>Position</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody >
+          {brandList.map((brand) => (
+            <TableRow key={brand.brandName}>
+              <TableCell className="font-medium">{brand.brandName}</TableCell>
+              <TableCell>-</TableCell>
+              <TableCell>-</TableCell>
+              <TableCell>-</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
