@@ -3,7 +3,7 @@ import axios from 'axios';
 
 
 const url  = process.env.SERVER_URL || "https://geo-tracker-001.onrender.com"
-// const url =  process.env.LOCAL_URL ||"http://localhost:9000"
+// const url =  process.env.LOCAL_URL ||"http://localhost:9000 "
 export const api = axios.create(
     {
         baseURL: url ,
