@@ -5,6 +5,15 @@ import { executePromptTask } from "@/lib/services/cronSchedule";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Allow': 'POST, OPTIONS',
+    },
+  });
+}
+
 export async function POST(
   req: NextRequest,
   props: { params: Promise<{ id: string }> }

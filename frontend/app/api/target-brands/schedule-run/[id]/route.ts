@@ -6,6 +6,15 @@ import { initScheduler } from "@/lib/services/cronSchedule";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Allow': 'PATCH, OPTIONS',
+    },
+  });
+}
+
 export async function PATCH(
   req: NextRequest,
   props: { params: Promise<{ id: string }> }
