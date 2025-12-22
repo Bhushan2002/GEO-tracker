@@ -6,17 +6,13 @@ import { initScheduler } from "@/lib/services/cronSchedule";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type RouteContext = {
-  params: { id: string }
-}
-
 export async function PATCH(
   req: NextRequest,
-  context: RouteContext
+  { params }: { params: { id: string } }
 ) {
   try {
     await connectDatabase();
-    const { id } = context.params;
+    const { id } = params;
     await TargetBrand.findByIdAndUpdate(id, { isScheduled: true });
     await initScheduler(); // Refresh the cron tasks
     return NextResponse.json({ message: "Brand added to daily schedule" }, { status: 200 });

@@ -5,17 +5,13 @@ import { executePromptTask } from "@/lib/services/cronSchedule";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type RouteContext = {
-  params: { id: string }
-}
-
 export async function POST(
   req: NextRequest,
-  context: RouteContext
+  { params }: { params: { id: string } }
 ) {
   try {
     await connectDatabase();
-    const { id } = context.params;
+    const { id } = params;
    
     executePromptTask(id); 
     return NextResponse.json({ message: "Extraction started" }, { status: 200 });

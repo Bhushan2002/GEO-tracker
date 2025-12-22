@@ -6,17 +6,13 @@ import { initScheduler } from "@/lib/services/cronSchedule";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-type RouteContext = {
-  params: { id: string }
-}
-
 export async function POST(
   req: NextRequest,
-  context: RouteContext
+  { params }: { params: { id: string } }
 ) {
   try {
     await connectDatabase();
-    const { id } = context.params;
+    const { id } = params;
     await Prompt.findByIdAndUpdate(id, { isScheduled: true });
     await initScheduler(); 
     return NextResponse.json({ message: "Prompt added to daily schedule" }, { status: 200 });
