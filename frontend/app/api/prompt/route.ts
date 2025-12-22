@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { Prompt } from "@/lib/models/prompt.model";
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     await connectDatabase();

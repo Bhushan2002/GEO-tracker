@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { Brand } from "@/lib/models/brand.model";
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     await connectDatabase();

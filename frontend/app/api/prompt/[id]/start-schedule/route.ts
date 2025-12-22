@@ -3,13 +3,17 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { Prompt } from "@/lib/models/prompt.model";
 import { initScheduler } from "@/lib/services/cronSchedule";
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     await connectDatabase();
-    const { id } = await params;
+    const { id } = params;
     await Prompt.findByIdAndUpdate(id, { isScheduled: true });
     await initScheduler(); 
     return NextResponse.json({ message: "Prompt added to daily schedule" }, { status: 200 });

@@ -3,13 +3,17 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { TargetBrand } from "@/lib/models/targetBrand.model";
 import { initScheduler } from "@/lib/services/cronSchedule";
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params;
   try {
     await connectDatabase();
-    const { id } = await params;
+    const { id } = params;
     await TargetBrand.findByIdAndUpdate(id, { isScheduled: false });
     await initScheduler(); // Refresh the cron tasks
     return NextResponse.json({ message: "Brand removed from daily schedule" }, { status: 200 });
