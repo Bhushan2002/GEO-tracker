@@ -5,4 +5,6 @@ const prompt_controller_1 = require("../controllers/prompt.controller");
 const router = (0, express_1.Router)();
 router.post('/', prompt_controller_1.createPromprt);
 router.get('/getprompts', prompt_controller_1.getPrompts);
+router.post('/:id/start-schedule', prompt_controller_1.initializeTask);
+router.post('/:id/stop-schedule', prompt_controller_1.stopTask);
 exports.default = router;

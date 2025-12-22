@@ -4,7 +4,7 @@ exports.getBrand = exports.createBrand = void 0;
 const brand_model_1 = require("../models/brand.model");
 const createBrand = async (req, res) => {
     try {
-        const { brand_name } = req.body;
+        const { brand_name, prominence_score, context, associated_links } = req.body;
         const exisitingBrand = await brand_model_1.Brand.findOne({ brand_name });
         if (exisitingBrand) {
             return res.status(400).json({ message: "Brand already exists" });
@@ -13,6 +13,9 @@ const createBrand = async (req, res) => {
             brand_name,
             mentions: 0,
             averageSentiment: "Neutral",
+            prominence_score: prominence_score || 0,
+            context: context || "",
+            associated_links: associated_links || [],
         });
         res.status(201).json(newBrand);
     }
@@ -24,7 +27,7 @@ const createBrand = async (req, res) => {
 exports.createBrand = createBrand;
 const getBrand = async (req, res) => {
     try {
-        const brand = await brand_model_1.Brand.find().sort({ lastRank: 1 });
+        const brand = await brand_model_1.Brand.find().sort({ lastRank: 1, brand_name: 1 });
         if (!brand || brand.length === 0) {
             return res.status(404).json({ message: "No brand found" });
         }

@@ -4,4 +4,5 @@ export  interface IPrompt {
     tags: string[], 
     ipAddress: string, 
     isActive : boolean
+    isScheduled: boolean;
 };

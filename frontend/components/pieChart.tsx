@@ -22,8 +22,8 @@ interface Props {
 export default function CustomPieChart({ data }: Props) {
   return (
     <div style={{ width: "100%", height: 300 }}>
-      <div>
-        <span>Most Used Domain </span>
+      <div className="px-4">
+        <span className="font-bold">Top 5 Brands by Visibility</span>
       </div>
       <ResponsiveContainer>
         <PieChart>
@@ -31,16 +31,10 @@ export default function CustomPieChart({ data }: Props) {
             data={data}
             dataKey="value"
             nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
             label
           >
-            {data.map((_, index) => (
-              <Cell
-                key={index}
-                fill={COLORS[index % COLORS.length]}
-              />
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
           <Tooltip />

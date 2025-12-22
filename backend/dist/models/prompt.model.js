@@ -10,6 +10,7 @@ const PromptSchema = new mongoose_1.default.Schema({
     topic: { type: String, required: true },
     ipAddress: String,
     tags: [String],
+    isScheduled: { type: Boolean, default: true },
     isActive: { type: Boolean, default: true },
 });
 exports.Prompt = mongoose_1.default.model("Prompt", PromptSchema);

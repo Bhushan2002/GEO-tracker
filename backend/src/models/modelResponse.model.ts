@@ -15,8 +15,14 @@ const modelResponseSchema = new mongoose.Schema<IModelResponse>(
     responseText: {type: String },
     latencyMs: {type: Number},
     tokenUsage: {type: Object},
-    error: {type: String}
+    error: {type: String},
+     aeo_geo_insights: {
+    share_of_voice_ranking: [String],
+    citation_transparency_score: Number,
+    recommendation_bias: String,
   },
+  },
+ 
   { timestamps: true }
 );
 export const ModelResponse = mongoose.model(

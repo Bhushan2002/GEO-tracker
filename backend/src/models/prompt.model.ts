@@ -6,6 +6,7 @@ const PromptSchema = new mongoose.Schema<IPrompt>({
   topic: { type: String, required: true },
   ipAddress: String,
   tags: [String],
+  isScheduled: {type: Boolean ,default:true},
  
   isActive: { type: Boolean, default: true },
 });

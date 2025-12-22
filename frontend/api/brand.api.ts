@@ -4,7 +4,10 @@ export const brandAPI = {
   getBrands() {
     return api.get("/api/brands");
   },
-  createBrand(brand_name: string){
-    return api.post('/api/brands',{brand_name})
+  getTargetBrand(){
+    return api.get("/api/target-brands")
+  },
+  createTargetBrand(brand_name: string,official_url: string){
+    return api.post('/api/target-brands',{brand_name, official_url})
   }
 };

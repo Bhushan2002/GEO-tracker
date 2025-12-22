@@ -9,6 +9,7 @@ const db_1 = require("./config/db");
 const prompt_router_1 = __importDefault(require("./routes/prompt.router"));
 const modelResponse_route_1 = __importDefault(require("./routes/modelResponse.route"));
 const brand_route_1 = __importDefault(require("./routes/brand.route"));
+const targetbrand_route_1 = __importDefault(require("./routes/targetbrand.route"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const cronSchedule_1 = require("./services/cronSchedule");
@@ -17,6 +18,7 @@ app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 app.use("/api/prompt", prompt_router_1.default);
 app.use("/api/modelresponse", modelResponse_route_1.default);
+app.use('/api/target-brands', targetbrand_route_1.default);
 app.use("/api/brands", brand_route_1.default);
 const port = process.env.PORT || 9000;
 const wait = async () => {

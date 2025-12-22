@@ -78,7 +78,11 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function VisibilityChart() {
+interface VisibilityChartProp{
+  data: any[];
+}
+
+export function VisibilityChart({data}: VisibilityChartProp) {
   const [timeRange, setTimeRange] = React.useState("90d");
 
   const filteredData = chartData.filter((item) => {
