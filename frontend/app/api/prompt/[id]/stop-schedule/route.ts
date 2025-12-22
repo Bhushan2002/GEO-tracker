@@ -6,14 +6,17 @@ import { initScheduler } from "@/lib/services/cronSchedule";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+type RouteContext = {
+  params: { id: string }
+}
+
 export async function POST(
   req: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
-  const params = await context.params;
   try {
     await connectDatabase();
-    const { id } = params;
+    const { id } = context.params;
     await Prompt.findByIdAndUpdate(id, { isScheduled: false });
     // Refresh the scheduler to remove this prompt from the 1:31 AM run
     await initScheduler(); 
