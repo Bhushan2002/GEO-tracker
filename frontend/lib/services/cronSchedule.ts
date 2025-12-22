@@ -1,6 +1,6 @@
 import cron, { ScheduledTask } from "node-cron";
 import { Prompt } from "../models/prompt.model";
-import { PromptRun } from "../models/promptRun.Model";
+import { PromptRun } from "../models/promptRun.model";
 import { ModelResponse } from "../models/modelResponse.model";
 import { Brand } from "../models/brand.model";
 import { TargetBrand } from "../models/targetBrand.model";
@@ -47,7 +47,7 @@ export const executePromptTask = async (promptId: string) => {
 
       await new Promise((r) => setTimeout(r, 9000));
 
-const extracted = await extractBrandFromText(res.responseText, targetBrandNames);
+      const extracted = await extractBrandFromText(res.responseText, targetBrandNames);
       if (extracted?.aeo_geo_insights) {
         await ModelResponse.findByIdAndUpdate(modelRes._id, {
           aeo_geo_insights: extracted.aeo_geo_insights,
@@ -107,7 +107,6 @@ const extracted = await extractBrandFromText(res.responseText, targetBrandNames)
       }
     }
 
-
     await Brand.updateMany({}, { $unset: { lastRank: "" } });
 
     const brands = await Brand.find().sort({
@@ -147,8 +146,7 @@ export const stopPromptSchedule = (promptId: string) => {
 
 export const initScheduler = async () => {
   const prompts = await Prompt.find({ isActive: true, isScheduled: true });
-
-  const scheduleBrands = await TargetBrand.find({isScheduled: true, isActive: true})
+  const scheduleBrands = await TargetBrand.find({ isScheduled: true, isActive: true });
 
   scheduledTasks.forEach((task) => task.stop());
   scheduledTasks.clear();

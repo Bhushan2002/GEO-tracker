@@ -1,13 +1,12 @@
 import axios from "axios";
 
-import dotenv from "dotenv";
-dotenv.config();
 const Models = [
- "openai/gpt-5.2",
- "google/gemini-3-flash-preview",
- "anthropic/claude-sonnet-4.5",
- "x-ai/grok-4.1-fast"
+  "openai/gpt-5.2",
+  "google/gemini-3-flash-preview",
+  "anthropic/claude-sonnet-4.5",
+  "x-ai/grok-4.1-fast"
 ];
+
 export const getOpenRenderResponse = async (promptText: string) => {
   const result = [];
 
@@ -35,7 +34,6 @@ export const getOpenRenderResponse = async (promptText: string) => {
         latencyMs: Date.now() - start,
         tokenUsage: res.data.usage,
       });
-      //   console.log('Response', res.data?.choices?.[0]?.message?.content);
     } catch (e: any) {
       result.push({
         modelName: model,
@@ -46,12 +44,18 @@ export const getOpenRenderResponse = async (promptText: string) => {
 
   return result;
 };
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-export const extractBrandFromText = async (transcript: string, targetBrands:string[]=[] , retries = 3) => {
+
+export const extractBrandFromText = async (
+  transcript: string,
+  targetBrands: string[] = [],
+  retries = 3
+) => {
   const extractionModel = "google/gemini-2.0-flash-exp:free";
 
   const extractionPrompt = `
- You are an expert AEO/GEO Intelligence Agent. Your mission is to perform a multi-entity audit on AI-generated chat transcripts to assess competitive visibility, citation authority, and brand sentiment.
+You are an expert AEO/GEO Intelligence Agent. Your mission is to perform a multi-entity audit on AI-generated chat transcripts to assess competitive visibility, citation authority, and brand sentiment.
 
 *Task*: 
 1. Analyze the provided AI chat transcript.
@@ -137,6 +141,7 @@ export const extractBrandFromText = async (transcript: string, targetBrands:stri
           },
         }
       );
+      
       let content = res.data?.choices?.[0]?.message?.content || "{}";
 
       // Strip markdown code blocks if the AI includes them

@@ -9,5 +9,11 @@ export const brandAPI = {
   },
   createTargetBrand(brand_name: string,official_url: string){
     return api.post('/api/target-brands',{brand_name, official_url})
+  },
+  scheduleRun(id: string) {
+    return api.patch(`/api/target-brands/schedule-run/${id}`);
+  },
+  scheduleStop(id: string) {
+    return api.patch(`/api/target-brands/schedule-stop/${id}`);
   }
 };

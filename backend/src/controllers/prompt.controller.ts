@@ -133,7 +133,7 @@ export const stopTask = async (req: Request, res:Response) => {
 export const runManualTask = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // Trigger the extraction logic immediately
+   
     executePromptTask(id); 
     res.status(200).json({ message: "Extraction started" });
   } catch (error) {

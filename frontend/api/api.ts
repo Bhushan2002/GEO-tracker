@@ -1,12 +1,11 @@
 import axios from 'axios';
 
+// Using Next.js API routes (no external server needed)
+const url = '';  // Empty string means same origin (Next.js server)
 
-
-const url  = process.env.SERVER_URL || "https://geo-tracker-001.onrender.com"
-// const url =  process.env.LOCAL_URL ||"http://localhost:9000"
 export const api = axios.create(
     {
-        baseURL: url ,
+        baseURL: url,
         headers:{
             'Content-Type': 'application/json'
         }

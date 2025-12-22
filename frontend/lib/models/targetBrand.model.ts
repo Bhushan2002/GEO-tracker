@@ -1,4 +1,4 @@
-import { Schema, model } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const targetBrandSchema = new Schema(
   {
@@ -10,4 +10,4 @@ const targetBrandSchema = new Schema(
   { timestamps: true }
 );
 
-export const TargetBrand = model("TargetBrand", targetBrandSchema);
+export const TargetBrand = models.TargetBrand || model("TargetBrand", targetBrandSchema);
