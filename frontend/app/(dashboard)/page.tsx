@@ -103,7 +103,7 @@ const chartData = React.useMemo(() => {
     <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
       {/* Top Row: Visibility Chart and Brand Table */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-7 bg-white rounded-xl border shadow-sm h-full">
+        <div className="lg:col-span-7  rounded-xl  h-full">
           <VisibilityChart data={chartData} />
         </div>
         <div className="lg:col-span-5 bg-white rounded-xl border shadow-sm p-5 h-full">
