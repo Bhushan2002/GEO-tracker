@@ -61,7 +61,7 @@ export default function Page() {
         <h2 className="text-xl font-bold">Create New Prompt</h2>
         <form onSubmit={handleAddPrompt} className="flex flex-col gap-3">
           <Input
-            placeholder="Enter prompt text (e.g., Best running shoes for marathons?)"
+            placeholder="Enter prompt text "
             value={promptText}
             onChange={(e) => setPromptText(e.target.value)}
           />
