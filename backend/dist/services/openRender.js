@@ -9,9 +9,9 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const Models = [
     "nex-agi/deepseek-v3.1-nex-n1:free",
-    "nex-agi/deepseek-v3.1-nex-n1:free",
-    "nvidia/nemotron-nano-12b-v2-vl:free",
-    "openai/gpt-oss-20b:free"
+    // "nex-agi/deepseek-v3.1-nex-n1:free",
+    // "nvidia/nemotron-nano-12b-v2-vl:free",
+    // "openai/gpt-oss-20b:free",
 ];
 // https://openrouter.ai/api/v1
 const getOpenRenderResponse = async (promptText) => {
@@ -39,7 +39,7 @@ const getOpenRenderResponse = async (promptText) => {
         catch (e) {
             result.push({
                 modelName: model,
-                error: e.messsage,
+                error: e.message || "Unknown error",
             });
         }
     }
@@ -48,7 +48,7 @@ const getOpenRenderResponse = async (promptText) => {
 exports.getOpenRenderResponse = getOpenRenderResponse;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const extractBrandFromText = async (transcript, retries = 3) => {
-    const extractionModel = "openai/gpt-oss-120b:free";
+    const extractionModel = "google/gemini-2.0-flash-exp:free";
     const extractionPrompt = `
   create an ai agent prompt to analyse an ai chat for the AI visibility AEO/GEO tool, to check citation, ranking, sentiment, brand mentions, link mentioned and more from the ai chat. The response output should be in structured json format only.
 Model
@@ -268,7 +268,7 @@ Share of Voice (SOV) Ranking: The aeo_geo_insights section provides a relative r
                 model: extractionModel,
                 messages: [
                     { role: "system", content: extractionPrompt },
-                    { role: "user", content: extractionPrompt },
+                    { role: "user", content: userInput },
                 ],
             }, {
                 headers: {
@@ -292,8 +292,14 @@ Share of Voice (SOV) Ranking: The aeo_geo_insights section provides a relative r
                 await sleep(waitTime);
                 continue;
             }
-            console.error("Brand extraction failed:", e.message);
-            return { predefined_brand_analysis: [], discovered_competitor_analysis: [] };
+            // Log the specific response error if available to help debug
+            console.error("Brand extraction failed:", e.response?.data?.error || e.message);
+            if (i === retries - 1) {
+                return {
+                    predefined_brand_analysis: [],
+                    discovered_competitor_analysis: [],
+                };
+            }
         }
     }
 };

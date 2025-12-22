@@ -4,7 +4,7 @@ import { ModelResponse } from "../models/modelResponse.model";
 import { PromptRun } from "../models/promptRun.Model";
 import { extractBrandFromText, getOpenRenderResponse } from "../services/openRender";
 import { TargetBrand } from "../models/targetBrand.model";
-import { initScheduler } from "../services/cronSchedule";
+import { executePromptTask, initScheduler } from "../services/cronSchedule";
 
 export const createPromprt = async (req: Request, res: Response) => {
   try {
@@ -130,4 +130,13 @@ export const stopTask = async (req: Request, res:Response) => {
   }
 };
 
-
+export const runManualTask = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    // Trigger the extraction logic immediately
+    executePromptTask(id); 
+    res.status(200).json({ message: "Extraction started" });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to start extraction" });
+  }
+};

@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import {
   PieChart,
   Pie,
@@ -21,20 +21,28 @@ interface Props {
 
 export default function CustomPieChart({ data }: Props) {
   return (
-    <div style={{ width: "100%", height: 300 }}>
-      <div className="px-4">
-        <span className="font-bold">Top 5 Brands by Visibility</span>
+    <div style={{ width: "100%", height: 350 }}>
+      <div className="px-4 pb-5">
+        <span className="font-medium text-gray-800">Competitive Share of Voice</span>
       </div>
       <ResponsiveContainer>
-        <PieChart>
+        <PieChart className="flex flex-row">
           <Pie
             data={data}
             dataKey="value"
             nameKey="name"
-            label
+            cx="50%"
+            cy="50%"
+            outerRadius={80}
+            label={({ name, percent }) =>
+              `${name} ${(percent * 100).toFixed(0)}%`
+            }
           >
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell
+                key={`cell-${index}`}
+                fill={COLORS[index % COLORS.length]}
+              />
             ))}
           </Pie>
           <Tooltip />

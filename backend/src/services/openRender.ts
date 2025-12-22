@@ -1,13 +1,12 @@
 import axios from "axios";
-import { modelNames } from "mongoose";
+
 import dotenv from "dotenv";
-import express from "express";
 dotenv.config();
 const Models = [
   "nex-agi/deepseek-v3.1-nex-n1:free",
-  "nex-agi/deepseek-v3.1-nex-n1:free",
-  "nvidia/nemotron-nano-12b-v2-vl:free",
-  "openai/gpt-oss-20b:free"
+  // "nex-agi/deepseek-v3.1-nex-n1:free",
+  // "nvidia/nemotron-nano-12b-v2-vl:free",
+  // "openai/gpt-oss-20b:free",
 ];
 
 // https://openrouter.ai/api/v1
@@ -42,7 +41,7 @@ export const getOpenRenderResponse = async (promptText: string) => {
     } catch (e: any) {
       result.push({
         modelName: model,
-        error: e.messsage,
+        error: e.message || "Unknown error",
       });
     }
   }
@@ -50,10 +49,8 @@ export const getOpenRenderResponse = async (promptText: string) => {
   return result;
 };
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-export const extractBrandFromText = async (
- transcript: string, retries = 3
-) => {
-  const extractionModel = "openai/gpt-oss-120b:free";
+export const extractBrandFromText = async (transcript: string, retries = 3) => {
+  const extractionModel = "google/gemini-2.0-flash-exp:free";
 
   const extractionPrompt = `
   create an ai agent prompt to analyse an ai chat for the AI visibility AEO/GEO tool, to check citation, ranking, sentiment, brand mentions, link mentioned and more from the ai chat. The response output should be in structured json format only.
@@ -266,37 +263,37 @@ Audit Summary: Added a high-level summary for quick dashboarding (e.g., "Total b
 Share of Voice (SOV) Ranking: The aeo_geo_insights section provides a relative ranking of all brands mentioned based on their influence in the chat.
 
   `;
-const userInput = `
+  const userInput = `
 - **Chat Transcript**: ${transcript}`;
 
-for (let i = 0; i < retries; i++) {
-  try {
-    const res = await axios.post(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        model: extractionModel, 
-        messages: [
-          { role: "system", content: extractionPrompt },
-          { role: "user", content: extractionPrompt },
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.OPEN_RENDER_API}`,
-          "Content-Type": "application/json",
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await axios.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          model: extractionModel,
+          messages: [
+            { role: "system", content: extractionPrompt },
+            { role: "user", content: userInput },
+          ],
         },
-      }
-    );
-    let content = res.data?.choices?.[0]?.message?.content || "{}";
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.OPEN_RENDER_API}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      let content = res.data?.choices?.[0]?.message?.content || "{}";
 
-    // Strip markdown code blocks if the AI includes them
-    content = content
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
+      // Strip markdown code blocks if the AI includes them
+      content = content
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
 
-    return JSON.parse(content);
-  } catch (e: any) {
+      return JSON.parse(content);
+    } catch (e: any) {
       // Handle Rate Limiting (429) with exponential backoff
       if (e.response?.status === 429 && i < retries - 1) {
         const waitTime = Math.pow(2, i) * 3000; // Wait 3s, 6s, 12s...
@@ -305,8 +302,18 @@ for (let i = 0; i < retries; i++) {
         continue;
       }
 
-      console.error("Brand extraction failed:", e.message);
-      return { predefined_brand_analysis: [], discovered_competitor_analysis: [] };
+      // Log the specific response error if available to help debug
+      console.error(
+        "Brand extraction failed:",
+        e.response?.data?.error || e.message
+      );
+
+      if (i === retries - 1) {
+        return {
+          predefined_brand_analysis: [],
+          discovered_competitor_analysis: [],
+        };
+      }
     }
   }
 };

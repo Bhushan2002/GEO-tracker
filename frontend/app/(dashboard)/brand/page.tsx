@@ -9,6 +9,8 @@ import { BrandTable } from "@/components/BrandTable";
 import { brandAPI } from "@/api/brand.api";
 import { TargetBrandTable } from "@/components/target-brandTable";
 
+
+
 export default function BrandPage() {
   const [brand_url, setBrand_url] = useState("");
   const [brand_name, setBrand_name] = useState("");
@@ -16,7 +18,7 @@ export default function BrandPage() {
   const [targetBrands, setTargetBrands] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch brands on initial load
+  
   useEffect(() => {
     loadBrands();
   }, []);

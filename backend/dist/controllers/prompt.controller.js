@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stopTask = exports.initializeTask = exports.getPrompts = exports.createPromprt = void 0;
+exports.runManualTask = exports.stopTask = exports.initializeTask = exports.getPrompts = exports.createPromprt = void 0;
 const prompt_model_1 = require("../models/prompt.model");
 const cronSchedule_1 = require("../services/cronSchedule");
 const createPromprt = async (req, res) => {
@@ -118,3 +118,15 @@ const stopTask = async (req, res) => {
     }
 };
 exports.stopTask = stopTask;
+const runManualTask = async (req, res) => {
+    try {
+        const { id } = req.params;
+        // Trigger the extraction logic immediately
+        (0, cronSchedule_1.executePromptTask)(id);
+        res.status(200).json({ message: "Extraction started" });
+    }
+    catch (error) {
+        res.status(500).json({ message: "Failed to start extraction" });
+    }
+};
+exports.runManualTask = runManualTask;

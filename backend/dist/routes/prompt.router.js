@@ -7,4 +7,5 @@ router.post('/', prompt_controller_1.createPromprt);
 router.get('/getprompts', prompt_controller_1.getPrompts);
 router.post('/:id/start-schedule', prompt_controller_1.initializeTask);
 router.post('/:id/stop-schedule', prompt_controller_1.stopTask);
+router.post('/:id/run', prompt_controller_1.runManualTask);
 exports.default = router;

@@ -2,7 +2,8 @@
 import { brandAPI } from "@/api/brand.api";
 
 import { DashBrandTable } from "@/components/dash-brandTable";
-import DomainTable from "@/components/domain-table";
+import DomainAnalysisChart from "@/components/domain-chart";
+import DomainTable from "@/components/domain-chart";
 import { ModelResponsesTable } from "@/components/ModelResponsesTable";
 import PieChartComponent from "@/components/pieChart";
 
@@ -22,30 +23,66 @@ export default function Overview() {
   const [brands, setBrands] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const pieData = brands.map((brand) => ({
+  const domainChartData = React.useMemo(() => {
+  if (!brands || brands.length === 0) return [];
+
+  const domainMap: Record<string, number> = {};
+  let totalLinks = 0;
+
+  brands.forEach((brand) => {
+    brand.associated_links?.forEach((link: any) => {
+      try {
+        // Extract domain from URL
+        const domain = new URL(link.url.startsWith("http") ? link.url : `https://${link.url}`)
+          .hostname.replace("www.", "");
+        domainMap[domain] = (domainMap[domain] || 0) + 1;
+        totalLinks++;
+      } catch (e) { /* ignore invalid urls */ }
+    });
+  });
+
+  // Convert to sorted array and calculate percentages
+  return Object.entries(domainMap)
+    .map(([domain, count]) => ({
+      domain,
+      used: Math.round((count / totalLinks) * 100)
+    }))
+    .sort((a, b) => b.used - a.used)
+    .slice(0, 5); // Show top 5
+}, [brands]);
+const chartData = React.useMemo(() => {
+  return brands.slice(0, 6).map((brand) => ({
     name: brand.brand_name,
-    value: brand.mentions,
-  }));
-  const chartData = brands.map((brand) => ({
-    name: brand.brand_name,
-    prominence: brand.prominence_score || 0,
     mentions: brand.mentions || 0,
+    prominence: brand.prominence_score || 0,
   }));
+}, [brands]);
   const pieChartData = React.useMemo(() => {
-    if (!brands || brands.length === 0) return [];
+  if (!brands || brands.length === 0) return [];
 
-    return [...brands]
-      .sort((a, b) => (b.mentions || 0) - (a.mentions || 0))
-      .slice(0, 5)
-      .map((brand) => ({
-        name: brand.brand_name || "Unknown",
-        value: brand.mentions || 0,
-      }));
-  }, [brands]);
 
+  const sortedBrands = [...brands].sort((a, b) => (b.mentions || 0) - (a.mentions || 0));
+
+
+  const topBrands = sortedBrands.slice(0, 10).map((brand) => ({
+    name: brand.brand_name || "Unknown",
+    value: brand.mentions || 0,
+  }));
+
+  const otherMentions = sortedBrands.slice(5).reduce((sum, brand) => sum + (brand.mentions || 0), 0);
+
+  if (otherMentions > 0) {
+    topBrands.push({
+      name: "Others",
+      value: otherMentions,
+    });
+  }
+
+  return topBrands;
+}, [brands]);
   useEffect(() => {
     loadBrands();
-  }, []);
+}, []);
 
   const loadBrands = async () => {
     try {
@@ -63,46 +100,38 @@ export default function Overview() {
   };
 
   return (
-    <div>
-      <div className="flex flex-col">
-        <div className=" flex flex-row ">
-          {/* chart */}
-          <div className="h-100 w-150 ">
-            <VisibilityChart data={chartData} />
-          </div>
-          {/* brand table */}
-          <div className="ml-3 pt-3  rounded-xl border bg-white shadow">
-            <span className="font-medium text-gray-800  ml-5 mt-2">Brand</span>
-            <Separator className="my-5" />
-            <hr />
-            <DashBrandTable data={brands} loading={isLoading} />
-          </div>
+    <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
+      {/* Top Row: Visibility Chart and Brand Table */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-7 bg-white rounded-xl border shadow-sm h-full">
+          <VisibilityChart data={chartData} />
         </div>
+        <div className="lg:col-span-5 bg-white rounded-xl border shadow-sm p-5 h-full">
+          <h3 className="font-semibold text-lg mb-4">Top Brands Ranking</h3>
+          <DashBrandTable data={brands} loading={isLoading} />
+        </div>
+      </div>
 
-        <div className=" flex flex-row mt-4 space-x-4">
-          {/* pie chart */}
-          <div className="bg-white border rounded-2xl pt-4 w-150 h-100">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                Loading Chart...
-              </div>
-            ) : pieChartData.length > 0 ? (
-              <PieChartComponent data={pieChartData} />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                No Brand Data Available
-              </div>
-            )}
-          </div>
-          {/* domain tables */}
-          <div className=" ">
-            <DomainTable />
-          </div>
-        </div>
 
-        <div className="h-100 w-310 pt-7">
-          <ModelResponsesTable />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-5 bg-white rounded-xl border shadow-sm p-5 min-h-[480px]">
+          <h3 className="font-semibold text-lg mb-2">Share of Voice</h3>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">Loading...</div>
+          ) : (
+            <PieChartComponent data={pieChartData} />
+          )}
         </div>
+        {/* <div className="lg:col-span-7 bg-white rounded-xl border shadow-sm p-5 min-h-[400px]">
+          <h3 className="font-semibold text-lg mb-4">Domain Authority</h3>
+          <DomainAnalysisChart data={domainChartData}/>
+        </div> */}
+      </div>
+
+
+      <div className="bg-white rounded-xl border shadow-sm p-5">
+        <h3 className="font-semibold text-lg mb-4">Detailed Model Insights</h3>
+        <ModelResponsesTable />
       </div>
     </div>
   );
