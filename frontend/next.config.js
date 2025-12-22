@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['mongoose', 'node-cron'],
+  output: 'standalone',
   // Force webpack in development to avoid Turbopack symlink issues on Windows
   ...(process.env.NODE_ENV === 'development' && {
     webpack: (config, { isServer }) => {
