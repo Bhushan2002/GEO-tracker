@@ -67,7 +67,7 @@ const executePromptTask = async (promptId) => {
                         await targetBrand_model_1.TargetBrand.create({
                             brand_name: data.brand_name,
                             official_url: data.associated_links?.[0]?.url ||
-                                "https://pending-verification.com",
+                                "N/A",
                             isActive: true,
                         });
                         alignmentNote = "Newly Added to Target List";
