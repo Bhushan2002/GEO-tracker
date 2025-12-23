@@ -10,6 +10,6 @@ export const PromptAPI = {
   },
   toggleSchedule(id: string, start: boolean) {
     const action = start ? "start-schedule" : "stop-schedule";
-    return api.post(`/api/prompt/${id}`, { action });
+    return api.post("/api/prompt/actions", { id, action });
   }
 };
