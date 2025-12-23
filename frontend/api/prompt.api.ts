@@ -9,7 +9,7 @@ export const PromptAPI = {
     return api.get<Prompt[]>("/api/prompt/getprompts");
   },
   toggleSchedule(id: string, start: boolean) {
-    const endpoint = start ? "start-schedule" : "stop-schedule";
-    return api.post(`/api/prompt/${id}/${endpoint}`);
+    const action = start ? "start-schedule" : "stop-schedule";
+    return api.post(`/api/prompt/${id}`, { action });
   }
 };

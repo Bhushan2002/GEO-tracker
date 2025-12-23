@@ -11,9 +11,9 @@ export const brandAPI = {
     return api.post('/api/target-brands',{brand_name, official_url})
   },
   scheduleRun(id: string) {
-    return api.patch(`/api/target-brands/schedule-run/${id}`);
+    return api.patch(`/api/target-brands/${id}`, { action: 'start' });
   },
   scheduleStop(id: string) {
-    return api.patch(`/api/target-brands/schedule-stop/${id}`);
+    return api.patch(`/api/target-brands/${id}`, { action: 'stop' });
   }
 };

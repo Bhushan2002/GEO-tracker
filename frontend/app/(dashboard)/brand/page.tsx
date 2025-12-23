@@ -71,7 +71,7 @@ export default function BrandPage() {
       <div className="border rounded-lg p-4 max-w-2xl">
         <h2 className="text-xl font-bold mb-4 ">Tracked Brands</h2>
 
-        <TargetBrandTable data={targetBrands} loading={isLoading} />
+        <TargetBrandTable data={targetBrands} loading={isLoading} onRefresh={loadBrands} />
       </div>
     </div>
   );
