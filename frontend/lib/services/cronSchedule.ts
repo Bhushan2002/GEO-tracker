@@ -29,7 +29,14 @@ export const executePromptTask = async (promptId: string) => {
   });
 
   try {
-    const trackedBrands = await TargetBrand.find({ isActive: true });
+    // Use scheduled brands for extraction if any are scheduled, otherwise use active brands
+    const scheduledBrands = await TargetBrand.find({ isScheduled: true, isActive: true });
+    const trackedBrands = scheduledBrands.length > 0 
+      ? scheduledBrands 
+      : await TargetBrand.find({ isActive: true });
+    
+    console.log(`Using ${trackedBrands.length} brands for extraction (scheduled: ${scheduledBrands.length})`);
+    
     const results = await getOpenRenderResponse(prompt.promptText);
     const targetBrandNames = trackedBrands.map(b => b.brand_name);
 

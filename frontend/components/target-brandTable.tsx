@@ -73,7 +73,7 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
                 disabled={loadingStates[brand._id]}
                 variant={brand.isScheduled ? "destructive" : "default"}
               >
-                {loadingStates[brand._id] ? "Loading..." : brand.isScheduled ? "Stop Schedule" : "Start Schedule"}
+                {loadingStates[brand._id] ? "Loading..." : brand.isScheduled ? "No" : "Yes"}
               </Button>
             </TableCell>
           </TableRow>
