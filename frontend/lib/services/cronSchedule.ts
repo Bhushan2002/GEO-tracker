@@ -16,17 +16,23 @@ export const executePromptTask = async (promptId: string) => {
   }
 
   runningPrompts.add(promptId);
+  console.log(`[DEBUG] Starting execution for prompt ${promptId}`);
 
   const prompt = await Prompt.findById(promptId);
   if (!prompt) {
+    console.error(`[DEBUG] Prompt ${promptId} not found`);
     runningPrompts.delete(promptId);
     return;
   }
+
+  console.log(`[DEBUG] Found prompt: ${prompt.promptText.substring(0, 50)}...`);
 
   const run = await PromptRun.create({
     promptId: prompt._id,
     status: "RUNNING",
   });
+
+  console.log(`[DEBUG] Created PromptRun with ID: ${run._id}`);
 
   try {
     // Use scheduled brands for extraction if any are scheduled, otherwise use active brands
@@ -35,12 +41,18 @@ export const executePromptTask = async (promptId: string) => {
       ? scheduledBrands 
       : await TargetBrand.find({ isActive: true });
     
-    console.log(`Using ${trackedBrands.length} brands for extraction (scheduled: ${scheduledBrands.length})`);
+    console.log(`[DEBUG] Using ${trackedBrands.length} brands for extraction (scheduled: ${scheduledBrands.length})`);
+    console.log(`[DEBUG] Brand names:`, trackedBrands.map(b => b.brand_name));
     
+    console.log(`[DEBUG] Calling OpenRender API...`);
     const results = await getOpenRenderResponse(prompt.promptText);
+    console.log(`[DEBUG] Received ${results.length} model responses`);
+    
     const targetBrandNames = trackedBrands.map(b => b.brand_name);
 
     for (const res of results) {
+      console.log(`[DEBUG] Processing response from model: ${res.modelName}`);
+      
       const modelRes = await ModelResponse.create({
         promptRunId: run._id,
         responseText: res.responseText,
@@ -50,12 +62,22 @@ export const executePromptTask = async (promptId: string) => {
         error: res.error,
       });
 
-      if (!res.responseText) continue;
+      console.log(`[DEBUG] Created ModelResponse ID: ${modelRes._id}`);
 
-      await new Promise((r) => setTimeout(r, 9000));
+      if (!res.responseText) {
+        console.log(`[DEBUG] No response text, skipping extraction`);
+        continue;
+      }
 
+      console.log(`[DEBUG] Response text length: ${res.responseText.length} chars`);
+      console.log(`[DEBUG] Waiting 12 seconds before extraction...`);
+      await new Promise((r) => setTimeout(r, 12000));
+
+      console.log(`[DEBUG] Calling extractBrandFromText...`);
       const extracted = await extractBrandFromText(res.responseText, targetBrandNames);
+      console.log(`[DEBUG] Extraction result:`, extracted ? 'Success' : 'Failed');
       if (extracted?.aeo_geo_insights) {
+        console.log(`[DEBUG] Updating ModelResponse with AEO insights`);
         await ModelResponse.findByIdAndUpdate(modelRes._id, {
           aeo_geo_insights: extracted.aeo_geo_insights,
         });
@@ -66,7 +88,10 @@ export const executePromptTask = async (promptId: string) => {
         ...(extracted?.discovered_competitor_analysis || []),
       ];
 
+      console.log(`[DEBUG] Total brands to process: ${allBrands.length}`);
+
       for (const data of allBrands) {
+        console.log(`[DEBUG] Processing brand: ${data.brand_name}`);
         const targetMatch = trackedBrands.find(
           (b) => b.brand_name.toLowerCase() === data.brand_name.toLowerCase()
         );
@@ -90,16 +115,22 @@ export const executePromptTask = async (promptId: string) => {
                 "N/A",
               isActive: true,
             });
+            console.log(`[DEBUG] Created new TargetBrand: ${data.brand_name}`);
             alignmentNote = "Newly Added to Target List";
-          } catch {
+          } catch (err) {
+            console.log(`[DEBUG] Duplicate brand, skipping: ${data.brand_name}`);
             // duplicate brand – ignore
           }
         }
 
+        console.log(`[DEBUG] Upserting Brand document for: ${data.brand_name}`);
         await Brand.findOneAndUpdate(
           { brand_name: data.brand_name },
           {
-            $setOnInsert: { brand_name: data.brand_name },
+            $setOnInsert: { 
+              brand_name: data.brand_name,
+              lastRank: 9999 // Temporary rank, will be updated in ranking phase
+            },
             $inc: { mentions: data.mention_count || 1 },
             $set: {
               averageSentiment: data.sentiment,
@@ -111,15 +142,18 @@ export const executePromptTask = async (promptId: string) => {
           },
           { upsert: true }
         );
+        console.log(`[DEBUG] Brand upserted successfully: ${data.brand_name}`);
       }
     }
 
-    await Brand.updateMany({}, { $unset: { lastRank: "" } });
-
+    // Sort brands and update rankings directly (no unset needed)
+    console.log(`[DEBUG] Updating brand rankings...`);
     const brands = await Brand.find().sort({
       mentions: -1,
       prominence_score: -1,
     });
+
+    console.log(`[DEBUG] Found ${brands.length} brands to rank`);
 
     const bulkOps = brands.map((b, index) => ({
       updateOne: {
@@ -130,15 +164,18 @@ export const executePromptTask = async (promptId: string) => {
 
     if (bulkOps.length) {
       await Brand.bulkWrite(bulkOps);
+      console.log(`[DEBUG] Rankings updated for ${bulkOps.length} brands`);
     }
 
     run.status = "COMPLETED";
+    console.log(`[DEBUG] Task completed successfully`);
   } catch (err) {
-    console.error("Task Execution Error:", err);
+    console.error("[ERROR] Task Execution Error:", err);
     run.status = "FAILED";
   } finally {
     await run.save();
     runningPrompts.delete(promptId);
+    console.log(`[DEBUG] Execution finished for prompt ${promptId}`);
   }
 };
 
@@ -152,6 +189,10 @@ export const stopPromptSchedule = (promptId: string) => {
 };
 
 export const initScheduler = async () => {
+  // ===== CRON SCHEDULING DISABLED FOR TESTING =====
+  // Uncomment below to enable automatic daily execution at 2:00 PM
+  
+  /*
   const prompts = await Prompt.find({ isActive: true, isScheduled: true });
   const scheduleBrands = await TargetBrand.find({ isScheduled: true, isActive: true });
 
@@ -165,4 +206,7 @@ export const initScheduler = async () => {
 
     scheduledTasks.set(prompt._id.toString(), task);
   }
+  */
+  
+  console.log("Cron scheduler initialization skipped (testing mode)");
 };

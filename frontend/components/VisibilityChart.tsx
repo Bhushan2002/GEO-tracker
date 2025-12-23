@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import {
-  Line,
-  LineChart,
+  Area,
+  AreaChart,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -43,53 +43,63 @@ interface VisibilityChartProp {
 
 export function VisibilityChart({ data }: VisibilityChartProp) {
   return (
-    <Card className="pt-0 shadow-sm border  rounded-xl bg-white">
-      <CardHeader className="flex flex-col gap-1 border-b py-5">
-        <CardTitle>Visibility Momentum</CardTitle>
-        <CardDescription>
-          Tracking brand mentions and recommendation strength
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6">
-        <ChartContainer
-          config={chartConfig}
-          className="aspect-auto h-[300px] w-full"
-        >
-          <LineChart data={data} margin={{ left: 12, right: 12 }}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.5} />
+    <Card className="pt-0 shadow-sm border   bg-white w-[600px]">
+      <CardContent className="px-2 pt-4 sm:px-6 ">
+        <ChartContainer config={chartConfig} className="aspect-auto h-[300px] ">
+          <AreaChart
+            data={data}
+            margin={{ left: 12, right: 12, top: 5, bottom: 5 }}
+          >
+            <defs>
+              <linearGradient id="colorMentions" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorProminence" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              vertical={false}
+              strokeDasharray="3 3"
+              opacity={0.3}
+            />
             <XAxis
               dataKey="name"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              interval={0}
+              angle={0}
             />
             <YAxis hide />
             <ChartTooltip
               cursor={{ stroke: "#e2e8f0", strokeWidth: 2 }}
-              content={<ChartTooltipContent indicator="line" />}
+              content={<ChartTooltipContent indicator="dot" />}
             />
             <ChartLegend content={<ChartLegendContent />} />
-            
-            {/* Mentions Line */}
-            <Line
+
+            {/* Mentions Area */}
+            <Area
               dataKey="mentions"
               type="monotone"
-              stroke="var(--color-mentions)"
-              strokeWidth={3}
-              dot={{ r: 4, fill: "var(--color-mentions)" }}
-              activeDot={{ r: 6 }}
+              stroke="#2563eb"
+              strokeWidth={2}
+              fill="url(#colorMentions)"
+              fillOpacity={1}
             />
-            
-            {/* Prominence Line */}
-            <Line
+
+            {/* Prominence Area */}
+            <Area
               dataKey="prominence"
               type="monotone"
-              stroke="var(--color-prominence)"
-              strokeWidth={3}
-              dot={{ r: 4, fill: "var(--color-prominence)" }}
-              activeDot={{ r: 6 }}
+              stroke="#10b981"
+              strokeWidth={2}
+              fill="url(#colorProminence)"
+              fillOpacity={1}
             />
-          </LineChart>
+          </AreaChart>
         </ChartContainer>
       </CardContent>
     </Card>

@@ -100,38 +100,85 @@ const chartData = React.useMemo(() => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
-      {/* Top Row: Visibility Chart and Brand Table */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-7  rounded-xl  h-full">
-          <VisibilityChart data={chartData} />
-        </div>
-        <div className="lg:col-span-5 bg-white rounded-xl border shadow-sm p-5 h-full">
-          <h3 className="font-semibold text-lg mb-4">Top Brands Ranking</h3>
-          <DashBrandTable data={brands} loading={isLoading} />
+    <div className="min-h-screen">
+      {/* Header */}
+      <div className="bg-white border-b sticky top-0 z-10">
+        <div className="px-6 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
+          <p className="text-sm text-gray-500 mt-1">Monitor your brand performance and AI insights</p>
         </div>
       </div>
 
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-5 bg-white rounded-xl border shadow-sm p-5 min-h-[480px]">
-          <h3 className="font-semibold text-lg mb-2">Share of Voice</h3>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">Loading...</div>
-          ) : (
-            <PieChartComponent data={pieChartData} />
-          )}
+      {/* Main Content */}
+      <div className="p-6 space-y-6">
+        {/* Top Row: Visibility Chart and Brand Table */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <div className="xl:col-span-7 bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div className="p-5 border-b bg-gray-50">
+              <h3 className="font-semibold text-lg text-gray-900">Brand Visibility Trends</h3>
+              <p className="text-sm text-gray-500 mt-1">Track mentions and prominence scores</p>
+            </div>
+            <div className="p-5 ">
+              <VisibilityChart data={chartData} />
+            </div>
+          </div>
+          
+          <div className="xl:col-span-5 bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div className="p-5 border-b bg-gray-50">
+              <h3 className="font-semibold text-lg text-gray-900">Top Brands Ranking</h3>
+              <p className="text-sm text-gray-500 mt-1">Current performance leaders</p>
+            </div>
+            <div className="p-5">
+              <DashBrandTable data={brands} loading={isLoading} />
+            </div>
+          </div>
         </div>
-        {/* <div className="lg:col-span-7 bg-white rounded-xl border shadow-sm p-5 min-h-[400px]">
-          <h3 className="font-semibold text-lg mb-4">Domain Authority</h3>
-          <DomainAnalysisChart data={domainChartData}/>
-        </div> */}
-      </div>
 
+        {/* Middle Row: Share of Voice */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <div className="xl:col-span-6 bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div className="p-5 border-b bg-gray-50">
+              <h3 className="font-semibold text-lg text-gray-900">Share of Voice</h3>
+              <p className="text-sm text-gray-500 mt-1">Distribution of brand mentions</p>
+            </div>
+            <div className="p-5">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-gray-400">Loading...</div>
+                </div>
+              ) : (
+                <PieChartComponent data={pieChartData} />
+              )}
+            </div>
+          </div>
 
-      <div className="bg-white rounded-xl border shadow-sm p-5">
-        <h3 className="font-semibold text-lg mb-4">Detailed Model Insights</h3>
-        <ModelResponsesTable />
+          <div className="xl:col-span-6 bg-white rounded-xl border shadow-sm overflow-hidden">
+            <div className="p-5 border-b bg-gray-50">
+              <h3 className="font-semibold text-lg text-gray-900">Domain Authority</h3>
+              <p className="text-sm text-gray-500 mt-1">Top domains referenced by AI</p>
+            </div>
+            <div className="p-5">
+              {domainChartData.length > 0 ? (
+                <DomainAnalysisChart data={domainChartData}/>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-gray-400">
+                  No domain data available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Row: Model Insights */}
+        <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
+          <div className="p-5 border-b bg-gray-50">
+            <h3 className="font-semibold text-lg text-gray-900">AI Model Responses</h3>
+            <p className="text-sm text-gray-500 mt-1">Detailed insights from different AI models</p>
+          </div>
+          <div className="p-2">
+            <ModelResponsesTable />
+          </div>
+        </div>
       </div>
     </div>
   );

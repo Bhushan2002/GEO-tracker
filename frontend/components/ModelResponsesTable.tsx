@@ -16,7 +16,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
 } from "./ui/alert-dialog";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import axios from "axios";
 
 const Responses = [
@@ -93,8 +97,10 @@ export function ModelResponsesTable() {
               {selectedResponse && new Date(selectedResponse.createdAt).toLocaleString("en-IN")}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="mt-4 whitespace-pre-wrap text-sm">
-            {selectedResponse?.responseText}
+          <div className="mt-4 prose prose-sm max-w-none dark:prose-invert overflow-x-auto">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {selectedResponse?.responseText || ""}
+            </ReactMarkdown>
           </div>
         </AlertDialogContent>
       </AlertDialog>

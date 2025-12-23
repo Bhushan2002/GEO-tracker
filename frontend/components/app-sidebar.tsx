@@ -25,6 +25,10 @@ const items  = [
     title: "Brand",
     href : '/brand'
   },
+  {
+    title: "Google Analytics",
+    href : '/google-analytics'
+  }
   
 ]
 

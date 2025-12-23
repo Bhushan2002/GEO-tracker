@@ -1,19 +1,24 @@
 import axios from "axios";
 
 const Models = [
-  "openai/gpt-5.2",
-  "google/gemini-3-flash-preview",
-  "anthropic/claude-sonnet-4.5",
-  "x-ai/grok-4.1-fast"
+  "openai/gpt-4o",
+  "anthropic/claude-3.5-sonnet"
 ];
 
 export const getOpenRenderResponse = async (promptText: string) => {
   const result = [];
+  
+  const apiKey = process.env.OPEN_RENDER_API;
+  console.log("[DEBUG OpenRender] API Key exists:", !!apiKey);
+  console.log("[DEBUG OpenRender] API Key prefix:", apiKey?.substring(0, 10) + "...");
+
+  console.log("[DEBUG OpenRender] Starting API calls for", Models.length, "models");
 
   for (const model of Models) {
     const start = Date.now();
 
     try {
+      console.log(`[DEBUG OpenRender] Calling ${model}...`);
       const res = await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
         {
@@ -22,19 +27,30 @@ export const getOpenRenderResponse = async (promptText: string) => {
         },
         {
           headers: {
-            Authorization: `Bearer ${process.env.OPEN_RENDER_API}`,
+            Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
           },
         }
       );
 
+      console.log(`[DEBUG OpenRender] ${model} response status:`, res.status);
+      console.log(`[DEBUG OpenRender] ${model} response data:`, JSON.stringify(res.data).substring(0, 200));
+      
+      const responseText = res.data?.choices?.[0]?.message?.content;
+      console.log(`[DEBUG OpenRender] ${model} responseText length:`, responseText?.length || 0);
+
       result.push({
         modelName: model,
-        responseText: res.data?.choices?.[0]?.message?.content,
+        responseText: responseText,
         latencyMs: Date.now() - start,
         tokenUsage: res.data.usage,
       });
+      
+      // Add 2 second delay between API calls to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
     } catch (e: any) {
+      console.error(`[ERROR OpenRender] ${model} failed:`, e.message);
       result.push({
         modelName: model,
         error: e.message || "Unknown error",
@@ -42,6 +58,7 @@ export const getOpenRenderResponse = async (promptText: string) => {
     }
   }
 
+  console.log("[DEBUG OpenRender] All API calls completed");
   return result;
 };
 
@@ -52,7 +69,7 @@ export const extractBrandFromText = async (
   targetBrands: string[] = [],
   retries = 3
 ) => {
-  const extractionModel = "google/gemini-2.0-flash-exp:free";
+  const extractionModel = "openai/gpt-4o";
 
   const extractionPrompt = `
 You are an expert AEO/GEO Intelligence Agent. Your mission is to perform a multi-entity audit on AI-generated chat transcripts to assess competitive visibility, citation authority, and brand sentiment.

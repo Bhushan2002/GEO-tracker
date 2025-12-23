@@ -12,6 +12,7 @@ export default function Page() {
   const [topic, setTopic] = useState("");
   const [prompts, setPrompts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExecuting, setIsExecuting] = useState(false);
 
   useEffect(() => {
     loadPrompts();
@@ -55,6 +56,26 @@ export default function Page() {
     }
   };
 
+  const handleExecuteAll = async () => {
+    setIsExecuting(true);
+    try {
+      const response = await fetch('/api/prompt/execute-all', {
+        method: 'POST',
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        toast.success(data.message || "Prompts execution started!");
+      } else {
+        toast.error(data.message || "Failed to execute prompts");
+      }
+    } catch (error) {
+      toast.error("Failed to execute prompts");
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card shadow-sm">
@@ -77,7 +98,17 @@ export default function Page() {
       </div>
 
       <div className="border rounded-lg p-4 bg-white shadow-sm">
-        <h2 className="text-xl font-bold mb-4">Active Monitoring Prompts</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Active Monitoring Prompts</h2>
+          <Button 
+            onClick={handleExecuteAll}
+            disabled={isExecuting}
+            variant="default"
+            className="bg-green-600 hover:bg-green-700"
+          >
+            {isExecuting ? "Executing..." : "▶ Execute All Scheduled Prompts"}
+          </Button>
+        </div>
         {/* Pass the refresh function to the table so buttons can trigger a reload */}
         <PromptTable data={prompts} loading={isLoading} onRefresh={loadPrompts} />
       </div>
