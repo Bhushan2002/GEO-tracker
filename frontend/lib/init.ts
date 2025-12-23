@@ -17,7 +17,4 @@ export async function initializeBackend() {
   }
 }
 
-// Auto-initialize when the module is loaded (server-side only)
-if (typeof window === 'undefined') {
-  initializeBackend().catch(console.error);
-}
+// Don't auto-initialize - let it happen on first API request instead
