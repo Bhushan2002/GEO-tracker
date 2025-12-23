@@ -29,8 +29,8 @@ export async function GET() {
     // Configure client with credentials
     const analyticsClient = new BetaAnalyticsDataClient({
       credentials: {
-        client_email: process.env.GA_CLIENT_EMAIL,
-        private_key: process.env.GA_PRIVATE_KEY.replace(/\\n/g, "\n"),
+        client_email: process.env.GA_CLIENT_EMAIL!,
+        private_key: process.env.GA_PRIVATE_KEY!.replace(/\\n/g, "\n"),
       },
     });
 
