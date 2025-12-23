@@ -16,23 +16,23 @@ export const executePromptTask = async (promptId: string) => {
   }
 
   runningPrompts.add(promptId);
-  console.log(`[DEBUG] Starting execution for prompt ${promptId}`);
+  console.log(` Starting execution for prompt ${promptId}`);
 
   const prompt = await Prompt.findById(promptId);
   if (!prompt) {
-    console.error(`[DEBUG] Prompt ${promptId} not found`);
+    console.error(` Prompt ${promptId} not found`);
     runningPrompts.delete(promptId);
     return;
   }
 
-  console.log(`[DEBUG] Found prompt: ${prompt.promptText.substring(0, 50)}...`);
+  console.log(` Found prompt: ${prompt.promptText.substring(0, 50)}...`);
 
   const run = await PromptRun.create({
     promptId: prompt._id,
     status: "RUNNING",
   });
 
-  console.log(`[DEBUG] Created PromptRun with ID: ${run._id}`);
+  console.log(` Created PromptRun with ID: ${run._id}`);
 
   try {
     // Use scheduled brands for extraction if any are scheduled, otherwise use active brands
@@ -41,17 +41,17 @@ export const executePromptTask = async (promptId: string) => {
       ? scheduledBrands 
       : await TargetBrand.find({ isActive: true });
     
-    console.log(`[DEBUG] Using ${trackedBrands.length} brands for extraction (scheduled: ${scheduledBrands.length})`);
-    console.log(`[DEBUG] Brand names:`, trackedBrands.map(b => b.brand_name));
+    console.log(` Using ${trackedBrands.length} brands for extraction (scheduled: ${scheduledBrands.length})`);
+    console.log(` Brand names:`, trackedBrands.map(b => b.brand_name));
     
-    console.log(`[DEBUG] Calling OpenRender API...`);
+    console.log(` Calling OpenRender API...`);
     const results = await getOpenRenderResponse(prompt.promptText);
-    console.log(`[DEBUG] Received ${results.length} model responses`);
+    console.log(` Received ${results.length} model responses`);
     
     const targetBrandNames = trackedBrands.map(b => b.brand_name);
 
     for (const res of results) {
-      console.log(`[DEBUG] Processing response from model: ${res.modelName}`);
+      console.log(` Processing response from model: ${res.modelName}`);
       
       const modelRes = await ModelResponse.create({
         promptRunId: run._id,
@@ -62,22 +62,22 @@ export const executePromptTask = async (promptId: string) => {
         error: res.error,
       });
 
-      console.log(`[DEBUG] Created ModelResponse ID: ${modelRes._id}`);
+      console.log(` Created ModelResponse ID: ${modelRes._id}`);
 
       if (!res.responseText) {
-        console.log(`[DEBUG] No response text, skipping extraction`);
+        console.log(` No response text, skipping extraction`);
         continue;
       }
 
-      console.log(`[DEBUG] Response text length: ${res.responseText.length} chars`);
-      console.log(`[DEBUG] Waiting 12 seconds before extraction...`);
+      console.log(` Response text length: ${res.responseText.length} chars`);
+      console.log(` 12 seconds before extraction...`);
       await new Promise((r) => setTimeout(r, 12000));
 
-      console.log(`[DEBUG] Calling extractBrandFromText...`);
+      console.log(`Calling extractBrandFromText...`);
       const extracted = await extractBrandFromText(res.responseText, targetBrandNames);
-      console.log(`[DEBUG] Extraction result:`, extracted ? 'Success' : 'Failed');
+      console.log(` Extraction result:`, extracted ? 'Success' : 'Failed');
       if (extracted?.aeo_geo_insights) {
-        console.log(`[DEBUG] Updating ModelResponse with AEO insights`);
+        console.log(` Updating ModelResponse with AEO insights`);
         await ModelResponse.findByIdAndUpdate(modelRes._id, {
           aeo_geo_insights: extracted.aeo_geo_insights,
         });
@@ -88,10 +88,10 @@ export const executePromptTask = async (promptId: string) => {
         ...(extracted?.discovered_competitor_analysis || []),
       ];
 
-      console.log(`[DEBUG] Total brands to process: ${allBrands.length}`);
+      console.log(` Total brands to process: ${allBrands.length}`);
 
       for (const data of allBrands) {
-        console.log(`[DEBUG] Processing brand: ${data.brand_name}`);
+        console.log(` Processing brand: ${data.brand_name}`);
         const targetMatch = trackedBrands.find(
           (b) => b.brand_name.toLowerCase() === data.brand_name.toLowerCase()
         );
@@ -115,7 +115,7 @@ export const executePromptTask = async (promptId: string) => {
                 "N/A",
               isActive: true,
             });
-            console.log(`[DEBUG] Created new TargetBrand: ${data.brand_name}`);
+            console.log(` Created new TargetBrand: ${data.brand_name}`);
             alignmentNote = "Newly Added to Target List";
           } catch (err) {
             console.log(`[DEBUG] Duplicate brand, skipping: ${data.brand_name}`);
@@ -123,7 +123,7 @@ export const executePromptTask = async (promptId: string) => {
           }
         }
 
-        console.log(`[DEBUG] Upserting Brand document for: ${data.brand_name}`);
+        console.log(` Upserting Brand document for: ${data.brand_name}`);
         await Brand.findOneAndUpdate(
           { brand_name: data.brand_name },
           {
@@ -142,18 +142,18 @@ export const executePromptTask = async (promptId: string) => {
           },
           { upsert: true }
         );
-        console.log(`[DEBUG] Brand upserted successfully: ${data.brand_name}`);
+        console.log(` Brand upserted successfully: ${data.brand_name}`);
       }
     }
 
     // Sort brands and update rankings directly (no unset needed)
-    console.log(`[DEBUG] Updating brand rankings...`);
+    console.log(` Updating brand rankings...`);
     const brands = await Brand.find().sort({
       mentions: -1,
       prominence_score: -1,
     });
 
-    console.log(`[DEBUG] Found ${brands.length} brands to rank`);
+    console.log(` Found ${brands.length} brands to rank`);
 
     const bulkOps = brands.map((b, index) => ({
       updateOne: {

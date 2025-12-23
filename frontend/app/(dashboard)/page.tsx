@@ -51,7 +51,7 @@ export default function Overview() {
     .slice(0, 5); // Show top 5
 }, [brands]);
 const chartData = React.useMemo(() => {
-  return brands.slice(0, 6).map((brand) => ({
+  return brands.slice(0, 5).map((brand) => ({
     name: brand.brand_name,
     mentions: brand.mentions || 0,
     prominence: brand.prominence_score || 0,
@@ -152,7 +152,7 @@ const chartData = React.useMemo(() => {
             </div>
           </div>
 
-          <div className="xl:col-span-6 bg-white rounded-xl border shadow-sm overflow-hidden">
+          {/* <div className="xl:col-span-6 bg-white rounded-xl border shadow-sm overflow-hidden">
             <div className="p-5 border-b bg-gray-50">
               <h3 className="font-semibold text-lg text-gray-900">Domain Authority</h3>
               <p className="text-sm text-gray-500 mt-1">Top domains referenced by AI</p>
@@ -166,7 +166,7 @@ const chartData = React.useMemo(() => {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Bottom Row: Model Insights */}
