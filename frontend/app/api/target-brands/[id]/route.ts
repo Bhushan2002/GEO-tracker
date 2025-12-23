@@ -5,6 +5,7 @@ import { initScheduler } from "@/lib/services/cronSchedule";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
 
 export async function GET(
   request: NextRequest,
