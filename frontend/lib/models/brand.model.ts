@@ -9,6 +9,7 @@ const brandSchema = new Schema<IBrand>(
     lastRank: {
       type: Number,
       default: undefined,
+      sparse: true,
     },
     prominence_score: { type: Number },
     context: { type: String },

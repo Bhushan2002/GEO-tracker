@@ -1,48 +1,50 @@
-import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import { google } from "googleapis";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export async function GET() {
   try {
-    // Validate environment variables
-    if (!process.env.GA_CLIENT_EMAIL || !process.env.GA_PRIVATE_KEY || !process.env.GA_PROPERTY_ID) {
-      console.error("Missing Google Analytics environment variables");
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('ga_access_token')?.value;
+    const propertyId = cookieStore.get('ga_property_id')?.value;
+    
+    if (!accessToken || !propertyId) {
       return NextResponse.json(
-        { error: "Google Analytics credentials are not properly configured" },
-        { status: 503 }
+        { error: "Not authenticated. Please connect Google Analytics first." },
+        { status: 401 }
       );
     }
 
-    // Format private key properly
-    const privateKey = process.env.GA_PRIVATE_KEY.replace(/\\n/g, '\n');
+    // Use user's OAuth token
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({ access_token: accessToken });
+    
+    const analyticsData = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
 
-    // Initialize the Data API Client within the request handler
-    const dataClient = new BetaAnalyticsDataClient({
-      credentials: {
-        client_email: process.env.GA_CLIENT_EMAIL,
-        private_key: privateKey,
-      },
-    });
-
-    const propertyId = process.env.GA_PROPERTY_ID;
+    console.log(`Fetching timeseries data for property: ${propertyId}`);
 
     // Execute the report request for time series by audience
-    const [response] = await dataClient.runReport({
+    const response = await analyticsData.properties.runReport({
       property: `properties/${propertyId}`,
-      dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-      dimensions: [
-        { name: "date" },
-        { name: "audienceName" }
-      ],
-      metrics: [
-        { name: "activeUsers" }
-      ],
+      requestBody: {
+        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dimensions: [
+          { name: "date" },
+          { name: "audienceName" }
+        ],
+        metrics: [
+          { name: "activeUsers" }
+        ],
+      }
     });
+
+    console.log(`Response received with ${response.data.rows?.length || 0} rows`);
 
     // Transform the data into a format suitable for multi-line chart
     const dataByDate: { [key: string]: any } = {};
     const audiences = new Set<string>();
 
-    response.rows?.forEach((row) => {
+    response.data.rows?.forEach((row: any) => {
       const date = row.dimensionValues?.[0]?.value || "";
       const audience = row.dimensionValues?.[1]?.value || "All Users";
       const users = parseInt(row.metricValues?.[0]?.value || "0");
@@ -58,6 +60,9 @@ export async function GET() {
     const chartData = Object.values(dataByDate).sort((a, b) => 
       a.date.localeCompare(b.date)
     );
+
+    console.log(`Processed ${chartData.length} data points for ${audiences.size} audiences`);
+    console.log(`Audiences found: ${Array.from(audiences).join(', ')}`);
 
     return NextResponse.json({
       chartData,

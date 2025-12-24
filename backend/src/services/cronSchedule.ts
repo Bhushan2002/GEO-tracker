@@ -60,13 +60,22 @@ const extracted = await extractBrandFromText(res.responseText, targetBrandNames)
       ];
 
       for (const data of allBrands) {
+        // Check if brand matches either brand_name OR actual_brand_name in TargetBrand
         const targetMatch = trackedBrands.find(
-          (b) => b.brand_name.toLowerCase() === data.brand_name.toLowerCase()
+          (b) => 
+            b.brand_name.toLowerCase() === data.brand_name.toLowerCase() ||
+            (b.actual_brand_name && b.actual_brand_name.toLowerCase() === data.brand_name.toLowerCase())
         );
 
         let alignmentNote = "Discovered Competitor";
 
         if (targetMatch) {
+          // Increment mentions in TargetBrand when matched
+          await TargetBrand.findByIdAndUpdate(
+            targetMatch._id,
+            { $inc: { mentions: 1 } }
+          );
+
           const citedOfficial = data.associated_links?.some((l: any) =>
             l.url.includes(targetMatch.official_url)
           );
@@ -74,21 +83,24 @@ const extracted = await extractBrandFromText(res.responseText, targetBrandNames)
           alignmentNote = citedOfficial
             ? "Strong Alignment: AI used official links."
             : "Misalignment: Official links omitted.";
-        } else {
-          try {
-            await TargetBrand.create({
-              brand_name: data.brand_name,
-              official_url:
-                data.associated_links?.[0]?.url ||
-                "N/A",
-              isActive: true,
-            });
-            alignmentNote = "Newly Added to Target List";
-          } catch {
-            // duplicate brand – ignore
-          }
-        }
+        } 
+        // Target brands should only be added via "add target brand form", not auto-added from responses
+        // else {
+        //   try {
+        //     await TargetBrand.create({
+        //       brand_name: data.brand_name,
+        //       official_url:
+        //         data.associated_links?.[0]?.url ||
+        //         "N/A",
+        //       isActive: true,
+        //     });
+        //     alignmentNote = "Newly Added to Target List";
+        //   } catch {
+        //     // duplicate brand – ignore
+        //   }
+        // }
 
+        // Add/update brand in Brand model regardless of target match
         await Brand.findOneAndUpdate(
           { brand_name: data.brand_name },
           {
@@ -145,19 +157,19 @@ export const stopPromptSchedule = (promptId: string) => {
   return true;
 };
 
-export const initScheduler = async () => {
-  const prompts = await Prompt.find({ isActive: true, isScheduled: true });
+// export const initScheduler = async () => {
+//   const prompts = await Prompt.find({ isActive: true, isScheduled: true });
 
-  const scheduleBrands = await TargetBrand.find({isScheduled: true, isActive: true})
+//   const scheduleBrands = await TargetBrand.find({isScheduled: true, isActive: true})
 
-  scheduledTasks.forEach((task) => task.stop());
-  scheduledTasks.clear();
+//   scheduledTasks.forEach((task) => task.stop());
+//   scheduledTasks.clear();
 
-  for (const prompt of prompts) {
-    const task = cron.schedule("0 0 14 * * *", () =>
-      executePromptTask(prompt._id.toString())
-    );
+//   for (const prompt of prompts) {
+//     const task = cron.schedule("0 0 14 * * *", () =>
+//       executePromptTask(prompt._id.toString())
+//     );
 
-    scheduledTasks.set(prompt._id.toString(), task);
-  }
-};
+//     scheduledTasks.set(prompt._id.toString(), task);
+//   }
+// };

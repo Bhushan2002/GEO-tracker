@@ -1,18 +1,27 @@
 import axios from "axios";
 
 const Models = [
-  "openai/gpt-4o",
-  "anthropic/claude-3.5-sonnet"
+  "openai/gpt-5.2",
+  "google/gemini-3-flash-preview",
+  "anthropic/claude-sonnet-4.5",
+  "x-ai/grok-4.1-fast",
 ];
 
 export const getOpenRenderResponse = async (promptText: string) => {
   const result = [];
-  
+
   const apiKey = process.env.OPEN_RENDER_API;
   console.log("[DEBUG OpenRender] API Key exists:", !!apiKey);
-  console.log("[DEBUG OpenRender] API Key prefix:", apiKey?.substring(0, 10) + "...");
+  console.log(
+    "[DEBUG OpenRender] API Key prefix:",
+    apiKey?.substring(0, 10) + "..."
+  );
 
-  console.log("[DEBUG OpenRender] Starting API calls for", Models.length, "models");
+  console.log(
+    "[DEBUG OpenRender] Starting API calls for",
+    Models.length,
+    "models"
+  );
 
   for (const model of Models) {
     const start = Date.now();
@@ -24,23 +33,33 @@ export const getOpenRenderResponse = async (promptText: string) => {
         {
           model,
           messages: [{ role: "user", content: promptText }],
-          plugins: [{
-            id: 'web'
-          }]
+          plugins: [
+            {
+              id: "web",
+            },
+            
+          ],
         },
         {
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
           },
-        }
+        },
+     
       );
 
       console.log(`[DEBUG OpenRender] ${model} response status:`, res.status);
-      console.log(`[DEBUG OpenRender] ${model} response data:`, JSON.stringify(res.data).substring(0, 200));
-      
+      console.log(
+        `[DEBUG OpenRender] ${model} response data:`,
+        JSON.stringify(res.data).substring(0, 200)
+      );
+
       const responseText = res.data?.choices?.[0]?.message?.content;
-      console.log(`[DEBUG OpenRender] ${model} responseText length:`, responseText?.length || 0);
+      console.log(
+        `[DEBUG OpenRender] ${model} responseText length:`,
+        responseText?.length || 0
+      );
 
       result.push({
         modelName: model,
@@ -48,10 +67,9 @@ export const getOpenRenderResponse = async (promptText: string) => {
         latencyMs: Date.now() - start,
         tokenUsage: res.data.usage,
       });
-      
+
       // Add 2 second delay between API calls to avoid rate limits
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     } catch (e: any) {
       console.error(`[ERROR OpenRender] ${model} failed:`, e.message);
       result.push({
@@ -72,7 +90,7 @@ export const extractBrandFromText = async (
   targetBrands: string[] = [],
   retries = 3
 ) => {
-  const extractionModel = "openai/gpt-4o";
+  const extractionModel = "google/gemini-3-flash-preview";
 
   const extractionPrompt = `
 You are an expert AEO/GEO Intelligence Agent. Your mission is to perform a multi-entity audit on AI-generated chat transcripts to assess competitive visibility, citation authority, and brand sentiment.
@@ -85,7 +103,7 @@ You are an expert AEO/GEO Intelligence Agent. Your mission is to perform a multi
 5. Perform a "Link & Citation Validation" to check for source transparency.
 
 *Input Data*:
-- *Predefined Target Brands*: ${targetBrands.join(', ')}
+- *Predefined Target Brands*: ${targetBrands.join(", ")}
 - *Chat Transcript*: ${transcript}
 
 *Required Analysis for Every Brand*:
@@ -150,9 +168,7 @@ You are an expert AEO/GEO Intelligence Agent. Your mission is to perform a multi
         "https://openrouter.ai/api/v1/chat/completions",
         {
           model: extractionModel,
-          messages: [
-            { role: "system", content: extractionPrompt },
-          ],
+          messages: [{ role: "system", content: extractionPrompt }],
         },
         {
           headers: {
@@ -161,7 +177,7 @@ You are an expert AEO/GEO Intelligence Agent. Your mission is to perform a multi
           },
         }
       );
-      
+
       let content = res.data?.choices?.[0]?.message?.content || "{}";
 
       // Strip markdown code blocks if the AI includes them

@@ -8,6 +8,7 @@ const targetBrandSchema = new Schema(
     brand_type: { type: String },
     isActive: { type: Boolean, default: true },
     isScheduled: { type: Boolean, default: false },
+    mentions: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

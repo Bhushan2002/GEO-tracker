@@ -106,21 +106,19 @@ export const executePromptTask = async (promptId: string) => {
           alignmentNote = citedOfficial
             ? "Strong Alignment: AI used official links."
             : "Misalignment: Official links omitted.";
-        } else {
-          try {
-            await TargetBrand.create({
-              brand_name: data.brand_name,
-              official_url:
-                data.associated_links?.[0]?.url ||
-                "N/A",
-              isActive: true,
-            });
-            console.log(` Created new TargetBrand: ${data.brand_name}`);
-            alignmentNote = "Newly Added to Target List";
-          } catch (err) {
-            console.log(`[DEBUG] Duplicate brand, skipping: ${data.brand_name}`);
-            // duplicate brand – ignore
+        }
+        // Discovered competitors are NOT added to TargetBrand collection
+        // TargetBrand only contains manually added brands by users
+
+        // Ensure associated_links is properly formatted as array of objects
+        let formattedLinks: any[] = [];
+        if (data.associated_links) {
+          if (Array.isArray(data.associated_links)) {
+            formattedLinks = data.associated_links.filter((link: any) => 
+              link && typeof link === 'object' && link.url
+            );
           }
+          // If it's a single object or string, ignore it - we need proper array format
         }
 
         console.log(` Upserting Brand document for: ${data.brand_name}`);
@@ -135,7 +133,7 @@ export const executePromptTask = async (promptId: string) => {
               averageSentiment: data.sentiment,
               prominence_score: data.prominence_score,
               context: data.context,
-              associated_links: data.associated_links || [],
+              associated_links: formattedLinks,
               alignment_analysis: alignmentNote,
             },
           },
