@@ -16,7 +16,7 @@ export async function GET() {
       dimensions: [{ name: "audienceName" }], // Groups data by the audiences you created
       metrics: [
         { name: "activeUsers" },
-        { name: "cohortActiveUsers" }, // Specifically for cohort return rates
+        { name: "cohortActiveUsers" }, 
         { name: "sessionConversionRate" }
       ],
     });
