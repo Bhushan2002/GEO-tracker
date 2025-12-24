@@ -350,7 +350,7 @@ const formatDate = (dateValue: any) => {
                 </CardContent>
               </Card> */}
 
-              <Card>
+              {/* <Card>
                 <CardHeader>
                   <CardTitle>Active Users by Audience</CardTitle>
                   <CardDescription>Compare user engagement across audiences</CardDescription>
@@ -359,7 +359,7 @@ const formatDate = (dateValue: any) => {
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={audienceReportData}>
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="audience" angle={-30} textAnchor="end" height={100} tickFormatter={formatDate}  />
+                      <XAxis dataKey="audience" angle={-45} textAnchor="end" height={100} />
                       <YAxis  />
                       <Tooltip />
                       <Legend />
@@ -386,8 +386,8 @@ const formatDate = (dateValue: any) => {
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
-              </Card>
-
+              </Card>*/}
+              
               <Card>
                 <CardHeader>
                   <CardTitle>Conversions by Audience</CardTitle>
@@ -405,7 +405,7 @@ const formatDate = (dateValue: any) => {
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
-              </Card>
+              </Card> 
 
               <Card>
                 <CardHeader>
