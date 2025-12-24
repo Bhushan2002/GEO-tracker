@@ -5,6 +5,10 @@ export const analyticsAPI = {
     return await api.get("/api/audiences/report");
   },
 
+  getAudienceTimeseries: async () => {
+    return await api.get("/api/audiences/timeseries");
+  },
+
   setupAiAudiences: async (data: any) => {
     return await api.post("/api/audiences/setup-ai", data);
   },

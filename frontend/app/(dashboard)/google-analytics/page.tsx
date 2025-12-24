@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { analyticsAPI } from "@/api/analytics.api";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 
 
 
@@ -25,7 +27,16 @@ export default function page() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [audiences, setAudiences] = useState<Audience[]>([]);
+  const [audienceReportData, setAudienceReportData] = useState<any[]>([]);
+  const [audienceTimeseriesData, setAudienceTimeseriesData] = useState<any[]>([]);
+  const [audienceNames, setAudienceNames] = useState<string[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [keyMetrics, setKeyMetrics] = useState({
+    activeUsers: 0,
+    engagedSessions: 0,
+    keyEvents: 0
+  });
   const [formData, setFormData] = useState({
     displayName: "",
     description: "",
@@ -34,6 +45,36 @@ export default function page() {
     matchType: "EXACT",
     value: "chatgpt.com"
   });
+
+  useEffect(() => {
+    // Check connection status from localStorage
+    const connectionStatus = localStorage.getItem("gaConnected");
+    setIsConnected(connectionStatus === "true");
+    
+    if (connectionStatus === "true") {
+      loadAudiences();
+      loadAudienceReport();
+      loadAudienceTimeseries();
+    }
+  }, []);
+
+  const toggleConnection = () => {
+    const newStatus = !isConnected;
+    setIsConnected(newStatus);
+    localStorage.setItem("gaConnected", newStatus.toString());
+    
+    if (newStatus) {
+      toast.success("Google Analytics connected!");
+      loadAudiences();
+      loadAudienceReport();
+      loadAudienceTimeseries();
+    } else {
+      toast.info("Google Analytics disconnected");
+      setAudiences([]);
+      setAudienceReportData([]);
+      setAudienceTimeseriesData([]);
+    }
+  };
 
   const loadAudiences = async () => {
     try {
@@ -47,51 +88,105 @@ export default function page() {
     }
   };
 
-  const handleCreateAudience = async () => {
-    if (!formData.displayName || !formData.description) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
+  const loadAudienceReport = async () => {
     try {
-      await analyticsAPI.setupAiAudiences(formData);
-      toast.success("Audience created successfully!");
-      setIsDialogOpen(false);
-      setFormData({
-        displayName: "",
-        description: "",
-        membershipDurationDays: 30,
-        dimensionName: "firstUserSource",
-        matchType: "EXACT",
-        value: "chatgpt.com"
-      });
-      loadAudiences();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || "Failed to create audience");
+      const res = await analyticsAPI.getAudienceReport();
+      setAudienceReportData(res.data);
+    } catch (error) {
+      console.error("Failed to load audience report:", error);
     }
   };
 
-  useEffect(() => { loadAudiences(); }, []);
-
-  const formatDate = (date: any) => {
-    if (!date) return "N/A";
-    if (typeof date === "string") return new Date(date).toLocaleDateString();
-    if (date.seconds) return new Date(parseInt(date.seconds) * 1000).toLocaleDateString();
-    return "N/A";
+  const loadAudienceTimeseries = async () => {
+    try {
+      const res = await analyticsAPI.getAudienceTimeseries();
+      setAudienceTimeseriesData(res.data.chartData || []);
+      setAudienceNames(res.data.audiences || []);
+    } catch (error) {
+      console.error("Failed to load audience timeseries:", error);
+    }
   };
 
+  // Calculate AI Touch vs Zero Touch AI data
+  // const getAiTouchData = () => {
+  //   if (!audienceReportData || audienceReportData.length === 0) return [];
+    
 
+  //   const aiKeywords = ['ai', 'chatgpt', 'gpt', 'claude', 'gemini', 'copilot', 'bard', 'perplexity'];
+    
+  //   let aiTouchUsers = 0;
+  //   let zeroTouchUsers = 0;
+    
+  //   audienceReportData.forEach((row) => {
+  //     const audienceName = (row.audience || '').toLowerCase();
+  //     const users = parseInt(row.users || '0');
+
+
+  //     const isAiAudience = aiKeywords.some(keyword => audienceName.includes(keyword));
+      
+  //     if (isAiAudience) {
+  //       aiTouchUsers += users;
+  //     } else {
+  //       zeroTouchUsers += users;
+  //     }
+  //   });
+    
+  //   return [
+  //     { name: 'Any Touch AI', value: aiTouchUsers, fill: '#8b5cf6' },
+  //     { name: 'Zero Touch AI', value: zeroTouchUsers, fill: '#6b7280' }
+  //   ];
+  // };
+
+  
+
+  
+
+
+const formatDate = (dateValue: any) => {
+  // 1. Safety check: if value is null/undefined, return empty string
+  if (!dateValue) return "";
+
+  // 2. Convert to string in case it's a Number
+  const dateStr = String(dateValue);
+
+  // 3. Ensure the string is in the expected GA format (YYYYMMDD = 8 characters)
+  if (dateStr.length !== 8) return dateStr;
+
+  const year = dateStr.substring(0, 4);
+  const month = dateStr.substring(4, 6);
+  const day = dateStr.substring(6, 8);
+  
+  const date = new Date(`${year}-${month}-${day}`);
+  
+  // Returns "Dec 24"
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
         const res = await fetch("/api/analytics");
         const result = await res.json();
-        // Transform data for the chart
-        const formatted = result.map((d: any) => ({
-          name: d.name,
-          users: d.users,
-        }));
-        setData(formatted);
+        
+        // Check if we have the new format with chartData and metrics
+        if (result.chartData && result.metrics) {
+          setData(result.chartData);
+          setKeyMetrics(result.metrics);
+        } else {
+          // Fallback for old format (backwards compatibility)
+          const formatted = result.map((d: any) => ({
+            name: d.name,
+            users: d.users,
+          }));
+          setData(formatted);
+          
+          // Calculate fallback metrics if needed
+          const totalUsers = formatted.reduce((sum: number, item: any) => sum + item.users, 0);
+          setKeyMetrics({
+            activeUsers: totalUsers,
+            engagedSessions: 0,
+            keyEvents: 0
+          });
+        }
       } catch (e) {
         toast.error("Failed to load analytics");
       } finally {
@@ -103,132 +198,296 @@ export default function page() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
-      <h2 className="text-2xl font-bold">Website Traffic</h2>
-      <div className="grid grid-cols-1 lg:col-span-12">
-        {loading ? <p>Loading...</p> : <WebsiteTrafficChart data={data} />}
-      </div>
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Audience Intelligence</h1>
-        <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <AlertDialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              Create New Audience
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="max-w-2xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Create AI Audience</AlertDialogTitle>
-            </AlertDialogHeader>
-            <div className="space-y-4 py-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Display Name *</label>
-                <Input 
-                  placeholder="e.g., First Touch AI Traffic"
-                  value={formData.displayName}
-                  onChange={(e) => setFormData({...formData, displayName: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Description *</label>
-                <Input 
-                  placeholder="Describe your audience"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Membership Duration (Days)</label>
-                <Input 
-                  type="number"
-                  value={formData.membershipDurationDays}
-                  onChange={(e) => setFormData({...formData, membershipDurationDays: parseInt(e.target.value)})}
-                />
-              </div>
-              <div className="border-t pt-4">
-                <h3 className="text-sm font-semibold mb-3">Filter Criteria</h3>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Dimension</label>
-                    <Select value={formData.dimensionName} onValueChange={(v) => setFormData({...formData, dimensionName: v})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="firstUserSource">First User Source</SelectItem>
-                        <SelectItem value="sessionSource">Session Source</SelectItem>
-                        <SelectItem value="pagePath">Page Path</SelectItem>
-                        <SelectItem value="deviceCategory">Device Category</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Match Type</label>
-                    <Select value={formData.matchType} onValueChange={(v) => setFormData({...formData, matchType: v})}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EXACT">Exact</SelectItem>
-                        <SelectItem value="CONTAINS">Contains</SelectItem>
-                        <SelectItem value="BEGINS_WITH">Begins With</SelectItem>
-                        <SelectItem value="ENDS_WITH">Ends With</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Value</label>
-                    <Input 
-                      placeholder="e.g., chatgpt.com"
-                      value={formData.value}
-                      onChange={(e) => setFormData({...formData, value: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
+      {/* Connection Status Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Google Analytics Connection</CardTitle>
+              <CardDescription>
+                {isConnected ? "Connected and tracking analytics data" : "Connect to start tracking analytics"}
+              </CardDescription>
             </div>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <Button onClick={handleCreateAudience} className="bg-blue-600 hover:bg-blue-700">
-                Create Audience
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-      <div className="bg-white rounded-xl border shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Created On</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+            <Button 
+              onClick={toggleConnection}
+              variant={isConnected ? "destructive" : "default"}
+              className={isConnected ? "" : "bg-green-600 hover:bg-green-700"}
+            >
+              {isConnected ? "Disconnect" : "Connect Google Analytics"}
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Website Traffic Section */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold">Website Traffic</h2>
+        
+        {/* Key Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-sm font-medium text-blue-600">Active users</CardDescription>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{keyMetrics.activeUsers}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-sm font-medium">Engaged sessions</CardDescription>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{keyMetrics.engagedSessions}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-sm font-medium">Key events</CardDescription>
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{keyMetrics.keyEvents}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Line Chart */}
+        <Card>
+          <CardContent className="pt-6">
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-center py-8">
-                  Loading audiences...
-                </TableCell>
-              </TableRow>
-            ) : audiences.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={3} className="text-center py-8 text-gray-500">
-                  No audiences found. Click "Initialize AI Audiences" to create one.
-                </TableCell>
-              </TableRow>
+              <div className="flex items-center justify-center h-64">
+                <p>Loading analytics...</p>
+              </div>
             ) : (
-              audiences.map((audience, i) => (
-                <TableRow key={i}>
-                  <TableCell className="font-medium">{audience.displayName}</TableCell>
-                  <TableCell>{audience.description || "N/A"}</TableCell>
-                  <TableCell>{formatDate(audience.createdAt)}</TableCell>
-                </TableRow>
-              ))
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#6b7280"
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={formatDate}
+                  />
+                  <YAxis 
+                    stroke="#6b7280"
+                    tick={{ fontSize: 12 }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '6px'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="users" 
+                    stroke="#1e40af" 
+                    strokeWidth={2}
+                    dot={{ fill: '#1e40af', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             )}
-          </TableBody>
-        </Table>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Audience Intelligence Section - Only show when connected */}
+      {isConnected && (
+        <>
+          <h1 className="text-2xl font-bold mt-8">Audience Intelligence</h1>
+
+          {/* Total users by Audience name over time */}
+          {audienceTimeseriesData.length > 0 && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Total users by Audience name over time</CardTitle>
+                <CardDescription>Compare audience engagement trends over the last 30 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={audienceTimeseriesData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#6b7280"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={formatDate}
+                    />
+                    <YAxis 
+                      stroke="#6b7280"
+                      tick={{ fontSize: 12 }}
+                 
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '6px'
+                      }}
+                    />
+                    <Legend />
+                    {audienceNames.map((audience, index) => {
+                      const colors = ['#1e40af', '#059669', '#dc2626', '#f59e0b', '#8b5cf6', '#ec4899'];
+                      return (
+                        <Line 
+                          key={audience}
+                          type="monotone" 
+                          dataKey={audience} 
+                          stroke={colors[index % colors.length]}
+                          strokeWidth={2}
+                          dot={{ r: 3 }}
+                          activeDot={{ r: 5 }}
+                          name={audience}
+                        />
+                      );
+                    })}
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Audience Analytics Graphs */}
+          {audienceReportData.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              {/* AI Touch vs Zero Touch AI */}
+              {/* <Card>
+                <CardHeader>
+                  <CardTitle>AI Touch Analysis</CardTitle>
+                  <CardDescription>Users who came through AI vs non-AI sources</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={getAiTouchData()}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                        outerRadius={80}
+                        dataKey="value"
+                      >
+                        {getAiTouchData().map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card> */}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Active Users by Audience</CardTitle>
+                  <CardDescription>Compare user engagement across audiences</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={audienceReportData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="audience" angle={-30} textAnchor="end" height={100} tickFormatter={formatDate}  />
+                      <YAxis  />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="users" fill="#3b82f6" name="Active Users" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sessions by Audience</CardTitle>
+                  <CardDescription>Session counts across different audiences</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={audienceReportData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="audience" angle={-45} textAnchor="end" height={100} tickFormatter={formatDate} />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="sessions" fill="#10b981" name="Sessions" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Conversions by Audience</CardTitle>
+                  <CardDescription>Track conversion performance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={audienceReportData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="audience" angle={-45} textAnchor="end" height={100} tickFormatter={formatDate}  />
+                      <YAxis  />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="conversions" fill="#f59e0b" name="Conversions" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Audience Metrics Table</CardTitle>
+                  <CardDescription>Detailed audience performance data</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Audience</TableHead>
+                        <TableHead>Users</TableHead>
+                        <TableHead>Sessions</TableHead>
+                        <TableHead>Conv. Rate</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {audienceReportData.map((row, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium">{row.audience}</TableCell>
+                          <TableCell>{row.users}</TableCell>
+                          <TableCell>{row.sessions}</TableCell>
+                          <TableCell>{row.conversionRate}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

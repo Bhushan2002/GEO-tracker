@@ -25,38 +25,50 @@ export async function GET() {
 
     const propertyId = process.env.GA_PROPERTY_ID;
 
-    // Execute the report request
+    // Execute the report request for time series by audience
     const [response] = await dataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-      // 'audienceName' is the key dimension to group data by your custom segments
-      dimensions: [{ name: "audienceName" }],
-      // Metrics used to analyze the value of AI traffic vs others
+      dimensions: [
+        { name: "date" },
+        { name: "audienceName" }
+      ],
       metrics: [
-        { name: "activeUsers" },
-        { name: "sessions" },
-        { name: "sessionConversionRate" },
-        { name: "conversions" }
+        { name: "activeUsers" }
       ],
     });
 
-    // Transform the raw API response into a clean format for your frontend Table
-    const formattedRows = response.rows?.map((row) => ({
-      audience: row.dimensionValues?.[0]?.value || "Unknown",
-      users: row.metricValues?.[1]?.value || "0",
-      sessions: row.metricValues?.[1]?.value || "0",
-      // Convert conversion rate to a readable percentage
-      conversionRate: `${(parseFloat(row.metricValues?.[2]?.value || "0") * 100).toFixed(2)}%`,
-      conversions: row.metricValues?.[3]?.value || "0",
-    }));
+    // Transform the data into a format suitable for multi-line chart
+    const dataByDate: { [key: string]: any } = {};
+    const audiences = new Set<string>();
 
-    return NextResponse.json(formattedRows || []);
+    response.rows?.forEach((row) => {
+      const date = row.dimensionValues?.[0]?.value || "";
+      const audience = row.dimensionValues?.[1]?.value || "All Users";
+      const users = parseInt(row.metricValues?.[0]?.value || "0");
+
+      audiences.add(audience);
+
+      if (!dataByDate[date]) {
+        dataByDate[date] = { date };
+      }
+      dataByDate[date][audience] = users;
+    });
+
+    const chartData = Object.values(dataByDate).sort((a, b) => 
+      a.date.localeCompare(b.date)
+    );
+
+    return NextResponse.json({
+      chartData,
+      audiences: Array.from(audiences)
+    });
   } catch (error: any) {
-    console.error("Audience Report Error:", error);
+    console.error("Audience Timeseries Error:", error);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
     return NextResponse.json({ 
-      error: error.message || "Failed to fetch audience report",
+      error: error.message || "Failed to fetch audience timeseries data",
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, { status: 500 });
   }

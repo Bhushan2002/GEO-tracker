@@ -19,14 +19,19 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await connectDatabase();
-    const { brand_name, official_url } = await req.json();
+    const { brand_name, official_url, actual_brand_name, brand_type } = await req.json();
     
     const existing = await TargetBrand.findOne({ brand_name });
     if (existing) {
       return NextResponse.json({ message: "Target brand already exists" }, { status: 400 });
     }
 
-    const newTarget = await TargetBrand.create({ brand_name, official_url });
+    const newTarget = await TargetBrand.create({ 
+      brand_name, 
+      official_url,
+      actual_brand_name,
+      brand_type
+    });
     return NextResponse.json(newTarget, { status: 201 });
   } catch (e) {
     console.log(e);

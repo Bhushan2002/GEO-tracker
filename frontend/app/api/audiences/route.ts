@@ -46,7 +46,12 @@ export async function GET() {
 
     return NextResponse.json(formattedAudiences);
   } catch (error: any) {
-    console.error("List Audiences Error:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("List Audiences Error:", error);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    return NextResponse.json({ 
+      error: error.message || "Failed to list audiences",
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }

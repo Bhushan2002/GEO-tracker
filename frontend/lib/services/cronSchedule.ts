@@ -129,7 +129,6 @@ export const executePromptTask = async (promptId: string) => {
           {
             $setOnInsert: { 
               brand_name: data.brand_name,
-              lastRank: 9999 // Temporary rank, will be updated in ranking phase
             },
             $inc: { mentions: data.mention_count || 1 },
             $set: {

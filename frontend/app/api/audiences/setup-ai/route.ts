@@ -12,15 +12,13 @@ export async function POST(request: Request) {
   const propertyPath = `properties/${process.env.GA_PROPERTY_ID}`;
 
   try {
-    const body = await request.json();
-    const { displayName, description, membershipDurationDays, dimensionName, matchType, value } = body;
-    
+
     const [audience] = await adminClient.createAudience({
       parent: propertyPath,
       audience: {
-        displayName: displayName,
-        description: description,
-        membershipDurationDays: membershipDurationDays || 30,
+        displayName: "First Touch AI Traffic",
+        description: "Users whose first interaction was via an AI tool",
+        membershipDurationDays: 30,
         eventTrigger:{
           eventName: "first_visit",
           logCondition: "AUDIENCE_JOINED"
@@ -39,10 +37,10 @@ export async function POST(request: Request) {
                         filterExpressions: [
                           {
                             dimensionOrMetricFilter: {
-                              fieldName: dimensionName || "firstUserSource",
+                              fieldName: "firstUserSource",
                               stringFilter: {
-                                matchType: matchType || "EXACT",
-                                value: value || "AI Tools",
+                                matchType: "EXACT",
+                                value:  "AI Tools",
                               },
                             },
                           },

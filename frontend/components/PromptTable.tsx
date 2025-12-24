@@ -45,6 +45,8 @@ export function PromptTable({ data, loading, onRefresh }: PromptTableProps) {
         <TableHeader>
           <TableRow>
             <TableHead>Prompt Text</TableHead>
+            <TableHead>Topic</TableHead>
+            <TableHead>Tags</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
@@ -54,6 +56,31 @@ export function PromptTable({ data, loading, onRefresh }: PromptTableProps) {
             <TableRow key={prompt._id}>
               <TableCell className="font-medium max-w-[500px] whitespace-normal">
                 {prompt.promptText}
+              </TableCell>
+              <TableCell>
+                {prompt.topic ? (
+                  <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700">
+                    {prompt.topic}
+                  </span>
+                ) : (
+                  <span className="text-gray-400 text-xs">-</span>
+                )}
+              </TableCell>
+              <TableCell className="max-w-[200px]">
+                {prompt.tags && prompt.tags.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {prompt.tags.map((tag, index) => (
+                      <span 
+                        key={index}
+                        className="px-2 py-1 rounded-full text-xs bg-purple-100 text-purple-700 whitespace-nowrap"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="text-gray-400 text-xs">-</span>
+                )}
               </TableCell>
               <TableCell>
                 <span className={`px-2 py-1 rounded-full text-xs ${prompt.isScheduled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>

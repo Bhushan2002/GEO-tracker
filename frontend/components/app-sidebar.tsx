@@ -29,10 +29,7 @@ const items  = [
     title: "Google Analytics",
     href : '/google-analytics'
   },
-  {
-    title: "Audience Intelligence",
-    href : '/audience'
-  }
+
   
 ]
 

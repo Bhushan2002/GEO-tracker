@@ -7,8 +7,8 @@ export const brandAPI = {
   getTargetBrand(){
     return api.get("/api/target-brands")
   },
-  createTargetBrand(brand_name: string,official_url: string){
-    return api.post('/api/target-brands',{brand_name, official_url})
+  createTargetBrand(data: { brand_name: string; official_url: string; actual_brand_name?: string; brand_type?: string }){
+    return api.post('/api/target-brands', data)
   },
   scheduleRun(id: string) {
     return api.post('/api/target-brands/schedule', { id, action: 'start' });

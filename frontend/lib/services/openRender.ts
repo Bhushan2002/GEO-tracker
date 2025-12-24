@@ -18,12 +18,15 @@ export const getOpenRenderResponse = async (promptText: string) => {
     const start = Date.now();
 
     try {
-      console.log(`[DEBUG OpenRender] Calling ${model}...`);
+      console.log(`DEBUG OpenRender Calling ${model}...`);
       const res = await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
         {
           model,
           messages: [{ role: "user", content: promptText }],
+          plugins: [{
+            id: 'web'
+          }]
         },
         {
           headers: {
