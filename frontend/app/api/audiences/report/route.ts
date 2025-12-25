@@ -23,15 +23,7 @@ export async function GET() {
         oauth2Client.setCredentials({ refresh_token: refreshToken });
         const { credentials } = await oauth2Client.refreshAccessToken();
         accessToken = credentials.access_token || undefined;
-        
-        if (accessToken) {
-          cookieStore.set('ga_access_token', accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 60 * 60,
-          });
-        }
+        console.log('Token refreshed successfully:', !!accessToken);
       } catch (refreshError) {
         console.error('Token refresh failed:', refreshError);
       }
@@ -79,7 +71,19 @@ export async function GET() {
       conversions: row.metricValues?.[3]?.value || "0",
     }));
 
-    return NextResponse.json(formattedRows || []);
+    const response = NextResponse.json(formattedRows || []);
+    
+    // Update access token cookie if it was refreshed
+    if (accessToken && !cookieStore.get('ga_access_token')?.value) {
+      response.cookies.set('ga_access_token', accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60,
+      });
+    }
+
+    return response;
   } catch (error: any) {
     console.error("Audience Report Error:", error);
     console.error("Error message:", error.message);

@@ -31,16 +31,15 @@ export async function GET() {
           if (newAccessToken) {
             console.log('Access token refreshed successfully');
             
-            // Update the cookie with the new access token
-            cookieStore.set('ga_access_token', newAccessToken, {
+            // Use the new token for the request and set cookie in response
+            const result = await fetchAccountsWithToken(newAccessToken);
+            result.cookies.set('ga_access_token', newAccessToken, {
               httpOnly: true,
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'lax',
               maxAge: 60 * 60, // 1 hour
             });
-
-            // Use the new token for the request
-            return await fetchAccountsWithToken(newAccessToken);
+            return result;
           }
         } catch (refreshError) {
           console.error('Token refresh failed:', refreshError);
