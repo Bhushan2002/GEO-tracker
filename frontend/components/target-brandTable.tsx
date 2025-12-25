@@ -95,11 +95,11 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
       </TableBody>
     </Table>
      */}
-    <div className="min-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+    <div className="min-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
       {data.map(brand=>(
-        <Card key={brand._id} className="flex flex-col h-full min-w-full hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-3">
-            <h3 className="font-semibold text-lg text-gray-900 truncate">{brand.brand_name}</h3>
+        <Card key={brand._id} className="flex flex-col  min-w-full hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-3"> 
+            <h3 className="font-semibold text-lg text-gray-900 ">{brand.brand_name}</h3>
           </CardHeader>
           
           <div className="flex-1 px-6 py-3 space-y-3">
@@ -147,7 +147,7 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
               size="sm"
               className="flex-1"
             >
-              {loadingStates[brand._id] ? "Loading..." : "Track"}
+              {loadingStates[brand._id] ? "" : "Track"}
             </Button>
             <Button 
               onClick={() => handleToggleSchedule(brand._id, brand.isScheduled)}
@@ -156,7 +156,7 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
               size="sm"
               className="flex-1"
             >
-              {loadingStates[brand._id] ? "Loading..." : "Reject"}
+              {loadingStates[brand._id] ? "" : "Reject"}
             </Button>
           </div>
         </Card>

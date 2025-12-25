@@ -83,9 +83,12 @@ export const executePromptTask = async (promptId: string) => {
       const competitorBrandDoc = await TargetBrand.findOne().sort({ mentions: -1 });
       const competitorBrand = competitorBrandDoc ? [competitorBrandDoc.actual_brand_name] : [];
 
-      // STEP 3: Batch extract all responses - first call warms the cache, rest benefit
-      console.log(` Starting batch extraction for ${validResponses.length} responses...`);
-      console.log(` First extraction will warm the cache, subsequent ones will be faster and cheaper`);
+      const targetBrandUrl = competitorBrandDoc.official_url || "";
+      console.log(` target brand url : ${targetBrandUrl.join(", ")}`);
+
+      // // STEP 3: Batch extract all responses - first call warms the cache, rest benefit
+      // console.log(` Starting batch extraction for ${validResponses.length} responses...`);
+      // console.log(` First extraction will warm the cache, subsequent ones will be faster and cheaper`);
       
       const extractions = await Promise.all(
         validResponses.map(async ({ modelRes, responseText, modelName }, index) => {
@@ -97,6 +100,7 @@ export const executePromptTask = async (promptId: string) => {
               mainBrands,
               targetBrandNames,
               competitorBrand,
+              targetBrandUrl
             );
             
             console.log(` [${index + 1}/${validResponses.length}] Extraction ${extracted ? 'successful' : 'failed'} for ${modelName}`);

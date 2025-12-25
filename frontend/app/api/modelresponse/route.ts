@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { ModelResponse } from "@/lib/models/modelResponse.model";
+import { Brand } from "@/lib/models/brand.model";
+import { PromptRun } from "@/lib/models/promptRun.model";
+import { Prompt } from "@/lib/models/prompt.model";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -8,6 +11,11 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectDatabase();
+    
+    // Force model registration
+    Brand;
+    PromptRun;
+    Prompt;
     
     console.log('Fetching model responses with populated brands...');
     

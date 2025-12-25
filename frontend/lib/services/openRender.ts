@@ -89,6 +89,7 @@ export const extractBrandFromText = async (
   mainBrands: string[] = [],
   targetBrands: string[] = [],
   competitorBrand: string[] = [],
+  targetBrandUrl: string[] =[],
   retries = 3
 ) => {
   const extractionModel = "google/gemini-3-flash-preview";
@@ -108,7 +109,7 @@ Task:
 Input Data:
 - Main focus brand: ${mainBrands.join(", ")}
 - Main focus brand brief info: [Insert brief about our main focus brand here]
-- Competitor brands: ${competitorBrand.join(", ")}
+- Competitor brands: ${competitorBrand.join(", ")} and ${targetBrandUrl.join(', ')}
 - Predefined Target Brands & their website: ${targetBrands.join(", ")}
 - Chat Transcript: ${transcript}
 
