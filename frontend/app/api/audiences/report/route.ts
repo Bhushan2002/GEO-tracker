@@ -71,11 +71,11 @@ export async function GET() {
       conversions: row.metricValues?.[3]?.value || "0",
     }));
 
-    const response = NextResponse.json(formattedRows || []);
+    const result = NextResponse.json(formattedRows || []);
     
     // Update access token cookie if it was refreshed
     if (accessToken && !cookieStore.get('ga_access_token')?.value) {
-      response.cookies.set('ga_access_token', accessToken, {
+      result.cookies.set('ga_access_token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -83,7 +83,7 @@ export async function GET() {
       });
     }
 
-    return response;
+    return result;
   } catch (error: any) {
     console.error("Audience Report Error:", error);
     console.error("Error message:", error.message);

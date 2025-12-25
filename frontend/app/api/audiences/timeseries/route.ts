@@ -82,14 +82,14 @@ export async function GET() {
     console.log(`Processed ${chartData.length} data points for ${audiences.size} audiences`);
     console.log(`Audiences found: ${Array.from(audiences).join(', ')}`);
 
-    const response = NextResponse.json({
+    const result = NextResponse.json({
       chartData,
       audiences: Array.from(audiences)
     });
     
     // Update access token cookie if it was refreshed
     if (accessToken && !cookieStore.get('ga_access_token')?.value) {
-      response.cookies.set('ga_access_token', accessToken, {
+      result.cookies.set('ga_access_token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -97,7 +97,7 @@ export async function GET() {
       });
     }
 
-    return response;
+    return result;
   } catch (error: any) {
     console.error("Audience Timeseries Error:", error);
     console.error("Error message:", error.message);
