@@ -5,11 +5,37 @@ import { cookies } from "next/headers";
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const accessToken = cookieStore.get('ga_access_token')?.value;
+    let accessToken = cookieStore.get('ga_access_token')?.value;
+    const refreshToken = cookieStore.get('ga_refresh_token')?.value;
     const propertyId = cookieStore.get('ga_property_id')?.value;
     
     console.log('Report API - Access Token present:', !!accessToken);
     console.log('Report API - Property ID:', propertyId);
+    
+    // Try to refresh token if access token is missing
+    if (!accessToken && refreshToken) {
+      try {
+        const oauth2Client = new google.auth.OAuth2(
+          process.env.NEXT_PUBLIC_GA_CLIENT_ID,
+          process.env.NEXT_PUBLIC_GA_CLIENT_SECRET,
+          `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
+        );
+        oauth2Client.setCredentials({ refresh_token: refreshToken });
+        const { credentials } = await oauth2Client.refreshAccessToken();
+        accessToken = credentials.access_token || undefined;
+        
+        if (accessToken) {
+          cookieStore.set('ga_access_token', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60,
+          });
+        }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+      }
+    }
     
     if (!accessToken || !propertyId) {
       console.error('Missing credentials - accessToken:', !!accessToken, 'propertyId:', propertyId);

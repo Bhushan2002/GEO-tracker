@@ -21,10 +21,7 @@ interface Props {
 
 export default function CustomPieChart({ data }: Props) {
   return (
-    <div style={{ width: "100%", height: 350 }}>
-      <div className="px-4 pb-5">
-        <span className="font-medium text-gray-800">Competitive Share of Voice</span>
-      </div>
+    <div className="w-full h-[400px] flex flex-col items-center justify-center">
       <ResponsiveContainer>
         <PieChart className="flex flex-row">
           <Pie
@@ -33,7 +30,9 @@ export default function CustomPieChart({ data }: Props) {
             nameKey="name"
             cx="50%"
             cy="50%"
-            outerRadius={80}
+            paddingAngle={2}
+            innerRadius={80}
+            outerRadius={90}
             label={({ name, percent }) =>
               `${name} ${(percent * 100).toFixed(0)}%`
             }
@@ -46,7 +45,7 @@ export default function CustomPieChart({ data }: Props) {
             ))}
           </Pie>
           <Tooltip />
-          <Legend />
+          <Legend  />
         </PieChart>
       </ResponsiveContainer>
     </div>

@@ -9,16 +9,33 @@ const modelResponseSchema = new mongoose.Schema<IModelResponse>(
       required: true
     },
     modelName: { type: String, required: true },
-    identifiedBrands: [{ type: Schema.Types.ObjectId, ref: 'Brand' }],
+    identifiedBrands: [{ type: Schema.Types.ObjectId , ref: 'Brand' }],
     responseText: { type: String },
     latencyMs: { type: Number },
     tokenUsage: { type: Object },
     error: { type: String },
-    aeo_geo_insights: {
-      share_of_voice_ranking: [String],
-      citation_transparency_score: Number,
-      recommendation_bias: String,
-    },
+    
+    // Strategic Analysis Summary (response-level insights)
+    audit_summary: {
+      total_brands_detected: Number,
+      implied_user_persona: String,
+      winning_brand: String,
+      winning_factor: [String],
+      missing_content_assets: [{
+        asset_type: String,
+        competitor_example: String,
+        priority: String,
+        impact: String
+      }],
+      predicted_follow_up_topics: [String],
+      conversion_killers: [String],
+      negative_risks: [String],
+      hallucination_flags: [{
+        claimed_statement: String,
+        factual_accuracy: String,
+        risk_level: String
+      }]
+    }
   },
   { timestamps: true }
 );

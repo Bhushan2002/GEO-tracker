@@ -47,6 +47,10 @@ export async function GET(request: Request){
         const firstProperty = properties[0];
         const propertyId = firstProperty.name?.split('/')[1] || '';
         
+        if (!firstProperty.name) {
+            return NextResponse.redirect(new URL('/google-analytics?error=invalid_property', request.url));
+        }
+        
         // Try to create the audience on user's property
         try {
             const audiencesResponse = await admin.properties.audiences.list({

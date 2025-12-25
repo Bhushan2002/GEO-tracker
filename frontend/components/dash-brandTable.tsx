@@ -19,7 +19,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
             <TableCell colSpan={4} className="text-center">No brands tracked yet.</TableCell>
           </TableRow>
         ) : (
-          data.slice(0,10).map((brand) => (
+          data.map((brand) => (
             <TableRow key={brand._id}>
               <TableCell className="font-medium">{brand.brand_name}</TableCell>
               <TableCell>{brand.mentions || 0}</TableCell>

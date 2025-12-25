@@ -5,6 +5,7 @@ import { ModelResponse } from "../models/modelResponse.model";
 import { Brand } from "../models/brand.model";
 import { TargetBrand } from "../models/targetBrand.model";
 import { extractBrandFromText, getOpenRenderResponse } from "./openRender";
+import mongoose from "mongoose";
 
 const scheduledTasks: Map<string, ScheduledTask> = new Map();
 const runningPrompts = new Set<string>(); // prevents overlap
@@ -50,96 +51,158 @@ export const executePromptTask = async (promptId: string) => {
     
     const targetBrandNames = trackedBrands.map(b => b.brand_name);
 
-    for (const res of results) {
-      console.log(` Processing response from model: ${res.modelName}`);
-      
-      const modelRes = await ModelResponse.create({
-        promptRunId: run._id,
-        responseText: res.responseText,
-        modelName: res.modelName,
-        latencyMs: res.latencyMs,
-        tokenUsage: res.tokenUsage,
-        error: res.error,
-      });
-
-      console.log(` Created ModelResponse ID: ${modelRes._id}`);
-
-      if (!res.responseText) {
-        console.log(` No response text, skipping extraction`);
-        continue;
-      }
-
-      console.log(` Response text length: ${res.responseText.length} chars`);
-      console.log(` 12 seconds before extraction...`);
-      await new Promise((r) => setTimeout(r, 12000));
-
-      console.log(`Calling extractBrandFromText...`);
-      const extracted = await extractBrandFromText(res.responseText, targetBrandNames);
-      console.log(` Extraction result:`, extracted ? 'Success' : 'Failed');
-      if (extracted?.aeo_geo_insights) {
-        console.log(` Updating ModelResponse with AEO insights`);
-        await ModelResponse.findByIdAndUpdate(modelRes._id, {
-          aeo_geo_insights: extracted.aeo_geo_insights,
+    // STEP 1: Create all ModelResponse documents first
+    console.log(` Creating ${results.length} ModelResponse documents...`);
+    const modelResponses = await Promise.all(
+      results.map(async (res) => {
+        const modelRes = await ModelResponse.create({
+          promptRunId: run._id,
+          responseText: res.responseText,
+          modelName: res.modelName,
+          latencyMs: res.latencyMs,
+          tokenUsage: res.tokenUsage,
+          error: res.error,
+          identifiedBrands: [],
         });
+        console.log(` Created ModelResponse ID: ${modelRes._id} for ${res.modelName}`);
+        return { modelRes, responseText: res.responseText, modelName: res.modelName };
+      })
+    );
+
+    // STEP 2: Filter responses that have text and prepare for batch extraction
+    const validResponses = modelResponses.filter(({ responseText }) => responseText);
+    console.log(` Processing ${validResponses.length} valid responses for extraction`);
+
+    if (validResponses.length === 0) {
+      console.log(` No valid responses to extract, skipping extraction phase`);
+    } else {
+      // Get main brand once for all extractions
+      const mainBrandDoc = await Brand.findOne().sort({ mentions: -1, prominence_score: -1 });
+      const mainBrands = mainBrandDoc ? [mainBrandDoc.brand_name] : [];
+
+      const competitorBrandDoc = await TargetBrand.findOne().sort({ mentions: -1 });
+      const competitorBrand = competitorBrandDoc ? [competitorBrandDoc.actual_brand_name] : [];
+
+      // STEP 3: Batch extract all responses - first call warms the cache, rest benefit
+      console.log(` Starting batch extraction for ${validResponses.length} responses...`);
+      console.log(` First extraction will warm the cache, subsequent ones will be faster and cheaper`);
+      
+      const extractions = await Promise.all(
+        validResponses.map(async ({ modelRes, responseText, modelName }, index) => {
+          console.log(` [${index + 1}/${validResponses.length}] Extracting brands from ${modelName}...`);
+          
+          try {
+            const extracted = await extractBrandFromText(
+              responseText,
+              mainBrands,
+              targetBrandNames,
+              competitorBrand,
+            );
+            
+            console.log(` [${index + 1}/${validResponses.length}] Extraction ${extracted ? 'successful' : 'failed'} for ${modelName}`);
+            
+            return { modelRes, extracted, modelName };
+          } catch (error) {
+            console.error(` [${index + 1}/${validResponses.length}] Extraction error for ${modelName}:`, error);
+            return { modelRes, extracted: null, modelName };
+          }
+        })
+      );
+
+      console.log(` Batch extraction completed for ${extractions.length} responses`);
+
+      // STEP 4: Update ModelResponse documents with audit summaries
+      const updateOps = extractions
+        .filter(({ extracted }) => extracted?.audit_summary)
+        .map(({ modelRes, extracted }) => ({
+          updateOne: {
+            filter: { _id: modelRes._id },
+            update: { $set: { audit_summary: extracted.audit_summary } },
+          },
+        }));
+
+      if (updateOps.length > 0) {
+        await ModelResponse.bulkWrite(updateOps);
+        console.log(` Updated ${updateOps.length} ModelResponses with audit summaries`);
       }
 
-      const allBrands = [
-        ...(extracted?.predefined_brand_analysis || []),
-        ...(extracted?.discovered_competitor_analysis || []),
-      ];
+      // STEP 5: Process brands for each model response and link them
+      console.log(` Processing brands for each model response...`);
+      
+      for (const { modelRes, extracted, modelName } of extractions) {
+        if (!extracted) continue;
+        
+        const brands = [
+          ...(extracted.predefined_brand_analysis || []),
+          ...(extracted.discovered_competitors || []),
+        ];
 
-      console.log(` Total brands to process: ${allBrands.length}`);
+        console.log(` Processing ${brands.length} brands from ${modelName}`);
+        
+        const brandIds: mongoose.Types.ObjectId[] = [];
 
-      for (const data of allBrands) {
-        console.log(` Processing brand: ${data.brand_name}`);
-        const targetMatch = trackedBrands.find(
-          (b) => b.brand_name.toLowerCase() === data.brand_name.toLowerCase()
-        );
-
-        let alignmentNote = "Discovered Competitor";
-
-        if (targetMatch) {
-          const citedOfficial = data.associated_links?.some((l: any) =>
-            l.url.includes(targetMatch.official_url)
+        // Process each brand and collect IDs
+        for (const data of brands) {
+          const targetMatch = trackedBrands.find(
+            (b) => b.brand_name.toLowerCase() === data.brand_name.toLowerCase()
           );
 
-          alignmentNote = citedOfficial
-            ? "Strong Alignment: AI used official links."
-            : "Misalignment: Official links omitted.";
-        }
-        // Discovered competitors are NOT added to TargetBrand collection
-        // TargetBrand only contains manually added brands by users
+          let alignmentNote = "Discovered Competitor";
 
-        // Ensure associated_links is properly formatted as array of objects
-        let formattedLinks: any[] = [];
-        if (data.associated_links) {
-          if (Array.isArray(data.associated_links)) {
-            formattedLinks = data.associated_links.filter((link: any) => 
-              link && typeof link === 'object' && link.url
+          if (targetMatch) {
+            await TargetBrand.findByIdAndUpdate(
+              targetMatch._id,
+              { $inc: { mentions: 1 } }
             );
+
+            const citedOfficial = data.associated_links?.some((l: any) =>
+              l.url.includes(targetMatch.official_url)
+            );
+
+            alignmentNote = citedOfficial
+              ? "Strong Alignment: AI used official links."
+              : "Misalignment: Official links omitted.";
           }
-          // If it's a single object or string, ignore it - we need proper array format
+
+          // Create or update brand and get the document back
+          const brand = await Brand.findOneAndUpdate(
+            { brand_name: data.brand_name },
+            {
+              $setOnInsert: { brand_name: data.brand_name },
+              $inc: { mentions: data.mention_count || 1 },
+              $set: {
+                averageSentiment: data.sentiment,
+                prominence_score: data.prominence_score,
+                context: data.mention_context || data.context,
+                
+                found: data.found !== undefined ? data.found : true,
+                mention_context: data.mention_context,
+                sentiment: data.sentiment,
+                sentiment_score: data.sentiment_score,
+                sentiment_text: data.sentiment_text,
+                rank_position: data.rank_position,
+                funnel_stage: data.funnel_stage,
+                attribute_mapping: data.attribute_mapping || [],
+                recommendation_strength: data.recommendation_strength,
+                associated_domain: data.associated_domain || [],
+                alignment_analysis: alignmentNote,
+              },
+            },
+            { upsert: true, new: true }
+          );
+
+          if (brand && brand._id) {
+            brandIds.push(brand._id);
+          }
         }
 
-        console.log(` Upserting Brand document for: ${data.brand_name}`);
-        await Brand.findOneAndUpdate(
-          { brand_name: data.brand_name },
-          {
-            $setOnInsert: { 
-              brand_name: data.brand_name,
-            },
-            $inc: { mentions: data.mention_count || 1 },
-            $set: {
-              averageSentiment: data.sentiment,
-              prominence_score: data.prominence_score,
-              context: data.context,
-              associated_links: formattedLinks,
-              alignment_analysis: alignmentNote,
-            },
-          },
-          { upsert: true }
-        );
-        console.log(` Brand upserted successfully: ${data.brand_name}`);
+        // Link brands to this ModelResponse
+        if (brandIds.length > 0) {
+          await ModelResponse.findByIdAndUpdate(modelRes._id, {
+            identifiedBrands: brandIds,
+          });
+          console.log(` Linked ${brandIds.length} brands to ModelResponse ${modelRes._id}`);
+        }
       }
     }
 

@@ -16,7 +16,16 @@ export interface PromptRun {
 
 export interface ModelResponse {
   _id: string;
-  promptRunId: string;
+  promptRunId: string | {
+    _id: string;
+    promptId: {
+      _id: string;
+      promptText: string;
+      topic?: string;
+      tags: string[];
+    };
+    status: "RUNNING" | "COMPLETED" | "FAILED";
+  };
   modelName: string;
   responseText?: string;
   latencyMs?: number;
@@ -27,4 +36,10 @@ export interface ModelResponse {
   };
   error?: string;
   createdAt: string;
+  identifiedBrands?: Array<{
+    _id: string;
+    brand_name: string;
+    mentions?: number;
+    prominence_score?: number;
+  }>;
 }

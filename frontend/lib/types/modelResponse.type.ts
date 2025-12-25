@@ -5,12 +5,29 @@ export interface IModelResponse {
   modelName: string;
   responseText: string;
   latencyMs?: number;
-  identifiedBrands: mongoose.Types.ObjectId;
+  identifiedBrands: mongoose.Types.ObjectId[];
   tokenUsage?: object;
   error?: string;
-  aeo_geo_insights: {
-    share_of_voice_ranking: string[];
-    citation_transparency_score: number;
-    recommendation_bias: string;
+  
+  // Strategic Analysis Summary (response-level insights only)
+  audit_summary?: {
+    total_brands_detected: number;
+    implied_user_persona: string;
+    winning_brand: string;
+    winning_factor: string[];
+    missing_content_assets: Array<{
+      asset_type: string;
+      competitor_example: string;
+      priority: string;
+      impact: string;
+    }>;
+    predicted_follow_up_topics: string[];
+    conversion_killers: string[] | null;
+    negative_risks: string[] | null;
+    hallucination_flags: Array<{
+      claimed_statement: string;
+      factual_accuracy: string;
+      risk_level: string;
+    }>;
   };
 }

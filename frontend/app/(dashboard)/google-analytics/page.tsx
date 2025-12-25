@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { analyticsAPI } from "@/api/analytics.api";
+import { accountsAPI } from "@/api/accounts.api";
 import {
   Card,
   CardContent,
@@ -42,6 +43,26 @@ interface Audience {
   createdAt: { seconds: string; nanos: number } | string;
 }
 
+interface Property {
+  name: string;
+  displayName: string;
+  propertyType: string;
+  createTime: string;
+  timeZone: string;
+  currencyCode: string;
+  propertyId: string;
+}
+
+interface Account {
+  name: string;
+  displayName: string;
+  createTime: string;
+  updateTime: string;
+  regionCode: string;
+  deleted: boolean;
+  properties: Property[];
+}
+
 export default function page() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +74,8 @@ export default function page() {
   const [audienceNames, setAudienceNames] = useState<string[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [keyMetrics, setKeyMetrics] = useState({
     activeUsers: 0,
     engagedSessions: 0,
@@ -89,6 +112,7 @@ export default function page() {
 
       console.log("Loading data after OAuth...");
       // Load data after successful OAuth
+      loadAccounts();
       loadAudiences();
       loadAudienceReport();
       loadAudienceTimeseries();
@@ -100,6 +124,7 @@ export default function page() {
     } else if (localStorageStatus === "true") {
       setIsConnected(true);
       console.log("Loading data from existing connection...");
+      loadAccounts();
       loadAudiences();
       loadAudienceReport();
       loadAudienceTimeseries();
@@ -123,6 +148,7 @@ export default function page() {
     if (isConnected) {
       setIsConnected(false);
       localStorage.setItem("gaConnected", "false");
+      setAccounts([]);
       setAudiences([]);
       setAudienceReportData([]);
       setAudienceTimeseriesData([]);
@@ -141,6 +167,26 @@ export default function page() {
 
     toast.info("Redirecting to Google sign-in...");
     window.location.href = authUrl;
+  };
+
+  const loadAccounts = async () => {
+    try {
+      setLoadingAccounts(true);
+      const res = await accountsAPI.listAccounts();
+      console.log("Accounts loaded:", res.data);
+      setAccounts(res.data);
+    } catch (error: any) {
+      console.error("Failed to load accounts:", error);
+      if (error.response?.status === 401) {
+        toast.error("Session expired. Please reconnect.");
+        setIsConnected(false);
+        localStorage.setItem("gaConnected", "false");
+      } else {
+        toast.error("Failed to load accounts.");
+      }
+    } finally {
+      setLoadingAccounts(false);
+    }
   };
 
   const loadAudiences = async () => {
@@ -253,6 +299,87 @@ export default function page() {
         </CardHeader>
       </Card>
 
+      {/* Google Analytics Accounts Table - Only show when connected */}
+      {isConnected && (
+        <>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Your Google Analytics Accounts</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>Connected Accounts & Properties</CardTitle>
+                <CardDescription>
+                  All Google Analytics accounts and properties you have access to
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingAccounts ? (
+                  <div className="flex items-center justify-center py-8">
+                    <p>Loading accounts...</p>
+                  </div>
+                ) : accounts.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No accounts found
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {accounts.map((account, accountIndex) => (
+                      <div key={account.name} className="border rounded-lg p-4">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-semibold flex items-center gap-2">
+                            {account.displayName}
+                            {account.deleted && (
+                              <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">
+                                Deleted
+                              </span>
+                            )}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            Account ID: {account.name?.split('/')[1]} • Region: {account.regionCode}
+                          </p>
+                        </div>
+
+                        {account.properties.length > 0 ? (
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Property Name</TableHead>
+                                <TableHead>Property ID</TableHead>
+
+                                <TableHead>Time Zone</TableHead>
+                                <TableHead>Currency</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {account.properties.map((property, propIndex) => (
+                                <TableRow key={property.name}>
+                                  <TableCell className="font-medium">
+                                    {property.displayName}
+                                  </TableCell>
+                                  <TableCell>{property.propertyId}</TableCell>
+                              
+                                  <TableCell className="text-sm text-gray-600">
+                                    {property.timeZone}
+                                  </TableCell>
+                                  <TableCell className="text-sm text-gray-600">
+                                    {property.currencyCode}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">
+                            No properties found in this account
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+    
       {/* Website Traffic Section */}
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">Website Traffic</h2>
@@ -297,9 +424,7 @@ export default function page() {
         </Card>
       </div>
 
-      {/* Audience Intelligence Section - Only show when connected */}
-      {isConnected && (
-        <>
+      {/* Audience Intelligence Section */}
           <h1 className="text-2xl font-bold mt-8">Audience Intelligence</h1>
 
           {/* Total users by Audience name over time */}

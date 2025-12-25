@@ -8,14 +8,47 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     await connectDatabase();
-    const modelResponse = await ModelResponse.find();
     
-    if (!modelResponse) {
-      return NextResponse.json({ message: "Model Responses not found" }, { status: 404 });
+    console.log('Fetching model responses with populated brands...');
+    
+    const modelResponse = await ModelResponse.find()
+      .populate({
+        path: 'identifiedBrands',
+        select: 'brand_name mentions prominence_score rank_position sentiment'
+      })
+      .populate({
+        path: 'promptRunId',
+        populate: {
+          path: 'promptId',
+          select: 'promptText topic tags'
+        }
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    if (!modelResponse || modelResponse.length === 0) {
+      console.log('No model responses found');
+      return NextResponse.json([], { status: 200 });
+    }
+    
+    console.log(`Found ${modelResponse.length} model responses`);
+    
+    // Log detailed information about brands
+    const responsesWithBrands = modelResponse.filter(r => r.identifiedBrands && r.identifiedBrands.length > 0);
+    console.log(`${responsesWithBrands.length} responses have identified brands`);
+    
+    if (responsesWithBrands.length > 0) {
+      console.log('Sample response:', {
+        id: responsesWithBrands[0]._id,
+        modelName: responsesWithBrands[0].modelName,
+        brandsCount: responsesWithBrands[0].identifiedBrands?.length || 0,
+        brands: responsesWithBrands[0].identifiedBrands
+      });
     }
     
     return NextResponse.json(modelResponse, { status: 200 });
   } catch (err) {
-    return NextResponse.json({ message: "Error fetching model responses" }, { status: 400 });
+    console.error('Error fetching model responses:', err);
+    return NextResponse.json({ message: "Error fetching model responses", error: String(err) }, { status: 400 });
   }
 }

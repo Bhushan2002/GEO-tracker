@@ -60,9 +60,9 @@ export default function BrandPage() {
   };
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card w-250">
+      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card max-w-5xl">
         <h2 className="text-xl font-bold">Add New Target Brand</h2>
-        <form onSubmit={handleAddBrand} className="flex flex-col gap-3">
+        <form onSubmit={handleAddBrand} className="flex flex-col gap-3 ">
           <div className="flex flex-row gap-3">
             <Input 
               placeholder="Brand Name " 
@@ -93,9 +93,7 @@ export default function BrandPage() {
         </form>
       </div>
 
-      <div className="border rounded-lg p-4 max-w-4xl">
-        <h2 className="text-xl font-bold mb-4 ">Tracked Brands</h2>
-
+      <div className=" p-4 max-w-5xl">
         <TargetBrandTable data={targetBrands} loading={isLoading} onRefresh={loadBrands} />
       </div>
     </div>

@@ -10,6 +10,7 @@ import {
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
+import { Card, CardHeader } from "./ui/card";
 
 interface BrandTableProps {
   data: any[];
@@ -43,6 +44,8 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
   if (loading) return <p className="p-4">Loading brands...</p>;
 
   return (
+    <div>
+{/* 
     <Table>
       <TableHeader>
         <TableRow>
@@ -68,17 +71,99 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
             </TableCell>
             <TableCell>{new Date(brand.createdAt).toLocaleString()}</TableCell>
             <TableCell className="text-right">
-              <Button 
-                onClick={() => handleToggleSchedule(brand._id, brand.isScheduled)}
-                disabled={loadingStates[brand._id]}
-                variant={brand.isScheduled ? "destructive" : "default"}
-              >
-                {loadingStates[brand._id] ? "Loading..." : brand.isScheduled ? "No" : "Yes"}
-              </Button>
+              <div className="flex gap-2 justify-end">
+                <Button 
+                  onClick={() => handleToggleSchedule(brand._id, brand.isScheduled)}
+                  disabled={loadingStates[brand._id] || brand.isScheduled}
+                  variant={brand.isScheduled ? "outline" : "default"}
+                  size="sm"
+                >
+                  {loadingStates[brand._id] ? "Loading..." : "Track"}
+                </Button>
+                <Button 
+                  onClick={() => handleToggleSchedule(brand._id, brand.isScheduled)}
+                  disabled={loadingStates[brand._id] || !brand.isScheduled}
+                  variant={!brand.isScheduled ? "outline" : "destructive"}
+                  size="sm"
+                >
+                  {loadingStates[brand._id] ? "Loading..." : "Reject"}
+                </Button>
+              </div>
             </TableCell>
           </TableRow>
         ))}
       </TableBody>
     </Table>
+     */}
+    <div className="min-w-4xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      {data.map(brand=>(
+        <Card key={brand._id} className="flex flex-col h-full min-w-full hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-3">
+            <h3 className="font-semibold text-lg text-gray-900 truncate">{brand.brand_name}</h3>
+          </CardHeader>
+          
+          <div className="flex-1 px-6 py-3 space-y-3">
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase mb-1">Official URL</p>
+              <a 
+                className="text-sm text-blue-600 hover:underline break-all line-clamp-2" 
+                href={brand.official_url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                title={brand.official_url}
+              >
+                {brand.official_url}
+              </a>
+            </div>
+            
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase mb-1">Added On</p>
+              <p className="text-sm text-gray-700">
+                {new Date(brand.createdAt).toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </p>
+            </div>
+            
+            <div>
+              <p className="text-xs font-medium text-gray-500 uppercase mb-1">Status</p>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                brand.isScheduled 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {brand.isScheduled ? "Tracking" : "Not Tracked"}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex gap-2 p-4 pt-3 border-t bg-gray-50">
+            <Button 
+              onClick={() => handleToggleSchedule(brand._id, brand.isScheduled)}
+              disabled={loadingStates[brand._id] || brand.isScheduled}
+              variant={brand.isScheduled ? "outline" : "default"}
+              size="sm"
+              className="flex-1"
+            >
+              {loadingStates[brand._id] ? "Loading..." : "Track"}
+            </Button>
+            <Button 
+              onClick={() => handleToggleSchedule(brand._id, brand.isScheduled)}
+              disabled={loadingStates[brand._id] || !brand.isScheduled}
+              variant={!brand.isScheduled ? "outline" : "destructive"}
+              size="sm"
+              className="flex-1"
+            >
+              {loadingStates[brand._id] ? "Loading..." : "Reject"}
+            </Button>
+          </div>
+        </Card>
+      ))}
+    </div>
+    
+        </div>
+
   );
 }
