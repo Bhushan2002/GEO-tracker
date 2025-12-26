@@ -71,12 +71,11 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
               tick={{ fill: "#6b7280", fontSize: 12 }}
             />
             <YAxis
-            dataKey={"name"}
               tickLine={false}
               axisLine={false}
               tick={{ fill: "#6b7280", fontSize: 12 }}
               tickMargin={8}
-              // tickFormatter={(value) => `${value}%`}
+              tickFormatter={(value) => `${value}%`}
             />
             <Tooltip
               contentStyle={{
