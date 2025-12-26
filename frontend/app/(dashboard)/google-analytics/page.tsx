@@ -316,7 +316,12 @@ export default function page() {
     try {
       const res = await analyticsAPI.getAiModelsReport();
       console.log("AI models report loaded:", res.data);
-      setAiModelsData(res.data);
+      // Filter to only include specific models: ChatGPT, Copilot, Perplexity
+      const allowedModels = ["ChatGPT", "Copilot", "Perplexity"];
+      const filteredData = res.data.filter((item: any) => 
+        allowedModels.includes(item.model)
+      );
+      setAiModelsData(filteredData);
     } catch (error) {
       console.error("Failed to load AI models report:", error);
     }
@@ -373,8 +378,8 @@ export default function page() {
   }, []);
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
-      <div className="bg-white border-b rounded-2xl border-gray-200 sticky top-0 mt-3  z-10">
+    <div className="min-h-screen">
+      <div className="bg-white border-b sticky top-0  z-10">
       <div className="px-6 py-4">
         <h1 className="text-2xl font-bold text-gray-900">
           Google Analytics Dashboard
@@ -384,6 +389,8 @@ export default function page() {
         </p>
       </div>
     </div>
+    <div className="space-y-4 p-6">
+
       {/* Connection Status Card */}
       <Card>
         <CardHeader>
@@ -508,7 +515,7 @@ export default function page() {
                     stroke="#6b7280"
                     tick={{ fontSize: 12 }}
                     tickFormatter={formatDate}
-                  />
+                    />
                   <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
                   <Tooltip
                     contentStyle={{
@@ -516,7 +523,7 @@ export default function page() {
                       border: "1px solid #e5e7eb",
                       borderRadius: "6px",
                     }}
-                  />
+                    />
                   <Line
                     type="monotone"
                     dataKey="users"
@@ -552,7 +559,7 @@ export default function page() {
                       stroke="#6b7280"
                       tick={{ fontSize: 12 }}
                       tickFormatter={formatDate}
-                    />
+                      />
                     <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
                     <Tooltip
                       contentStyle={{
@@ -560,7 +567,7 @@ export default function page() {
                         border: "1px solid #e5e7eb", 
                         borderRadius: "6px",
                       }}
-                    />
+                      />
                     <Legend />
                     {audienceNames.map((audience, index) => {
                       const colors = [
@@ -573,14 +580,14 @@ export default function page() {
                       ];
                       return (
                         <Line
-                          key={audience}
-                          type="monotone"
-                          dataKey={audience}
-                          stroke={colors[index % colors.length]}
-                          strokeWidth={2}
-                          dot={{ r: 3 }}
-                          activeDot={{ r: 5 }}
-                          name={audience}
+                        key={audience}
+                        type="monotone"
+                        dataKey={audience}
+                        stroke={colors[index % colors.length]}
+                        strokeWidth={2}
+                        dot={{ r: 3 }}
+                        activeDot={{ r: 5 }}
+                        name={audience}
                         />
                       );
                     })}
@@ -611,7 +618,7 @@ export default function page() {
                         textAnchor="end"
                         height={100}
                         tickFormatter={formatDate}
-                      />
+                        />
                       <YAxis />
                       <Tooltip />
                       <Legend />
@@ -619,7 +626,7 @@ export default function page() {
                         dataKey="conversions"
                         fill="#f59e0b"
                         name="Conversions"
-                      />
+                        />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -691,7 +698,7 @@ export default function page() {
                             border: "1px solid #e5e7eb",
                             borderRadius: "6px",
                           }}
-                        />
+                          />
                         <Legend />
                         <Bar dataKey="users" fill="#1e40af" name="Active Users" />
                       </BarChart>
@@ -718,7 +725,7 @@ export default function page() {
                           outerRadius={100}
                           fill="#8884d8"
                           dataKey="users"
-                        >
+                          >
                           {aiModelsData.map((entry: any, index: number) => {
                             const colors = [
                               "#1e40af",
@@ -732,8 +739,8 @@ export default function page() {
                             ];
                             return (
                               <Cell
-                                key={`cell-${index}`}
-                                fill={colors[index % colors.length]}
+                              key={`cell-${index}`}
+                              fill={colors[index % colors.length]}
                               />
                             );
                           })}
@@ -744,7 +751,7 @@ export default function page() {
                             border: "1px solid #e5e7eb",
                             borderRadius: "6px",
                           }}
-                        />
+                          />
                       </PieChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -769,7 +776,7 @@ export default function page() {
                       </TableRow>
                     </TableHeader>
                     <TableBody >
-                      {aiModelsData.slice(1).map((row, i) => (
+                      {aiModelsData.map((row, i) => (
                         <TableRow key={i}>
                           <TableCell className="font-medium">{row.model}</TableCell>
                    
@@ -786,6 +793,7 @@ export default function page() {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

@@ -221,7 +221,7 @@ export default function Page() {
       </div>
 
       <div className="border rounded-lg p-4 bg-white shadow-sm">
-        <div className=" items-center mb-4">
+        <div className="flex justify-between  mb-4 ">
           <h2 className="text-xl font-bold">Active Monitoring Prompts</h2>
           <Button 
             onClick={handleExecuteAll}

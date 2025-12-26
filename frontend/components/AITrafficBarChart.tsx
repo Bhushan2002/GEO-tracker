@@ -19,10 +19,13 @@ export function AITrafficBarChart() {
         
         // Transform GA data for Recharts
         // API returns: [{ model: "ChatGPT", users: 150, sessions: 200, ... }]
-        const formatted = result.map((item: any) => ({
-          model: item.model,
-          traffic: item.users,
-        })) || []
+        const allowedModels = ["ChatGPT", "Copilot", "Perplexity"];
+        const formatted = result
+          .filter((item: any) => allowedModels.includes(item.model))
+          .map((item: any) => ({
+            model: item.model,
+            traffic: item.users,
+          })) || []
 
         console.log("Formatted data for chart:", formatted)
         setData(formatted)
