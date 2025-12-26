@@ -751,7 +751,7 @@ export default function page() {
                 </Card>
               </div>
 
-              <Card>
+              <Card className="min-w-full">
                 <CardHeader>
                   <CardTitle>AI Models Performance Table</CardTitle>
                   <CardDescription>
@@ -759,23 +759,20 @@ export default function page() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
-                  <Table>
+                  <Table className="min-w-full">
                     <TableHeader>
                       <TableRow>
                         <TableHead>AI Model</TableHead>
-                        <TableHead>Source</TableHead>
                         <TableHead>Active Users</TableHead>
                         <TableHead>Sessions</TableHead>
                         <TableHead>Conversion Rate</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {aiModelsData.map((row, i) => (
+                    <TableBody >
+                      {aiModelsData.slice(1).map((row, i) => (
                         <TableRow key={i}>
                           <TableCell className="font-medium">{row.model}</TableCell>
-                          <TableCell className="text-sm text-gray-600">
-                            {row.source}
-                          </TableCell>
+                   
                           <TableCell>{row.users}</TableCell>
                           <TableCell>{row.sessions}</TableCell>
                           <TableCell>{row.conversionRate}</TableCell>

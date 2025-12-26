@@ -81,7 +81,7 @@ export default function BrandPage() {
               onChange={(e) => setBrand_name(e.target.value)}
               required
             />
-            <Input 
+            <Input  
               placeholder="Official URL " 
               value={brand_url}
               onChange={(e) => setBrand_url(e.target.value)}
