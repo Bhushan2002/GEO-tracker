@@ -139,7 +139,17 @@ export default function Page() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen p-2 space-y-6">
+      <div className="bg-white border-b rounded-2xl border-gray-200 sticky top-0 mt-3  z-10">
+        <div className="px-6 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Prompts
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Monitor your brand performance and AI insights
+          </p>
+        </div>
+      </div>
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card shadow-sm">
         <h2 className="text-xl font-bold">Create New Prompt</h2>
         <form onSubmit={handleAddPrompt} className="flex flex-col gap-3">
@@ -152,7 +162,7 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 ">
             <label className="text-sm font-medium">Topic (Required)</label>
             <Select value={topic} onValueChange={setTopic}>
               <SelectTrigger className="w-full">

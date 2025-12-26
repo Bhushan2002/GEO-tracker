@@ -374,6 +374,16 @@ export default function page() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
+      <div className="bg-white border-b rounded-2xl border-gray-200 sticky top-0 mt-3  z-10">
+      <div className="px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Google Analytics Dashboard
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Monitor your brand performance and AI insights
+        </p>
+      </div>
+    </div>
       {/* Connection Status Card */}
       <Card>
         <CardHeader>

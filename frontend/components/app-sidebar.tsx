@@ -39,15 +39,16 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>
-            AI 
+            <span className="text-xl font-bold text-gray-900">AI Search Analytics</span>
+            
           </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
+          <SidebarGroupContent className="" >
+            <SidebarMenu className="pt-5 flex justify-center">
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                <SidebarMenuItem  key={item.title} >  
+                  <SidebarMenuButton asChild >
                     <a href={item.href}>
-                      <span className="font-medium text-gray-800">{item.title}</span>
+                      <span className="font-medium  text-gray-800">{item.title}</span>
                     </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

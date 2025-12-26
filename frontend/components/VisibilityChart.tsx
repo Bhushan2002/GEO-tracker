@@ -2,81 +2,61 @@
 
 import * as React from "react";
 import {
-  Area,
-  AreaChart,
+  Line,
+  LineChart,
   CartesianGrid,
   XAxis,
   YAxis,
   ResponsiveContainer,
   Tooltip,
+  Legend,
 } from "recharts";
 
 import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
-
-const chartConfig = {
-  mentions: {
-    label: "Mentions",
-    color: "hsl(221, 83%, 53%)",
-  },
-  prominence: {
-    label: "Prominence Score",
-    color: "hsl(142, 76%, 36%)",
-  },
-} satisfies ChartConfig;
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface VisibilityChartProp {
   data: any[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-        <p className="font-semibold text-gray-900 mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-sm text-gray-600">{entry.name}:</span>
-            </div>
-            <span className="text-sm font-semibold text-gray-900">
-              {entry.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
+const BRAND_COLORS = [
+  "#3b82f6", // blue
+  "#6366f1", // indigo
+  "#f97316", // orange
+  "#10b981", // green
+  "#06b6d4", // cyan
+  "#8b5cf6", // purple
+  "#ec4899", // pink
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#14b8a6", // teal
+];
 
 export function VisibilityChart({ data }: VisibilityChartProp) {
+  // Extract brand names from the data (all keys except timeStamp/date)
+  const brandNames = React.useMemo(() => {
+    if (!data || data.length === 0) return [];
+    const firstRow = data[0];
+    return Object.keys(firstRow).filter((key) => key !== "timeStamp" && key !== "date");
+  }, [data]);
+
   return (
-    <div className="w-full h-full">
-      <ChartContainer config={chartConfig} className="w-full h-[350px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Brand Visibility Over Time</CardTitle>
+        <CardDescription>Tracking brand mentions and prominence</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={350}>
+          <LineChart
             data={data}
             margin={{ left: 0, right: 20, top: 10, bottom: 10 }}
           >
-            <defs>
-              <linearGradient id="colorMentions" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="hsl(221, 83%, 53%)" stopOpacity={0.05}/>
-              </linearGradient>
-              <linearGradient id="colorProminence" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.4}/>
-                <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.05}/>
-              </linearGradient>
-            </defs>
             <CartesianGrid
               vertical={false}
               strokeDasharray="3 3"
@@ -84,52 +64,47 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
               opacity={0.5}
             />
             <XAxis
-              dataKey="name"
+              dataKey="timeStamp"
               tickLine={false}
               axisLine={{ stroke: "#e5e7eb" }}
               tickMargin={12}
-              interval={0}
               tick={{ fill: "#6b7280", fontSize: 12 }}
-              angle={0}
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tick={{ fill: "#6b7280", fontSize: 12 }}
               tickMargin={8}
+              tickFormatter={(value) => `${value}%`}
             />
-            <Tooltip content={<CustomTooltip />} />
-            <ChartLegend 
-              content={<ChartLegendContent />}
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "white",
+                border: "1px solid #e5e7eb",
+                borderRadius: "6px",
+              }}
+            />
+            <Legend
               wrapperStyle={{ paddingTop: "20px" }}
+              iconType="line"
             />
 
-            {/* Prominence Area (behind) */}
-            <Area
-              dataKey="prominence"
-              type="monotone"
-              stroke="hsl(142, 76%, 36%)"
-              strokeWidth={3}
-              fill="url(#colorProminence)"
-              fillOpacity={1}
-              dot={{ fill: "hsl(142, 76%, 36%)", strokeWidth: 2, r: 4, stroke: "#fff" }}
-              activeDot={{ r: 6, strokeWidth: 2 }}
-            />
-
-            {/* Mentions Area (front) */}
-            <Area
-              dataKey="mentions"
-              type="monotone"
-              stroke="hsl(221, 83%, 53%)"
-              strokeWidth={3}
-              fill="url(#colorMentions)"
-              fillOpacity={1}
-              dot={{ fill: "hsl(221, 83%, 53%)", strokeWidth: 2, r: 4, stroke: "#fff" }}
-              activeDot={{ r: 6, strokeWidth: 2 }}
-            />
-          </AreaChart>
+            {/* Dynamic lines for each brand */}
+            {brandNames.map((brand, index) => (
+              <Line
+                key={brand}
+                dataKey={brand}
+                type="monotone"
+                stroke={BRAND_COLORS[index % BRAND_COLORS.length]}
+                strokeWidth={3}
+                dot={{ r: 4, strokeWidth: 2, stroke: BRAND_COLORS[index % BRAND_COLORS.length] }}
+                activeDot={{ r: 6, strokeWidth: 2 }}
+                name={brand}
+              />
+            ))}
+          </LineChart>
         </ResponsiveContainer>
-      </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BrandTable } from "@/components/BrandTable";
 import { brandAPI } from "@/api/brand.api";
 import { TargetBrandTable } from "@/components/target-brandTable";
+import { Brand } from '../../../lib/models/brand.model';
 
 
 
@@ -59,8 +60,18 @@ export default function BrandPage() {
     }
   };
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card max-w-5xl">
+    <div className=" min-h-screen p-6 space-y-6">
+      <div className="bg-white border-b rounded-2xl border-gray-200 sticky top-0 mt-3  z-10">
+      <div className="px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Brand Management
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Monitor your brand performance and AI insights
+        </p>
+      </div>
+    </div>
+      <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card min-w-full">
         <h2 className="text-xl font-bold">Add New Target Brand</h2>
         <form onSubmit={handleAddBrand} className="flex flex-col gap-3 ">
           <div className="flex flex-row gap-3">
@@ -93,7 +104,7 @@ export default function BrandPage() {
         </form>
       </div>
 
-      <div className=" p-4 max-w-5xl">
+      <div className=" p-4 min-w-full border rounded-lg bg-card max-w-5xl">
         <TargetBrandTable data={targetBrands} loading={isLoading} onRefresh={loadBrands} />
       </div>
     </div>

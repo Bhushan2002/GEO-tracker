@@ -64,6 +64,7 @@ export default function Overview() {
       name: brand.brand_name,
       mentions: brand.mentions || 0,
       prominence: brand.prominence_score || 0,
+      timeStamp: new Date(brand.updatedAt).toLocaleDateString(),
     }));
   }, [brands]);
   
@@ -189,7 +190,7 @@ export default function Overview() {
             <div className="p-5 border-b bg-gray-50">
               <div className="flex flex-row justify-between items-center">
               <h3 className="font-semibold text-lg text-gray-900">
-                Top Brands Ranking
+                Top Competitors
               </h3>
               <Link href={'/brand/all-brands'}>
               see all
