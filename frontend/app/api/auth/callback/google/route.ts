@@ -4,12 +4,6 @@ import { google } from "googleapis";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  response.cookies.set("ga_access_token", tokens.access_token || "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // This evaluates to TRUE in production
-    sameSite: "lax",
-    maxAge: 60 * 60,
-  });
 
   if (!code) {
     return NextResponse.redirect(
