@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { analyticsAPI } from "@/api/analytics.api";
 import { accountsAPI } from "@/api/accounts.api";
+import { AITrafficBarChart } from '../../../components/AITrafficBarChart';
 import {
   Card,
   CardContent,
@@ -34,6 +35,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+
 
 interface Audience {
   name: string;
@@ -72,6 +74,8 @@ export default function page() {
     []
   );
   const [audienceNames, setAudienceNames] = useState<string[]>([]);
+  const [cohortData, setCohortData] = useState<any[]>([]);
+  const [aiModelsData, setAiModelsData] = useState<any[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -116,6 +120,7 @@ export default function page() {
       loadAudiences();
       loadAudienceReport();
       loadAudienceTimeseries();
+      loadAiModelsReport();
 
       // Clear the cookie after syncing
       document.cookie =
@@ -128,6 +133,7 @@ export default function page() {
       loadAudiences();
       loadAudienceReport();
       loadAudienceTimeseries();
+      loadAiModelsReport();
     }
 
     // Check for error in URL params
@@ -219,8 +225,100 @@ export default function page() {
       console.log("Audience timeseries loaded:", res.data);
       setAudienceTimeseriesData(res.data.chartData || []);
       setAudienceNames(res.data.audiences || []);
+      
+      // Transform timeseries data into cohort format
+      if (res.data.chartData && res.data.audiences) {
+        transformToCohortData(res.data.chartData, res.data.audiences);
+      }
     } catch (error) {
       console.error("Failed to load audience timeseries:", error);
+    }
+  };
+
+  const transformToCohortData = (timeseriesData: any[], audiences: string[]) => {
+    const colors: { [key: string]: string } = {
+      "Any Touch AI": "#1e40af",
+      "Zero Touch AI": "#9333ea",
+      "AI Tools": "#059669",
+      "ChatGPT": "#dc2626",
+      "Claude": "#f59e0b",
+    };
+
+    const cohortsByAudience: { [key: string]: any } = {};
+
+    // Group data by audience
+    audiences.forEach((audience) => {
+      const audienceData = timeseriesData.filter(
+        (row: any) => row[audience] !== undefined
+      );
+
+      if (audienceData.length > 0) {
+        // Sort by date to find first appearance
+        const sortedDates = audienceData
+          .map((row: any) => row.date)
+          .sort();
+
+        // Group into cohorts by week
+        const cohortMap: { [key: string]: any[] } = {};
+        
+        audienceData.forEach((row: any) => {
+          const dateObj = new Date(row.date);
+          const weekStart = new Date(dateObj);
+          weekStart.setDate(dateObj.getDate() - dateObj.getDay());
+          const weekKey = weekStart.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          });
+
+          if (!cohortMap[weekKey]) {
+            cohortMap[weekKey] = [];
+          }
+          cohortMap[weekKey].push(row);
+        });
+
+        // Calculate retention percentages
+        const cohorts = Object.entries(cohortMap).map(([weekKey, rows]: [string, any[]]) => {
+          const firstWeekUsers = rows[0][audience] || 0;
+          const weekPercentages = rows.map((row) => {
+            const percentage = firstWeekUsers > 0 
+              ? ((row[audience] || 0) / firstWeekUsers) * 100 
+              : 0;
+            return Math.round(percentage * 10) / 10; // Round to 1 decimal
+          });
+
+          return {
+            dateRange: weekKey,
+            users: Math.round(firstWeekUsers),
+            weekPercentages,
+          };
+        });
+
+        cohortsByAudience[audience] = {
+          name: audience.toLowerCase().replace(/\s+/g, "-"),
+          label: audience,
+          color: colors[audience] || "#6366f1",
+          activeUsers: Math.round(
+            (audienceData[audienceData.length - 1]?.[audience] || 0) * 10
+          ) / 10,
+          weeks: [],
+          cohorts: cohorts.slice(0, 5), // Limit to 5 cohorts
+        };
+      }
+    });
+
+    const cohortDataArray = Object.values(cohortsByAudience);
+    console.log("Transformed cohort data:", cohortDataArray);
+    setCohortData(cohortDataArray);
+  };
+
+  const loadAiModelsReport = async () => {
+    try {
+      const res = await analyticsAPI.getAiModelsReport();
+      console.log("AI models report loaded:", res.data);
+      setAiModelsData(res.data);
+    } catch (error) {
+      console.error("Failed to load AI models report:", error);
     }
   };
 
@@ -423,9 +521,8 @@ export default function page() {
           </CardContent>
         </Card>
       </div>
+          <AITrafficBarChart />
 
-      {/* Audience Intelligence Section */}
-          <h1 className="text-2xl font-bold mt-8">Audience Intelligence</h1>
 
           {/* Total users by Audience name over time */}
           {audienceTimeseriesData.length > 0 && (
@@ -540,6 +637,134 @@ export default function page() {
                         <TableRow key={i}>
                           <TableCell className="font-medium">
                             {row.audience}
+                          </TableCell>
+                          <TableCell>{row.users}</TableCell>
+                          <TableCell>{row.sessions}</TableCell>
+                          <TableCell>{row.conversionRate}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* AI Models Traffic Section */}
+          {aiModelsData.length > 0 && (
+            <div className="space-y-4 mt-8">
+              <h2 className="text-2xl font-bold">AI Models Traffic Breakdown</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Users by AI Model</CardTitle>
+                    <CardDescription>
+                      Distribution of traffic from different AI sources
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={aiModelsData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis
+                          dataKey="model"
+                          angle={-45}
+                          textAnchor="end"
+                          height={100}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "6px",
+                          }}
+                        />
+                        <Legend />
+                        <Bar dataKey="users" fill="#1e40af" name="Active Users" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>AI Model Distribution</CardTitle>
+                    <CardDescription>
+                      Traffic share by model
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={aiModelsData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ model, value }) => `${model}: ${value}`}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          dataKey="users"
+                        >
+                          {aiModelsData.map((entry: any, index: number) => {
+                            const colors = [
+                              "#1e40af",
+                              "#059669",
+                              "#dc2626",
+                              "#f59e0b",
+                              "#8b5cf6",
+                              "#ec4899",
+                              "#06b6d4",
+                              "#ef4444",
+                            ];
+                            return (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={colors[index % colors.length]}
+                              />
+                            );
+                          })}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "6px",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>AI Models Performance Table</CardTitle>
+                  <CardDescription>
+                    Detailed metrics for each AI model
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>AI Model</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Active Users</TableHead>
+                        <TableHead>Sessions</TableHead>
+                        <TableHead>Conversion Rate</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {aiModelsData.map((row, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-medium">{row.model}</TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {row.source}
                           </TableCell>
                           <TableCell>{row.users}</TableCell>
                           <TableCell>{row.sessions}</TableCell>
