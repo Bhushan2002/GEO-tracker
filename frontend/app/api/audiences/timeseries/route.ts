@@ -14,7 +14,7 @@ export async function GET() {
       try {
         const oauth2Client = new google.auth.OAuth2(
           process.env.NEXT_PUBLIC_GA_CLIENT_ID,
-          process.env.NEXT_PUBLIC_GA_CLIENT_SECRET,
+          process.env.GA_CLIENT_SECRET,
           `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
         );
         oauth2Client.setCredentials({ refresh_token: refreshToken });
