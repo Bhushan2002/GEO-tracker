@@ -63,7 +63,7 @@ export default function Overview() {
     return brands.slice(0, 5).map((brand) => ({
       name: brand.brand_name,
       mentions: brand.mentions || 0,
-      prominence: brand.prominence_score || 0,
+      // prominence: brand.prominence_score || 0,
       timeStamp: new Date(brand.updatedAt).toLocaleDateString(),
     }));
   }, [brands]);

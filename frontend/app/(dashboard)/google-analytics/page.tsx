@@ -538,11 +538,11 @@ export default function page() {
           </CardContent>
         </Card>
       </div>
-          <AITrafficBarChart />
+          {/* <AITrafficBarChart /> */}
 
 
           {/* Total users by Audience name over time */}
-          {audienceTimeseriesData.length > 0 && (
+          {/* {audienceTimeseriesData.length > 0 && (
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle>Total users by Audience name over time</CardTitle>
@@ -595,7 +595,7 @@ export default function page() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-          )}
+          )} */}
 
           {/* Audience Analytics Graphs */}
           {audienceReportData.length > 0 && (
@@ -670,7 +670,7 @@ export default function page() {
           {/* AI Models Traffic Section */}
           {aiModelsData.length > 0 && (
             <div className="space-y-4 mt-8">
-              <h2 className="text-2xl font-bold">AI Models Traffic Breakdown</h2>
+              <h2 className="text-2xl font-bold">AI Models Traffic</h2>
               
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
