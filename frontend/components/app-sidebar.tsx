@@ -44,11 +44,11 @@ const items = [
   //   href: "/audiences",
   //   icon: Users,
   // },
-  // {
-  //   title: "Google Analytics",
-  //   href: "/google-analytics",
-  //   icon: BarChart3,
-  // },
+  {
+    title: "Google Analytics",
+    href: "/google-analytics",
+    icon: BarChart3,
+  },
 ];
 
 export function AppSidebar() {
