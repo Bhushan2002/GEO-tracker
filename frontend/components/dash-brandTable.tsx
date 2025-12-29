@@ -9,7 +9,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
         <TableRow >
           <TableHead>Brand Name</TableHead>
           <TableHead>Mentions</TableHead>
-          <TableHead>Last Sentiment</TableHead>
+          <TableHead>Sentiment rank</TableHead>
           <TableHead>Current Rank</TableHead>
         </TableRow>
       </TableHeader>
@@ -23,7 +23,8 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
             <TableRow key={brand._id}>
               <TableCell className="font-medium">{brand.brand_name}</TableCell>
               <TableCell>{brand.mentions || 0}</TableCell>
-              <TableCell>{brand.averageSentiment || "N/A"}</TableCell>
+              {/* <TableCell>{brand.averageSentiment || "N/A"}</TableCell> */}
+              <TableCell>{brand.sentiment_score || "N/A"}</TableCell>
               <TableCell>{brand.lastRank || "Unranked"}</TableCell>
             </TableRow>
           ))

@@ -9,7 +9,6 @@ import {
   YAxis,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
 
 import {
@@ -20,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-interface VisibilityChartProp {
+interface SentimentChartProp {
   data: any[];
 }
 
@@ -37,43 +36,57 @@ const BRAND_COLORS = [
   "#14b8a6", // teal
 ];
 
-export function VisibilityChart({ data }: VisibilityChartProp) {
-  // Transform data from long format to wide format and get top 5 brands
+export function SentimentChart({ data }: SentimentChartProp) {
   const { chartData, top5Brands, hasData } = React.useMemo(() => {
     if (!data || data.length === 0) return { chartData: [], top5Brands: [], hasData: false };
     
-    // Check if the data actually has mentions field
-    const hasRequiredField = data.some(row => row.mentions !== undefined && row.mentions !== null);
+    // Check if the data has sentiment_score field
+    const hasRequiredField = data.some(row => row.sentiment_score !== undefined && row.sentiment_score !== null);
     
     if (!hasRequiredField) {
       return { chartData: [], top5Brands: [], hasData: false };
     }
     
-    // Calculate total mentions for each brand
-    const brandTotals: { [key: string]: number } = {};
+    // Calculate average sentiment scores for each brand
+    const brandData: { [key: string]: { sum: number; count: number; dataPoints: any[] } } = {};
+    
     data.forEach(row => {
       const brandName = row.name;
-      const value = parseFloat(row.mentions) || 0;
-      brandTotals[brandName] = (brandTotals[brandName] || 0) + value;
+      const sentiment = parseFloat(row.sentiment_score) || 0;
+      
+      if (!brandData[brandName]) {
+        brandData[brandName] = { sum: 0, count: 0, dataPoints: [] };
+      }
+      
+      brandData[brandName].sum += sentiment;
+      brandData[brandName].count += 1;
+      brandData[brandName].dataPoints.push({
+        timeStamp: row.timeStamp,
+        sentiment: sentiment
+      });
     });
     
-    // Get top 5 brands
-    const top5 = Object.entries(brandTotals)
-      .sort((a, b) => b[1] - a[1])
+    // Get top 5 brands by average sentiment
+    const top5 = Object.entries(brandData)
+      .map(([brand, stats]) => ({
+        brand,
+        avgSentiment: stats.sum / stats.count
+      }))
+      .sort((a, b) => b.avgSentiment - a.avgSentiment)
       .slice(0, 5)
-      .map(([brand]) => brand);
+      .map(item => item.brand);
     
     // Group data by timestamp
     const timeStampMap: { [key: string]: any } = {};
-    data.forEach(row => {
-      const timestamp = row.timeStamp;
-      const brandName = row.name;
-      const value = parseFloat(row.mentions) || 0;
-      
-      if (!timeStampMap[timestamp]) {
-        timeStampMap[timestamp] = { timeStamp: timestamp };
+    Object.entries(brandData).forEach(([brandName, stats]) => {
+      if (top5.includes(brandName)) {
+        stats.dataPoints.forEach(point => {
+          if (!timeStampMap[point.timeStamp]) {
+            timeStampMap[point.timeStamp] = { timeStamp: point.timeStamp };
+          }
+          timeStampMap[point.timeStamp][brandName] = point.sentiment;
+        });
       }
-      timeStampMap[timestamp][brandName] = value;
     });
     
     // Convert to array and sort by timestamp
@@ -86,19 +99,16 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
     return { chartData: transformed, top5Brands: top5, hasData: true };
   }, [data]);
 
-
-
-
   if (!hasData || !chartData || chartData.length === 0) {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Brand Visibility Over Time</CardTitle>
-          <CardDescription>Top 5 brands by mentions over time</CardDescription>
+          <CardTitle>Brand Sentiment Trends</CardTitle>
+          <CardDescription>Top 5 brands by sentiment scores over time</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-[350px] text-gray-500">
-            No data available
+            No sentiment data available in the current dataset
           </div>
         </CardContent>
       </Card>
@@ -108,8 +118,8 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Brand Visibility Over Time</CardTitle>
-        <CardDescription>Top 5 brands by mentions over time</CardDescription>
+        <CardTitle>Brand Sentiment Trends</CardTitle>
+        <CardDescription>Top 5 brands by sentiment scores over time</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
@@ -129,7 +139,6 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
               axisLine={{ stroke: "#e5e7eb" }}
               tickMargin={12}
               tick={{ fill: "#6b7280", fontSize: 12 }}
-
             />
             <YAxis
               tickLine={false}
@@ -144,10 +153,6 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
                 borderRadius: "6px",
               }}
             />
-            {/* <Legend
-              wrapperStyle={{ paddingTop: "20px" }}
-              iconType="line"
-            /> */}
 
             {/* Lines for top 5 brands */}
             {top5Brands.map((brandName, index) => (

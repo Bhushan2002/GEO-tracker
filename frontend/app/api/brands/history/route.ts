@@ -32,10 +32,16 @@ export async function GET(req: NextRequest) {
       brands.forEach((brand) => {
         const variation = Math.random() * 0.3 + 0.85; // 85-115% variation
         const mentions = Math.round((brand.mentions || 0) * variation);
+        const sentimentScore = brand.sentiment_score 
+          ? parseFloat((brand.sentiment_score * (Math.random() * 0.2 + 0.9)).toFixed(2))
+          : null;
+        const rankPosition = brand.lastRank || null;
         
         timeSeriesData.push({
           name: brand.brand_name,
           mentions: mentions,
+          sentiment_score: sentimentScore,
+          lastRank: rankPosition,
           timeStamp: dateStr
         });
       });

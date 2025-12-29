@@ -9,7 +9,6 @@ import {
   YAxis,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
 
 import {
@@ -20,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-interface VisibilityChartProp {
+interface PositionChartProp {
   data: any[];
 }
 
@@ -37,38 +36,46 @@ const BRAND_COLORS = [
   "#14b8a6", // teal
 ];
 
-export function VisibilityChart({ data }: VisibilityChartProp) {
-  // Transform data from long format to wide format and get top 5 brands
+export function PositionChart({ data }: PositionChartProp) {
   const { chartData, top5Brands, hasData } = React.useMemo(() => {
     if (!data || data.length === 0) return { chartData: [], top5Brands: [], hasData: false };
     
-    // Check if the data actually has mentions field
-    const hasRequiredField = data.some(row => row.mentions !== undefined && row.mentions !== null);
+    // Check if the data actually has lastRank field
+    const hasRequiredField = data.some(row => row.lastRank !== undefined && row.lastRank !== null);
     
     if (!hasRequiredField) {
       return { chartData: [], top5Brands: [], hasData: false };
     }
     
-    // Calculate total mentions for each brand
-    const brandTotals: { [key: string]: number } = {};
+    // Calculate average position for each brand (lower rank is better)
+    const brandTotals: { [key: string]: { sum: number; count: number } } = {};
     data.forEach(row => {
       const brandName = row.name;
-      const value = parseFloat(row.mentions) || 0;
-      brandTotals[brandName] = (brandTotals[brandName] || 0) + value;
+      const value = parseFloat(row.lastRank) || 0;
+      
+      if (!brandTotals[brandName]) {
+        brandTotals[brandName] = { sum: 0, count: 0 };
+      }
+      brandTotals[brandName].sum += value;
+      brandTotals[brandName].count += 1;
     });
     
-    // Get top 5 brands
+    // Get top 5 brands by best average position (lowest rank)
     const top5 = Object.entries(brandTotals)
-      .sort((a, b) => b[1] - a[1])
+      .map(([brand, stats]) => ({
+        brand,
+        avgRank: stats.sum / stats.count
+      }))
+      .sort((a, b) => a.avgRank - b.avgRank) // Lower rank is better
       .slice(0, 5)
-      .map(([brand]) => brand);
+      .map(item => item.brand);
     
     // Group data by timestamp
     const timeStampMap: { [key: string]: any } = {};
     data.forEach(row => {
       const timestamp = row.timeStamp;
       const brandName = row.name;
-      const value = parseFloat(row.mentions) || 0;
+      const value = parseFloat(row.lastRank) || 0;
       
       if (!timeStampMap[timestamp]) {
         timeStampMap[timestamp] = { timeStamp: timestamp };
@@ -86,19 +93,16 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
     return { chartData: transformed, top5Brands: top5, hasData: true };
   }, [data]);
 
-
-
-
   if (!hasData || !chartData || chartData.length === 0) {
     return (
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Brand Visibility Over Time</CardTitle>
-          <CardDescription>Top 5 brands by mentions over time</CardDescription>
+          <CardTitle>Brand Position Trends</CardTitle>
+          <CardDescription>Top 5 brands by position ranking over time</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-[350px] text-gray-500">
-            No data available
+            No position data available in the current dataset
           </div>
         </CardContent>
       </Card>
@@ -108,8 +112,8 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Brand Visibility Over Time</CardTitle>
-        <CardDescription>Top 5 brands by mentions over time</CardDescription>
+        <CardTitle>Brand Position Trends</CardTitle>
+        <CardDescription>Top 5 brands by position ranking over time (lower is better)</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
@@ -129,13 +133,13 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
               axisLine={{ stroke: "#e5e7eb" }}
               tickMargin={12}
               tick={{ fill: "#6b7280", fontSize: 12 }}
-
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tick={{ fill: "#6b7280", fontSize: 12 }}
               tickMargin={8}
+              reversed={true} // Lower rank appears higher on chart
             />
             <Tooltip
               contentStyle={{
@@ -144,10 +148,6 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
                 borderRadius: "6px",
               }}
             />
-            {/* <Legend
-              wrapperStyle={{ paddingTop: "20px" }}
-              iconType="line"
-            /> */}
 
             {/* Lines for top 5 brands */}
             {top5Brands.map((brandName, index) => (

@@ -1,21 +1,28 @@
 "use client";
 import { brandAPI } from "@/api/brand.api";
-
 import { DashBrandTable } from "@/components/dash-brandTable";
 import { ModelResponsesTable } from "@/components/ModelResponsesTable";
 import PieChartComponent from "@/components/pieChart";
 import CitationsPieChart from "@/components/CitationsPieChart";
 
 import { VisibilityChart } from "@/components/VisibilityChart";
+
+import { PositionChart } from "@/components/PositionChart";
 import Link from "next/link";
-  
+
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { Button } from "@/components/ui/button";
+import { SentimentChart } from "@/components/SentimentChart";
 
 export default function Overview() {
   const [brands, setBrands] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [mentionsData, setMentionsData] = useState<any[]>([]);
+  const [sentimentsData, setSentimentsData] = useState<any[]>([]);
+  const [positionData, setPositionData] = useState<any[]>([]);
+  const [chartType, setChartType] = useState<'mentions' | 'sentiments' | 'position'>('mentions');
 
   const domainTableData = React.useMemo(() => {
     if (!brands || brands.length === 0) return [];
@@ -60,7 +67,7 @@ export default function Overview() {
       .sort((a, b) => b.used - a.used)
       .slice(0, 6); // Show top 6
   }, [brands]);
-  
+
   const pieChartData = React.useMemo(() => {
     if (!brands || brands.length === 0) return [];
 
@@ -108,7 +115,7 @@ export default function Overview() {
       brand.associated_domain?.forEach((domainData: any) => {
         const type = domainData.domain_citation_type || "Other";
         const urlCount = domainData.associated_url?.length || 0;
-        
+
         if (!typeMap[type]) {
           typeMap[type] = 0;
         }
@@ -128,19 +135,39 @@ export default function Overview() {
     return { data, total: totalCitations };
   }, [brands]);
 
-  const fetchBrandHistory = async () => {
+  const fetchMentionsData = async () => {
     try {
       const response = await brandAPI.getBrandHistory(30); // Last 30 days
-      setChartData(response.data);
+      setMentionsData(response.data);
     } catch (error) {
-      console.error("Failed to load brand history:", error);
+      console.error("Failed to load mentions data:", error);
+    }
+  };
+
+  const fetchSentimentsData = async () => {
+    try {
+      const response = await brandAPI.getBrandHistory(30); // Last 30 days
+      // Assuming the API returns sentiment data - adjust if needed
+      setSentimentsData(response.data);
+    } catch (error) {
+      console.error("Failed to load sentiments data:", error);
+    }
+  };
+
+  const fetchPositionData = async () => {
+    try {
+      const response = await brandAPI.getBrandHistory(30); // Last 30 days
+      // Assuming the API returns position data - adjust if needed
+      setPositionData(response.data);
+    } catch (error) {
+      console.error("Failed to load position data:", error);
     }
   };
 
   const loadBrands = async () => {
     try {
       const res = await brandAPI.getBrands();
-      const data = res.data.slice(0,10).sort((a: any, b: any) => {
+      const data = res.data.slice(0, 10).sort((a: any, b: any) => {
         if (a.lastRank !== b.lastRank) return a.lastRank - b.lastRank;
         return b.mentions - a.mentions;
       });
@@ -151,11 +178,16 @@ export default function Overview() {
       setIsLoading(false);
     }
   };
-  
+
   useEffect(() => {
     loadBrands();
-    fetchBrandHistory();
+    fetchMentionsData();
+    fetchSentimentsData();
+    fetchPositionData();
   }, []);
+
+
+
 
   return (
     <div className="min-h-screen">
@@ -176,29 +208,50 @@ export default function Overview() {
         {/* Top Row: Visibility Chart and Brand Table */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           <div className="xl:col-span-7 bg-white rounded-xl border shadow-sm overflow-hidden">
-            <div className="p-5 border-b bg-gray-50">
-              <h3 className="font-semibold text-lg text-gray-900">
-                Brand Visibility Trends
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Track mentions and prominence scores
-              </p>
+            <div className="flex flex-row p-5 border-b bg-gray-50 justify-between items-center">
+              <div className="">
+                <h3 className="font-semibold text-lg text-gray-900">
+                  Brand Trends
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Track mentions and prominence scores
+                </p>
+              </div>
+              <ButtonGroup>
+                <Button 
+                  variant={chartType === 'mentions' ? 'default' : 'outline'}
+                  onClick={() => setChartType('mentions')}
+                >
+                  Mentions
+                </Button>
+                <Button 
+                  variant={chartType === 'sentiments' ? 'default' : 'outline'}
+                  onClick={() => setChartType('sentiments')}
+                >
+                  Sentiments
+                </Button>
+                <Button 
+                  variant={chartType === 'position' ? 'default' : 'outline'}
+                  onClick={() => setChartType('position')}
+                >
+                  Position
+                </Button>
+              </ButtonGroup>
             </div>
             <div className="p-5 ">
-              <VisibilityChart data={chartData} />
+              {chartType === 'mentions' && <VisibilityChart data={mentionsData} />}
+              {chartType === 'sentiments' && <SentimentChart data={sentimentsData} />}
+              {chartType === 'position' && <PositionChart data={positionData} />}
             </div>
           </div>
 
           <div className="xl:col-span-5 bg-white rounded-xl border shadow-sm overflow-hidden">
-            
             <div className="p-5 border-b bg-gray-50">
               <div className="flex flex-row justify-between items-center">
-              <h3 className="font-semibold text-lg text-gray-900">
-                Top Competitors
-              </h3>
-              <Link href={'/brand/all-brands'}>
-              see all
-              </Link>
+                <h3 className="font-semibold text-lg text-gray-900">
+                  Top Competitors
+                </h3>
+                <Link href={"/brand/all-brands"}>see all</Link>
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 Current performance leaders
@@ -247,8 +300,8 @@ export default function Overview() {
                   <div className="text-gray-400">Loading...</div>
                 </div>
               ) : (
-                <CitationsPieChart 
-                  data={citationsPieData.data} 
+                <CitationsPieChart
+                  data={citationsPieData.data}
                   totalCitations={citationsPieData.total}
                 />
               )}
@@ -289,7 +342,7 @@ export default function Overview() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <span className="text-sm font-medium text-gray-900">
-                              {item.domain}
+                              {item.domain || "Unknown Domain"}
                             </span>
                           </div>
                         </td>
