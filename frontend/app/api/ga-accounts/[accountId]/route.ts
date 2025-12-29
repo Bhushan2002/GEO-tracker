@@ -5,12 +5,13 @@ import { GAAccount } from "@/lib/models/gaAccount.model";
 // GET specific GA account with tokens
 export async function GET(
   request: NextRequest,
-  { params }: { params: { accountId: string } }
+  { params }: { params: Promise<{ accountId: string }> }
 ) {
   try {
     await connectDatabase();
     
-    const account = await GAAccount.findById(params.accountId);
+    const { accountId } = await params;
+    const account = await GAAccount.findById(accountId);
     
     if (!account || !account.isActive) {
       return NextResponse.json(
