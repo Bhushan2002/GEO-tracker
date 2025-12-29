@@ -15,6 +15,7 @@ import { toast } from "sonner";
 export default function Overview() {
   const [brands, setBrands] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [chartData, setChartData] = useState<any[]>([]);
 
   const domainTableData = React.useMemo(() => {
     if (!brands || brands.length === 0) return [];
@@ -58,14 +59,6 @@ export default function Overview() {
       }))
       .sort((a, b) => b.used - a.used)
       .slice(0, 6); // Show top 6
-  }, [brands]);
-  const chartData = React.useMemo(() => {
-    return brands.slice(0, 5).map((brand) => ({
-      name: brand.brand_name,
-      mentions: brand.mentions || 0,
-      prominence: brand.prominence_score || 0,
-      timeStamp: new Date(brand.updatedAt).toLocaleDateString(),
-    }));
   }, [brands]);
   
   const pieChartData = React.useMemo(() => {
@@ -134,9 +127,15 @@ export default function Overview() {
 
     return { data, total: totalCitations };
   }, [brands]);
-  useEffect(() => {
-    loadBrands();
-  }, []);
+
+  const fetchBrandHistory = async () => {
+    try {
+      const response = await brandAPI.getBrandHistory(30); // Last 30 days
+      setChartData(response.data);
+    } catch (error) {
+      console.error("Failed to load brand history:", error);
+    }
+  };
 
   const loadBrands = async () => {
     try {
@@ -152,6 +151,11 @@ export default function Overview() {
       setIsLoading(false);
     }
   };
+  
+  useEffect(() => {
+    loadBrands();
+    fetchBrandHistory();
+  }, []);
 
   return (
     <div className="min-h-screen">

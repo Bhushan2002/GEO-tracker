@@ -38,23 +38,73 @@ const BRAND_COLORS = [
 ];
 
 export function VisibilityChart({ data }: VisibilityChartProp) {
-  // Extract brand names from the data (all keys except timeStamp/date)
-  const brandNames = React.useMemo(() => {
-    if (!data || data.length === 0) return [];
-    const firstRow = data[0];
-    return Object.keys(firstRow).filter((key) => key !== "timeStamp" && key !== "date");
+  // Transform data from long format to wide format and get top 5 brands
+  const { chartData, top5Brands } = React.useMemo(() => {
+    if (!data || data.length === 0) return { chartData: [], top5Brands: [] };
+    
+    // Calculate total mentions for each brand
+    const brandTotals: { [key: string]: number } = {};
+    data.forEach(row => {
+      const brandName = row.name;
+      const mentions = parseFloat(row.mentions) || 0;
+      brandTotals[brandName] = (brandTotals[brandName] || 0) + mentions;
+    });
+    
+    // Get top 5 brands
+    const top5 = Object.entries(brandTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([brand]) => brand);
+    
+    // Group data by timestamp
+    const timeStampMap: { [key: string]: any } = {};
+    data.forEach(row => {
+      const timestamp = row.timeStamp;
+      const brandName = row.name;
+      const mentions = parseFloat(row.mentions) || 0;
+      
+      if (!timeStampMap[timestamp]) {
+        timeStampMap[timestamp] = { timeStamp: timestamp };
+      }
+      timeStampMap[timestamp][brandName] = mentions;
+    });
+    
+    // Convert to array and sort by timestamp
+    const transformed = Object.values(timeStampMap).sort((a, b) => {
+      const dateA = new Date(a.timeStamp.split('/').reverse().join('-'));
+      const dateB = new Date(b.timeStamp.split('/').reverse().join('-'));
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    return { chartData: transformed, top5Brands: top5 };
   }, [data]);
+
+  if (!chartData || chartData.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Brand Visibility Over Time</CardTitle>
+          <CardDescription>Top 5 brands by mentions over time</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[350px] text-gray-500">
+            No data available
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Brand Visibility Over Time</CardTitle>
-        <CardDescription>Tracking brand mentions and prominence</CardDescription>
+        <CardDescription>Top 5 brands by mentions over time</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
           <LineChart
-            data={data}
+            data={chartData}
             margin={{ left: 0, right: 20, top: 10, bottom: 10 }}
           >
             <CartesianGrid
@@ -69,13 +119,13 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
               axisLine={{ stroke: "#e5e7eb" }}
               tickMargin={12}
               tick={{ fill: "#6b7280", fontSize: 12 }}
+
             />
             <YAxis
               tickLine={false}
               axisLine={false}
               tick={{ fill: "#6b7280", fontSize: 12 }}
               tickMargin={8}
-              tickFormatter={(value) => `${value}%`}
             />
             <Tooltip
               contentStyle={{
@@ -89,17 +139,17 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
               iconType="line"
             />
 
-            {/* Dynamic lines for each brand */}
-            {brandNames.map((brand, index) => (
+            {/* Lines for top 5 brands */}
+            {top5Brands.map((brandName, index) => (
               <Line
-                key={brand}
-                dataKey={brand}
+                key={brandName}
                 type="monotone"
+                dataKey={brandName}
                 stroke={BRAND_COLORS[index % BRAND_COLORS.length]}
-                strokeWidth={3}
-                dot={{ r: 4, strokeWidth: 2, stroke: BRAND_COLORS[index % BRAND_COLORS.length] }}
-                activeDot={{ r: 6, strokeWidth: 2 }}
-                name={brand}
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+                name={brandName}
               />
             ))}
           </LineChart>

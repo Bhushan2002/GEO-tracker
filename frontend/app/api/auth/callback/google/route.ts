@@ -114,21 +114,63 @@ export async function GET(request: Request) {
           parent: firstProperty.name,
           requestBody: {
             displayName: "AI Traffic",
-            description: "Users who came from AI tools",
+            description: "Users who came from AI tools (ChatGPT, Copilot, Perplexity, etc.)",
             membershipDurationDays: 30,
             filterClauses: [
               {
+                clauseType: "INCLUDE",
                 simpleFilter: {
                   scope: "AUDIENCE_FILTER_SCOPE_ACROSS_ALL_SESSIONS",
                   filterExpression: {
-                    andGroup: {
+                    orGroup: {
                       filterExpressions: [
                         {
                           dimensionOrMetricFilter: {
                             fieldName: "firstUserSource",
                             stringFilter: {
                               matchType: "CONTAINS",
-                              value: "AI Tools",
+                              value: "chatgpt",
+                              caseSensitive: false,
+                            },
+                          },
+                        },
+                        {
+                          dimensionOrMetricFilter: {
+                            fieldName: "firstUserSource",
+                            stringFilter: {
+                              matchType: "CONTAINS",
+                              value: "copilot",
+                              caseSensitive: false,
+                            },
+                          },
+                        },
+                        {
+                          dimensionOrMetricFilter: {
+                            fieldName: "firstUserSource",
+                            stringFilter: {
+                              matchType: "CONTAINS",
+                              value: "perplexity",
+                              caseSensitive: false,
+                            },
+                          },
+                        },
+                        {
+                          dimensionOrMetricFilter: {
+                            fieldName: "firstUserSource",
+                            stringFilter: {
+                              matchType: "CONTAINS",
+                              value: "claude",
+                              caseSensitive: false,
+                            },
+                          },
+                        },
+                        {
+                          dimensionOrMetricFilter: {
+                            fieldName: "firstUserSource",
+                            stringFilter: {
+                              matchType: "CONTAINS",
+                              value: "gemini",
+                              caseSensitive: false,
                             },
                           },
                         },

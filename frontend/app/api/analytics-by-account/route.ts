@@ -77,7 +77,8 @@ export async function GET(request: NextRequest) {
       users: parseInt(row.metricValues?.[0]?.value || "0"),
       sessions: parseInt(row.metricValues?.[1]?.value || "0"),
       keyEvents: parseInt(row.metricValues?.[2]?.value || "0"),
-    }));
+    }))
+    .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
     const metrics = {
       activeUsers:

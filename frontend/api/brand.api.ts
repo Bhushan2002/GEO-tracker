@@ -4,6 +4,9 @@ export const brandAPI = {
   getBrands() {
     return api.get("/api/brands");
   },
+  getBrandHistory(days: number = 30) {
+    return api.get(`/api/brands/history?days=${days}`);
+  },
   getTargetBrand(){
     return api.get("/api/target-brands")
   },
