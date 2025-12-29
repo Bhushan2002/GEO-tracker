@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { google } from "googleapis";
+import { connectDatabase } from "@/lib/db/mongodb";
+import { GAAccount } from "@/lib/models/gaAccount.model";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -10,6 +12,7 @@ export async function GET(request: Request) {
       new URL("/google-analytics?error=no_code", request.url)
     );
   }
+
   const oauth2Client = new google.auth.OAuth2(
     process.env.NEXT_PUBLIC_GA_CLIENT_ID,
     process.env.GA_CLIENT_SECRET!,
@@ -17,8 +20,12 @@ export async function GET(request: Request) {
   );
 
   try {
+    console.log("OAuth callback received with code");
+    console.log("Redirect URI:", `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`);
+    
     // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken(code);
+    console.log("Tokens received successfully");
     oauth2Client.setCredentials(tokens);
 
     // Get user's GA4 properties using Admin API
@@ -37,10 +44,11 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get the first account's properties (or you can let user choose)
-    const firstAccount = accounts[0].name;
+    // Get the first account's properties
+    const firstAccount = accounts[0];
+    const accountId = firstAccount.name?.split("/")[1] || "";
     const propertiesResponse = await admin.properties.list({
-      filter: `parent:${firstAccount}`,
+      filter: `parent:${firstAccount.name}`,
     });
 
     const properties = propertiesResponse.data.properties || [];
@@ -51,32 +59,57 @@ export async function GET(request: Request) {
       );
     }
 
-    // Use the first property (you can add UI to let user select later)
+    // Use the first property
     const firstProperty = properties[0];
     const propertyId = firstProperty.name?.split("/")[1] || "";
 
-    if (!firstProperty.name) {
+    if (!firstProperty.name || !tokens.access_token || !tokens.refresh_token) {
       return NextResponse.redirect(
         new URL("/google-analytics?error=invalid_property", request.url)
       );
     }
 
-    // Try to create the audience on user's property
+    // Calculate token expiry
+    const expiresAt = new Date(tokens.expiry_date || Date.now() + 3600 * 1000);
+
+    // Save to database
+    console.log("Connecting to database...");
+    await connectDatabase();
+    console.log("Database connected");
+    
+    console.log("Saving account with propertyId:", propertyId);
+    const gaAccount = await GAAccount.findOneAndUpdate(
+      { propertyId: propertyId },
+      {
+        accountName: firstAccount.displayName || "Google Analytics Account",
+        accountId: accountId,
+        propertyId: propertyId,
+        propertyName: firstProperty.displayName || "Property",
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        expiresAt: expiresAt,
+        isActive: true,
+      },
+      {
+        upsert: true,
+        new: true,
+      }
+    );
+
+    console.log("GA Account saved to database:", gaAccount._id);
+
+    // Try to create AI Traffic audience
     try {
       const audiencesResponse = await admin.properties.audiences.list({
         parent: firstProperty.name,
       });
 
       const existingAudiences = audiencesResponse.data.audiences || [];
-
-      // Check if any AI Traffic audience already exists (including variations like "AI Traffic 2025-12-23...")
       const aiTrafficAudienceExists = existingAudiences.some((aud: any) =>
         aud.displayName?.toLowerCase().includes("ai traffic")
       );
 
-      if (aiTrafficAudienceExists) {
-        console.log("AI Traffic audience already exists, skipping creation");
-      } else {
+      if (!aiTrafficAudienceExists) {
         await admin.properties.audiences.create({
           parent: firstProperty.name,
           requestBody: {
@@ -113,41 +146,16 @@ export async function GET(request: Request) {
       console.error("Audience operation error:", audienceError.message);
     }
 
-    // Store tokens and property info in encrypted cookies
+    // Redirect back with success
     const response = NextResponse.redirect(
-      new URL("/google-analytics", request.url)
+      new URL("/google-analytics?connected=true", request.url)
     );
 
-    // Store tokens securely (encrypt in production!)
-    response.cookies.set("ga_access_token", tokens.access_token || "", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60, // 1 hour
-    });
-
-    if (tokens.refresh_token) {
-      response.cookies.set("ga_refresh_token", tokens.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 30, // 30 days
-      });
-    }
-
-    // Store property ID
-    response.cookies.set("ga_property_id", propertyId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 30,
-    });
-
-    response.cookies.set("ga_connected", "true");
-
     return response;
-  } catch (error) {
-    console.error("Auth/Audience Error:", error);
+  } catch (error: any) {
+    console.error("Auth callback error:", error);
+    console.error("Error stack:", error.stack);
+    console.error("Error message:", error.message);
     return NextResponse.redirect(
       new URL("/google-analytics?error=setup_failed", request.url)
     );
