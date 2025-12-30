@@ -56,12 +56,17 @@ export default function GoogleAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
   const [aiModelsData, setAiModelsData] = useState<any[]>([]);
+  const [firstTouchData, setFirstTouchData] = useState<any[]>([]);
+  const [zeroTouchData, setZeroTouchData] = useState<any[]>([]);
   const [keyMetrics, setKeyMetrics] = useState({
     activeUsers: 0,
     engagedSessions: 0,
     keyEvents: 0,
   });
-
+  const [attributionData, setAttributionData] = useState([
+    { segment: "First Touch AI", users: 0, convRate: 0 },
+    { segment: "Zero Touch AI", users: 0, convRate: 0 },
+  ]);
   useEffect(() => {
     loadGAAccounts();
     checkForNewConnection();
@@ -76,7 +81,7 @@ export default function GoogleAnalyticsPage() {
   const checkForNewConnection = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const connected = urlParams.get("connected");
-    
+
     if (connected === "true") {
       toast.success("Google Analytics account connected successfully!");
       // Clean up URL
@@ -97,13 +102,18 @@ export default function GoogleAnalyticsPage() {
       setLoading(true);
       const response = await fetch("/api/ga-accounts");
       const accounts = await response.json();
-      
+
       setGaAccounts(accounts);
-      
+
       // Auto-select first account if available
       if (accounts.length > 0 && !selectedAccountId) {
         setSelectedAccountId(accounts[0]._id);
       }
+      const attributionRes = await fetch(
+        `/api/audiences/report?accountId=${accounts[0]._id}`
+      );
+      const attribution = await attributionRes.json();
+      setAttributionData(attribution);
     } catch (error) {
       console.error("Failed to load GA accounts:", error);
       toast.error("Failed to load accounts");
@@ -117,24 +127,50 @@ export default function GoogleAnalyticsPage() {
       setLoading(true);
 
       // Fetch analytics data
-      const analyticsRes = await fetch(`/api/analytics-by-account?accountId=${accountId}`);
+      const analyticsRes = await fetch(
+        `/api/analytics-by-account?accountId=${accountId}`
+      );
       const analyticsData = await analyticsRes.json();
-      
+
       if (analyticsData.chartData) {
         setChartData(analyticsData.chartData);
         setKeyMetrics(analyticsData.metrics);
       }
 
       // Fetch AI models data
-      const aiModelsRes = await fetch(`/api/ai-models-by-account?accountId=${accountId}`);
+      const aiModelsRes = await fetch(
+        `/api/ai-models-by-account?accountId=${accountId}`
+      );
       const aiModels = await aiModelsRes.json();
-      
+
       // Filter for specific models
       const allowedModels = ["ChatGPT", "Copilot", "Perplexity"];
-      const filteredAiModels = aiModels.filter((item: any) => 
+      const filteredAiModels = aiModels.filter((item: any) =>
         allowedModels.includes(item.model)
       );
       setAiModelsData(filteredAiModels);
+
+      // Fetch First Touch data
+      try {
+        const firstTouchRes = await fetch(
+          `/api/analytics/first-touch?accountId=${accountId}`
+        );
+        const firstTouch = await firstTouchRes.json();
+        setFirstTouchData(firstTouch);
+      } catch (err) {
+        console.error("Failed to load first touch data:", err);
+      }
+
+      // Fetch Zero Touch data
+      try {
+        const zeroTouchRes = await fetch(
+          `/api/analytics/zero-touch?accountId=${accountId}`
+        );
+        const zeroTouch = await zeroTouchRes.json();
+        setZeroTouchData(zeroTouch);
+      } catch (err) {
+        console.error("Failed to load zero touch data:", err);
+      }
     } catch (error) {
       console.error("Failed to load account data:", error);
       toast.error("Failed to load analytics data");
@@ -163,7 +199,7 @@ export default function GoogleAnalyticsPage() {
       await fetch(`/api/ga-accounts?id=${accountId}`, { method: "DELETE" });
       toast.success("Account removed successfully");
       loadGAAccounts();
-      
+
       if (selectedAccountId === accountId) {
         setSelectedAccountId("");
         setChartData([]);
@@ -195,7 +231,8 @@ export default function GoogleAnalyticsPage() {
             Google Analytics Dashboard
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Monitor your brand performance and AI insights across multiple accounts
+            Monitor your brand performance and AI insights across multiple
+            accounts
           </p>
         </div>
       </div>
@@ -227,7 +264,10 @@ export default function GoogleAnalyticsPage() {
             ) : gaAccounts.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No accounts connected yet</p>
-                <p className="text-sm mt-2">Click "Add Account" to connect your first Google Analytics account</p>
+                <p className="text-sm mt-2">
+                  Click "Add Account" to connect your first Google Analytics
+                  account
+                </p>
               </div>
             ) : (
               <Table>
@@ -279,7 +319,10 @@ export default function GoogleAnalyticsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+              <Select
+                value={selectedAccountId}
+                onValueChange={setSelectedAccountId}
+              >
                 <SelectTrigger className="w-full max-w-md">
                   <SelectValue placeholder="Select an account" />
                 </SelectTrigger>
@@ -302,7 +345,9 @@ export default function GoogleAnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Website Traffic</CardTitle>
-                <CardDescription>Daily active users over the last 30 days</CardDescription>
+                <CardDescription>
+                  Daily active users over the last 30 days
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -327,12 +372,23 @@ export default function GoogleAnalyticsPage() {
                           borderRadius: "6px",
                         }}
                       />
+                      <Legend />
                       <Line
                         type="monotone"
                         dataKey="users"
                         stroke="#1e40af"
                         strokeWidth={2}
+                        name="Total Users"
                         dot={{ fill: "#1e40af", r: 4 }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="aiUsers"
+                        stroke="#059669"
+                        strokeWidth={2}
+                        name="AI Traffic"
+                        dot={{ fill: "#059669", r: 4 }}
                         activeDot={{ r: 6 }}
                       />
                     </LineChart>
@@ -422,7 +478,9 @@ export default function GoogleAnalyticsPage() {
                     <TableBody>
                       {aiModelsData.map((row, i) => (
                         <TableRow key={i}>
-                          <TableCell className="font-medium">{row.model}</TableCell>
+                          <TableCell className="font-medium">
+                            {row.model}
+                          </TableCell>
                           <TableCell>{row.users}</TableCell>
                           <TableCell>{row.sessions}</TableCell>
                           <TableCell>{row.conversionRate}</TableCell>
@@ -433,6 +491,122 @@ export default function GoogleAnalyticsPage() {
                 </CardContent>
               </Card>
             )}
+
+            {/* First Touch & Zero Touch Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* First Touch Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>First Touch Attribution</CardTitle>
+                  <CardDescription>
+                    Initial user interactions over time
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {firstTouchData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={firstTouchData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis
+                          dataKey="date"
+                          stroke="#6b7280"
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={formatDate}
+                        />
+                        <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "6px",
+                          }}
+                        />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="users"
+                          stroke="#059669"
+                          strokeWidth={2}
+                          name="First Touch Users"
+                          dot={{ fill: "#059669", r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="conversions"
+                          stroke="#dc2626"
+                          strokeWidth={2}
+                          name="Conversions"
+                          dot={{ fill: "#dc2626", r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-gray-500">
+                      No first touch data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Zero Touch Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Zero Touch Attribution</CardTitle>
+                  <CardDescription>
+                    Indirect influence and brand awareness
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {zeroTouchData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={zeroTouchData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis
+                          dataKey="date"
+                          stroke="#6b7280"
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={formatDate}
+                        />
+                        <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "6px",
+                          }}
+                        />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="impressions"
+                          stroke="#8b5cf6"
+                          strokeWidth={2}
+                          name="Impressions"
+                          dot={{ fill: "#8b5cf6", r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="brandSearches"
+                          stroke="#f59e0b"
+                          strokeWidth={2}
+                          name="Brand Searches"
+                          dot={{ fill: "#f59e0b", r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-[300px] text-gray-500">
+                      No zero touch data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+            </div>
           </>
         )}
       </div>

@@ -10,7 +10,7 @@ export const brandAPI = {
   getTargetBrand(){
     return api.get("/api/target-brands")
   },
-  createTargetBrand(data: { brand_name: string; official_url: string; actual_brand_name?: string; brand_type?: string }){
+  createTargetBrand(data: { brand_name: string; official_url: string; actual_brand_name?: string; brand_type?: string, brand_description?: string, mainBrand?: boolean }) {
     return api.post('/api/target-brands', data)
   },
   scheduleRun(id: string) {

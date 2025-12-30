@@ -77,9 +77,15 @@ export const executePromptTask = async (promptId: string) => {
       console.log(` No valid responses to extract, skipping extraction phase`);
     } else {
       // Get main brand once for all extractions
-      const mainBrandDoc = await Brand.findOne().sort({ mentions: -1, prominence_score: -1 });
-      const mainBrands = mainBrandDoc ? [mainBrandDoc.brand_name] : [];
+      // const mainBrandDoc = await Brand.findOne().sort({ mentions: -1, prominence_score: -1 });
+      // const mainBrands = mainBrandDoc ? [mainBrandDoc.brand_name] : [];
 
+      const mainBrandDoc = await TargetBrand.findOne({mainBrand: true, isActive: true});
+      const mainBrandName = mainBrandDoc ? mainBrandDoc.brand_name : "";
+      const mainBrandUrl = mainBrandDoc ? mainBrandDoc.official_url : "";
+
+      const mainBrandDescription = mainBrandDoc ? mainBrandDoc.brand_description : "";
+      console.log(` Main brand for extraction: ${mainBrandDoc ? mainBrandDoc.brand_name : 'None'}`);
       const competitorBrandDoc = await TargetBrand.findOne().sort({ mentions: -1 });
       const competitorBrand = competitorBrandDoc ? [competitorBrandDoc.actual_brand_name] : [];
 
@@ -97,10 +103,10 @@ export const executePromptTask = async (promptId: string) => {
           try {
             const extracted = await extractBrandFromText(
               responseText,
-              mainBrands,
+              mainBrandName,
+              mainBrandUrl,
               targetBrandNames,
-              competitorBrand,
-              targetBrandUrl
+              mainBrandDescription,
             );
             
             console.log(` [${index + 1}/${validResponses.length}] Extraction ${extracted ? 'successful' : 'failed'} for ${modelName}`);
@@ -178,7 +184,6 @@ export const executePromptTask = async (promptId: string) => {
                 averageSentiment: data.sentiment,
                 prominence_score: data.prominence_score,
                 context: data.mention_context || data.context,
-                
                 found: data.found !== undefined ? data.found : true,
                 mention_context: data.mention_context,
                 sentiment: data.sentiment,

@@ -98,19 +98,20 @@ export async function GET(request: Request) {
 
     console.log("GA Account saved to database:", gaAccount._id);
 
-    // Try to create AI Traffic audience
+    // Try to create or find AI Traffic audience
     try {
       const audiencesResponse = await admin.properties.audiences.list({
         parent: firstProperty.name,
       });
 
       const existingAudiences = audiencesResponse.data.audiences || [];
-      const aiTrafficAudienceExists = existingAudiences.some((aud: any) =>
+      let aiAudience = existingAudiences.find((aud: any) =>
         aud.displayName?.toLowerCase().includes("ai traffic")
       );
 
-      if (!aiTrafficAudienceExists) {
-        await admin.properties.audiences.create({
+      if (!aiAudience) {
+        // Create new AI Traffic audience
+        const createResponse = await admin.properties.audiences.create({
           parent: firstProperty.name,
           requestBody: {
             displayName: "AI Traffic",
@@ -182,7 +183,18 @@ export async function GET(request: Request) {
             ],
           },
         });
-        console.log("AI Traffic audience created successfully");
+        aiAudience = createResponse.data;
+        console.log("AI Traffic audience created successfully:", aiAudience?.name);
+      } else {
+        console.log("AI Traffic audience already exists:", aiAudience.name);
+      }
+
+      // Store audience details in GAAccount
+      if (aiAudience?.name) {
+        gaAccount.aiAudienceId = aiAudience.name;
+        gaAccount.aiAudienceName = aiAudience.displayName || "AI Traffic";
+        await gaAccount.save();
+        console.log("Audience details saved to GAAccount");
       }
     } catch (audienceError: any) {
       console.error("Audience operation error:", audienceError.message);

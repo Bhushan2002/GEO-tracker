@@ -1,4 +1,5 @@
 import { Schema, model, models } from "mongoose";
+import { Brand } from './brand.model';
 
 const targetBrandSchema = new Schema(
   {
@@ -6,6 +7,8 @@ const targetBrandSchema = new Schema(
     official_url: { type: String, required: true },
     actual_brand_name: { type: String },
     brand_type: { type: String },
+    brand_description: {type: String},
+    mainBrand: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     isScheduled: { type: Boolean, default: false },
     mentions: { type: Number, default: 0 },

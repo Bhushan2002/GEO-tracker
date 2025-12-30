@@ -41,5 +41,16 @@ export interface ModelResponse {
     brand_name: string;
     mentions?: number;
     prominence_score?: number;
+    sentiment?: string;
+    sentiment_score?: number;
+    associated_domain?: Array<{
+      domain_citation: string;
+      domain_citation_type?: string;
+      associated_url?: Array<{
+        url_citation: string;
+        url_anchor_text?: string;
+        url_citation_type?: string;
+      }>;
+    }>;
   }>;
 }

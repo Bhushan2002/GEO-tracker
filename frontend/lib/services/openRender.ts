@@ -86,10 +86,10 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const extractBrandFromText = async (
   transcript: string,
-  mainBrands: string[] = [],
+  mainBrand: string,
+  mainBrandUrl :string,
   targetBrands: string[] = [],
-  competitorBrand: string[] = [],
-  targetBrandUrl: string[] =[],
+  mainBrandDescription: string,
   retries = 3
 ) => {
   const extractionModel = "google/gemini-3-flash-preview";
@@ -107,9 +107,8 @@ Task:
 7. Don’t invent or add or assume or make extra things, just use the provided chat transcript and input data for analysis and refer only to that content.
 
 Input Data:
-- Main focus brand: ${mainBrands.join(", ")}
-- Main focus brand brief info: [Insert brief about our main focus brand here]
-- Competitor brands: ${competitorBrand.join(", ")} and ${targetBrandUrl.join(', ')}
+- Main focus brand and url: ${mainBrand} (${mainBrandUrl})
+- Main focus brand brief info: ${mainBrandDescription}
 - Predefined Target Brands & their website: ${targetBrands.join(", ")}
 - Chat Transcript: ${transcript}
 

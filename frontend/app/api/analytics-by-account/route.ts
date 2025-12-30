@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
       auth: oauth2Client,
     });
 
+    // Fetch overall traffic
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
@@ -72,11 +73,88 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Fetch AI traffic specifically
+    const aiTrafficResponse = await analyticsData.properties.runReport({
+      property: `properties/${account.propertyId}`,
+      requestBody: {
+        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dimensions: [{ name: "date" }],
+        metrics: [
+          { name: "activeUsers" },
+        ],
+        dimensionFilter: {
+          orGroup: {
+            expressions: [
+              {
+                filter: {
+                  fieldName: "firstUserSource",
+                  stringFilter: {
+                    matchType: "CONTAINS",
+                    value: "chatgpt",
+                    caseSensitive: false,
+                  },
+                },
+              },
+              {
+                filter: {
+                  fieldName: "firstUserSource",
+                  stringFilter: {
+                    matchType: "CONTAINS",
+                    value: "perplexity",
+                    caseSensitive: false,
+                  },
+                },
+              },
+              {
+                filter: {
+                  fieldName: "firstUserSource",
+                  stringFilter: {
+                    matchType: "CONTAINS",
+                    value: "copilot",
+                    caseSensitive: false,
+                  },
+                },
+              },
+              {
+                filter: {
+                  fieldName: "firstUserSource",
+                  stringFilter: {
+                    matchType: "CONTAINS",
+                    value: "claude",
+                    caseSensitive: false,
+                  },
+                },
+              },
+              {
+                filter: {
+                  fieldName: "firstUserSource",
+                  stringFilter: {
+                    matchType: "CONTAINS",
+                    value: "gemini",
+                    caseSensitive: false,
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    // Create a map of AI traffic by date
+    const aiTrafficMap = new Map();
+    aiTrafficResponse.data.rows?.forEach((row: any) => {
+      const date = row.dimensionValues?.[0]?.value || "";
+      const users = parseInt(row.metricValues?.[0]?.value || "0");
+      aiTrafficMap.set(date, users);
+    });
+
     const chartData = response.data.rows?.map((row: any) => ({
       name: row.dimensionValues?.[0]?.value || "",
       users: parseInt(row.metricValues?.[0]?.value || "0"),
       sessions: parseInt(row.metricValues?.[1]?.value || "0"),
       keyEvents: parseInt(row.metricValues?.[2]?.value || "0"),
+      aiUsers: aiTrafficMap.get(row.dimensionValues?.[0]?.value) || 0,
     }))
     .sort((a: any, b: any) => a.name.localeCompare(b.name));
 

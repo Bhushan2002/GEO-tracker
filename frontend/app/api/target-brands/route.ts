@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await connectDatabase();
-    const { brand_name, official_url, actual_brand_name, brand_type } = await req.json();
+    const { brand_name, official_url, actual_brand_name, brand_type, brand_description, mainBrand } = await req.json();
     
     const existing = await TargetBrand.findOne({ brand_name });
     if (existing) {
@@ -30,7 +30,9 @@ export async function POST(req: NextRequest) {
       brand_name, 
       official_url,
       actual_brand_name,
-      brand_type
+      brand_type,
+      brand_description,
+      mainBrand: mainBrand || false,
     });
     return NextResponse.json(newTarget, { status: 201 });
   } catch (e) {

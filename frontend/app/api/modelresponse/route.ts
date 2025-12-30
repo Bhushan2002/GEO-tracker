@@ -22,7 +22,7 @@ export async function GET() {
     const modelResponse = await ModelResponse.find()
       .populate({
         path: 'identifiedBrands',
-        select: 'brand_name mentions prominence_score rank_position sentiment'
+        select: 'brand_name mentions prominence_score rank_position sentiment sentiment_score sentiment_text associated_domain'
       })
       .populate({
         path: 'promptRunId',

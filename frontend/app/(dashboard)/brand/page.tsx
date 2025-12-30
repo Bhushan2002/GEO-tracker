@@ -10,15 +10,20 @@ import { brandAPI } from "@/api/brand.api";
 import { TargetBrandTable } from "@/components/target-brandTable";
 import { Brand } from "../../../lib/models/brand.model";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function BrandPage() {
   const [brand_url, setBrand_url] = useState("");
   const [brand_name, setBrand_name] = useState("");
   const [actualBrandName, setActualBrandName] = useState("");
+  const [brand_description, setBrand_description] = useState("");
   const [brandType, setBrandType] = useState("");
   const [brands, setBrands] = useState<any[]>([]);
   const [targetBrands, setTargetBrands] = useState<any[]>([]);
+  const [mainBrand, setMainBrand] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
 
   useEffect(() => {
     loadBrands();
@@ -46,6 +51,8 @@ export default function BrandPage() {
         official_url: brand_url,
         actual_brand_name: actualBrandName.trim() || undefined,
         brand_type: brandType.trim() || undefined,
+        brand_description: brand_description.trim() || undefined,
+        mainBrand: mainBrand || false
       });
       toast.success("Target brand added!");
       setTargetBrands((prev) => [res.data, ...prev]);
@@ -53,6 +60,8 @@ export default function BrandPage() {
       setBrand_url("");
       setActualBrandName("");
       setBrandType("");
+      setBrand_description("");
+      setMainBrand(false);
     } catch (error) {
       toast.error("Failed to add brand.");
     }
@@ -68,7 +77,7 @@ export default function BrandPage() {
         </div>
       </div>
       <div className="space-y-6 p-6">
-        <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card min-w-full ">
+        <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card min-w-full space-y-4">
           <h2 className="text-xl font-bold">Add New Target Brand</h2>
           <form onSubmit={handleAddBrand} className="flex flex-col gap-3 ">
             <div className="flex flex-row gap-3">
@@ -97,7 +106,18 @@ export default function BrandPage() {
                 onChange={(e) => setBrandType(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-fit">
+            <Input
+              placeholder="Description"
+              value={brand_description}
+              onChange={(e) => setBrand_description(e.target.value)}
+              required
+            />
+            <div className="flex items-center space-x-2">
+            <Checkbox id="main" checked={mainBrand} onCheckedChange={(checked) => setMainBrand(checked === true)} />
+            <Label htmlFor="main">Main Brand</Label>
+            </div>
+
+            <Button type="submit" className="w-fit mt-3">
               Add to Tracking
             </Button>
           </form>
