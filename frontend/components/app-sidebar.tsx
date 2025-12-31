@@ -7,7 +7,9 @@ import {
   Tag,
   BarChart3,
   Settings,
+  LogOut,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -53,6 +55,22 @@ const items = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        router.push("/login");
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <Sidebar collapsible="icon" className="border-r border-gray-200 bg-white">
@@ -106,7 +124,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-2 border-t border-gray-100">
+      <SidebarFooter className="p-2 px-4 border-t border-gray-100">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -120,6 +138,18 @@ export function AppSidebar() {
                   Settings
                 </span>
               </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              tooltip="Log Out"
+              className="flex items-center gap-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors w-full"
+            >
+              <LogOut className="h-5 w-5 text-red-400" />
+              <span className="group-data-[collapsible=icon]:hidden font-medium">
+                Log Out
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
