@@ -1,21 +1,79 @@
-import { AnalyticsAdminServiceClient } from "@google-analytics/admin";
-import { NextResponse } from "next/server";
+import { google } from "googleapis";
+import { NextRequest, NextResponse } from "next/server";
+import { connectDatabase } from "@/lib/db/mongodb";
+import { GAAccount } from "@/lib/models/gaAccount.model";
+import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
-const adminClient = new AnalyticsAdminServiceClient({
-  credentials: {
-    client_email: process.env.GA_CLIENT_EMAIL!,
-    private_key: process.env.GA_PRIVATE_KEY?.split(String.raw`\n`).join("\n"),
-  },
-});
+async function refreshTokenIfNeeded(account: any) {
+  const now = new Date();
+  if (account.expiresAt > now) {
+    return account.accessToken;
+  }
 
-export async function POST(request: Request) {
-  const propertyPath = `properties/${process.env.GA_PROPERTY_ID}`;
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.NEXT_PUBLIC_GA_CLIENT_ID,
+    process.env.GA_CLIENT_SECRET,
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
+  );
 
+  oauth2Client.setCredentials({ refresh_token: account.refreshToken });
+  const { credentials } = await oauth2Client.refreshAccessToken();
+
+  account.accessToken = credentials.access_token;
+  account.expiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
+  await account.save();
+
+  return credentials.access_token;
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const audience = await adminClient.createAudience({
+    const { searchParams } = new URL(request.url);
+    const accountId = searchParams.get('accountId');
+
+    if (!accountId) {
+      return NextResponse.json({ error: "Account ID is required" }, { status: 400 });
+    }
+
+    await connectDatabase();
+    const workspaceId = await getWorkspaceId(request);
+    if (!workspaceId) return workspaceError();
+
+    const account = await GAAccount.findOne({ _id: accountId, workspaceId });
+
+    if (!account || !account.isActive) {
+      return NextResponse.json({ error: "Account not found or inactive" }, { status: 404 });
+    }
+
+    const accessToken = await refreshTokenIfNeeded(account);
+
+    const oauth2Client = new google.auth.OAuth2();
+    oauth2Client.setCredentials({ access_token: accessToken });
+
+    const admin = google.analyticsadmin({ version: 'v1alpha', auth: oauth2Client });
+
+    const propertyPath = `properties/${account.propertyId}`;
+
+    // Check for existing audience
+    const audiencesResponse = await admin.properties.audiences.list({
       parent: propertyPath,
-      audience: {
-        displayName: "AI Models Traffic",
+    });
+
+    const existingAudiences = audiencesResponse.data.audiences || [];
+    const aiAudience = existingAudiences.find((aud: any) => {
+      const dName = aud.displayName?.toLowerCase() || "";
+      return dName.includes("ai traffic") || (dName.includes("ai") && dName.includes("traffic"));
+    });
+
+    if (aiAudience) {
+      // If audience already exists, return it
+      return NextResponse.json({ success: true, audience: aiAudience });
+    }
+
+    const audience = await admin.properties.audiences.create({
+      parent: propertyPath,
+      requestBody: {
+        displayName: "AI Traffic",
         description: "Users coming from various AI model sources (ChatGPT, Claude, Gemini, etc)",
         membershipDurationDays: 30,
         filterClauses: [
@@ -50,9 +108,7 @@ export async function POST(request: Request) {
         ],
       },
     });
-    console.log("Created AI Models Audience:", audience);
-
-    return NextResponse.json({ success: true, audience });
+    return NextResponse.json({ success: true, audience: audience.data });
   } catch (error: any) {
     console.error("Setup AI Models Error Details:", error);
 

@@ -12,6 +12,7 @@ import { Brand } from "../../../lib/models/brand.model";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useWorkspace } from "@/lib/contexts/workspace-context";
 
 export default function BrandPage() {
   const [brand_url, setBrand_url] = useState("");
@@ -25,9 +26,11 @@ export default function BrandPage() {
   const [isLoading, setIsLoading] = useState(true);
 
 
+  const { activeWorkspace } = useWorkspace();
+
   useEffect(() => {
     loadBrands();
-  }, []);
+  }, [activeWorkspace?._id]);
 
   const loadBrands = async () => {
     try {
@@ -113,8 +116,8 @@ export default function BrandPage() {
               required
             />
             <div className="flex items-center space-x-2">
-            <Checkbox id="main" checked={mainBrand} onCheckedChange={(checked) => setMainBrand(checked === true)} />
-            <Label htmlFor="main">Main Brand</Label>
+              <Checkbox id="main" checked={mainBrand} onCheckedChange={(checked) => setMainBrand(checked === true)} />
+              <Label htmlFor="main">Main Brand</Label>
             </div>
 
             <Button type="submit" className="w-fit mt-3">

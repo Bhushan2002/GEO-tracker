@@ -1,4 +1,5 @@
-export interface IPrompt {  
+export interface IPrompt {
+  workspaceId?: string;
   promptText: string;
   topic: string;
   tags: string[];

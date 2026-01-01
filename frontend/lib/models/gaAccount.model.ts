@@ -1,6 +1,7 @@
 import mongoose, { model, models } from "mongoose";
 
 const gaAccountSchema = new mongoose.Schema({
+    workspaceId: { type: mongoose.Schema.Types.ObjectId, ref: "Workspace", required: true },
     accountName: { type: String, required: true }, // User-friendly name for the account
     accountId: { type: String, required: true }, // GA Account ID
     propertyId: { type: String, required: true }, // GA Property ID
@@ -14,6 +15,6 @@ const gaAccountSchema = new mongoose.Schema({
     aiAudienceName: { type: String, required: false }, // GA4 AI Traffic Audience Name
 }, { timestamps: true });
 
-gaAccountSchema.index({ propertyId: 1 }, { unique: true });
+gaAccountSchema.index({ propertyId: 1, workspaceId: 1 }, { unique: true });
 
 export const GAAccount = models.GAAccount || model('GAAccount', gaAccountSchema);

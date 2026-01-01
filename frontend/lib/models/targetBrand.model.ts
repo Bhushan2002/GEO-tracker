@@ -3,11 +3,12 @@ import { Brand } from './brand.model';
 
 const targetBrandSchema = new Schema(
   {
-    brand_name: { type: String, required: true, unique: true },
+    workspaceId: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
+    brand_name: { type: String, required: true },
     official_url: { type: String, required: true },
     actual_brand_name: { type: String },
     brand_type: { type: String },
-    brand_description: {type: String},
+    brand_description: { type: String },
     mainBrand: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     isScheduled: { type: Boolean, default: false },
@@ -15,5 +16,7 @@ const targetBrandSchema = new Schema(
   },
   { timestamps: true }
 );
+
+targetBrandSchema.index({ brand_name: 1, workspaceId: 1 }, { unique: true });
 
 export const TargetBrand = models.TargetBrand || model("TargetBrand", targetBrandSchema);

@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
+import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
@@ -14,15 +15,15 @@ async function refreshTokenIfNeeded(account: any) {
     process.env.GA_CLIENT_SECRET,
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
   );
-  
+
   oauth2Client.setCredentials({ refresh_token: account.refreshToken });
   const { credentials } = await oauth2Client.refreshAccessToken();
-  
+
   // Update token in database
   account.accessToken = credentials.access_token;
   account.expiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
   await account.save();
-  
+
   return credentials.access_token;
 }
 
@@ -39,7 +40,10 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDatabase();
-    const account = await GAAccount.findById(accountId);
+    const workspaceId = await getWorkspaceId(request);
+    if (!workspaceId) return workspaceError();
+
+    const account = await GAAccount.findOne({ _id: accountId, workspaceId });
 
     if (!account || !account.isActive) {
       return NextResponse.json(
@@ -56,16 +60,17 @@ export async function GET(request: NextRequest) {
       try {
         const oauth2Client = new google.auth.OAuth2();
         oauth2Client.setCredentials({ access_token: accessToken });
-        
+
         const admin = google.analyticsadmin({ version: 'v1alpha', auth: oauth2Client });
         const audiencesResponse = await admin.properties.audiences.list({
           parent: `properties/${account.propertyId}`,
         });
 
         const existingAudiences = audiencesResponse.data.audiences || [];
-        const aiAudience = existingAudiences.find((aud: any) =>
-          aud.displayName?.toLowerCase().includes("ai traffic")
-        );
+        const aiAudience = existingAudiences.find((aud: any) => {
+          const dName = aud.displayName?.toLowerCase() || "";
+          return dName.includes("ai traffic") || (dName.includes("ai") && dName.includes("traffic"));
+        });
 
         if (aiAudience?.name) {
           account.aiAudienceId = aiAudience.name;
@@ -111,7 +116,7 @@ export async function GET(request: NextRequest) {
             fieldName: "audienceName",
             stringFilter: {
               matchType: "EXACT",
-              value: account.aiAudienceName || "AI Traffic",
+              value: account.aiAudienceId,
               caseSensitive: false,
             },
           },

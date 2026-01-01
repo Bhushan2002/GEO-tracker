@@ -30,25 +30,28 @@ export const executePromptTask = async (promptId: string) => {
 
   const run = await PromptRun.create({
     promptId: prompt._id,
+    workspaceId: prompt.workspaceId,
     status: "RUNNING",
   });
 
   console.log(` Created PromptRun with ID: ${run._id}`);
 
+  const workspaceId = prompt.workspaceId;
+
   try {
     // Use scheduled brands for extraction if any are scheduled, otherwise use active brands
-    const scheduledBrands = await TargetBrand.find({ isScheduled: true, isActive: true });
-    const trackedBrands = scheduledBrands.length > 0 
-      ? scheduledBrands 
-      : await TargetBrand.find({ isActive: true });
-    
+    const scheduledBrands = await TargetBrand.find({ isScheduled: true, isActive: true, workspaceId });
+    const trackedBrands = scheduledBrands.length > 0
+      ? scheduledBrands
+      : await TargetBrand.find({ isActive: true, workspaceId });
+
     console.log(` Using ${trackedBrands.length} brands for extraction (scheduled: ${scheduledBrands.length})`);
     console.log(` Brand names:`, trackedBrands.map(b => b.brand_name));
-    
+
     console.log(` Calling OpenRender API...`);
     const results = await getOpenRenderResponse(prompt.promptText);
     console.log(` Received ${results.length} model responses`);
-    
+
     const targetBrandNames = trackedBrands.map(b => b.brand_name);
 
     // STEP 1: Create all ModelResponse documents first
@@ -57,6 +60,7 @@ export const executePromptTask = async (promptId: string) => {
       results.map(async (res) => {
         const modelRes = await ModelResponse.create({
           promptRunId: run._id,
+          workspaceId: workspaceId,
           responseText: res.responseText,
           modelName: res.modelName,
           latencyMs: res.latencyMs,
@@ -80,13 +84,13 @@ export const executePromptTask = async (promptId: string) => {
       // const mainBrandDoc = await Brand.findOne().sort({ mentions: -1, prominence_score: -1 });
       // const mainBrands = mainBrandDoc ? [mainBrandDoc.brand_name] : [];
 
-      const mainBrandDoc = await TargetBrand.findOne({mainBrand: true, isActive: true});
+      const mainBrandDoc = await TargetBrand.findOne({ mainBrand: true, isActive: true, workspaceId });
       const mainBrandName = mainBrandDoc ? mainBrandDoc.brand_name : "";
       const mainBrandUrl = mainBrandDoc ? mainBrandDoc.official_url : "";
 
       const mainBrandDescription = mainBrandDoc ? mainBrandDoc.brand_description : "";
       console.log(` Main brand for extraction: ${mainBrandDoc ? mainBrandDoc.brand_name : 'None'}`);
-      const competitorBrandDoc = await TargetBrand.findOne().sort({ mentions: -1 });
+      const competitorBrandDoc = await TargetBrand.findOne({ workspaceId }).sort({ mentions: -1 });
       const competitorBrand = competitorBrandDoc ? [competitorBrandDoc.actual_brand_name] : [];
 
       const targetBrandUrl = competitorBrandDoc?.official_url || "";
@@ -95,11 +99,11 @@ export const executePromptTask = async (promptId: string) => {
       // // STEP 3: Batch extract all responses - first call warms the cache, rest benefit
       // console.log(` Starting batch extraction for ${validResponses.length} responses...`);
       // console.log(` First extraction will warm the cache, subsequent ones will be faster and cheaper`);
-      
+
       const extractions = await Promise.all(
         validResponses.map(async ({ modelRes, responseText, modelName }, index) => {
           console.log(` [${index + 1}/${validResponses.length}] Extracting brands from ${modelName}...`);
-          
+
           try {
             const extracted = await extractBrandFromText(
               responseText,
@@ -108,9 +112,9 @@ export const executePromptTask = async (promptId: string) => {
               targetBrandNames,
               mainBrandDescription,
             );
-            
+
             console.log(` [${index + 1}/${validResponses.length}] Extraction ${extracted ? 'successful' : 'failed'} for ${modelName}`);
-            
+
             return { modelRes, extracted, modelName };
           } catch (error) {
             console.error(` [${index + 1}/${validResponses.length}] Extraction error for ${modelName}:`, error);
@@ -138,17 +142,17 @@ export const executePromptTask = async (promptId: string) => {
 
       // STEP 5: Process brands for each model response and link them
       console.log(` Processing brands for each model response...`);
-      
+
       for (const { modelRes, extracted, modelName } of extractions) {
         if (!extracted) continue;
-        
+
         const brands = [
           ...(extracted.predefined_brand_analysis || []),
           ...(extracted.discovered_competitors || []),
         ];
 
         console.log(` Processing ${brands.length} brands from ${modelName}`);
-        
+
         const brandIds: mongoose.Types.ObjectId[] = [];
 
         // Process each brand and collect IDs
@@ -176,9 +180,9 @@ export const executePromptTask = async (promptId: string) => {
 
           // Create or update brand and get the document back
           const brand = await Brand.findOneAndUpdate(
-            { brand_name: data.brand_name },
+            { brand_name: data.brand_name, workspaceId },
             {
-              $setOnInsert: { brand_name: data.brand_name },
+              $setOnInsert: { brand_name: data.brand_name, workspaceId },
               $inc: { mentions: data.mention_count || 1 },
               $set: {
                 averageSentiment: data.sentiment,
@@ -220,7 +224,7 @@ export const executePromptTask = async (promptId: string) => {
 
     // Sort brands and update rankings directly (no unset needed)
     console.log(` Updating brand rankings...`);
-    const brands = await Brand.find().sort({
+    const brands = await Brand.find({ workspaceId }).sort({
       mentions: -1,
       prominence_score: -1,
     });
@@ -263,7 +267,7 @@ export const stopPromptSchedule = (promptId: string) => {
 export const initScheduler = async () => {
   // ===== CRON SCHEDULING DISABLED FOR TESTING =====
   // Uncomment below to enable automatic daily execution at 2:00 PM
-  
+
   /*
   const prompts = await Prompt.find({ isActive: true, isScheduled: true });
   const scheduleBrands = await TargetBrand.find({ isScheduled: true, isActive: true });
@@ -279,6 +283,6 @@ export const initScheduler = async () => {
     scheduledTasks.set(prompt._id.toString(), task);
   }
   */
-  
+
   console.log("Cron scheduler initialization skipped (testing mode)");
 };

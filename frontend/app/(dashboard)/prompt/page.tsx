@@ -3,12 +3,15 @@
 import { PromptAPI } from "@/api/prompt.api";
 import { PromptTable } from "@/components/PromptTable";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; 
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useWorkspace } from "@/lib/contexts/workspace-context";
+import { api } from "@/api/api";
 
 export default function Page() {
+  const { activeWorkspace } = useWorkspace();
   const [promptText, setPromptText] = useState("");
   const [topic, setTopic] = useState("");
   const [topics, setTopics] = useState<string[]>([]);
@@ -29,7 +32,7 @@ export default function Page() {
       }
     }
     loadPrompts();
-  }, []);
+  }, [activeWorkspace?._id]);
 
   const loadPrompts = async () => {
     setIsLoading(true); // Ensure loading state is active on refresh
@@ -40,7 +43,7 @@ export default function Page() {
       const derivedTopics = Array.from(
         new Set((res.data || []).map((p: any) => p.topic).filter(Boolean))
       ) as string[];
-      
+
       // Merge with stored topics (avoid duplicates)
       setTopics((prev) => {
         const merged = Array.from(new Set([...prev, ...derivedTopics]));
@@ -121,18 +124,13 @@ export default function Page() {
   const handleExecuteAll = async () => {
     setIsExecuting(true);
     try {
-      const response = await fetch('/api/prompt/execute-all', {
-        method: 'POST',
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        toast.success(data.message || "Prompts execution started!");
-      } else {
-        toast.error(data.message || "Failed to execute prompts");
-      }
-    } catch (error) {
-      toast.error("Failed to execute prompts");
+      const response = await api.post('/api/prompt/execute-all');
+      const data = response.data;
+
+      toast.success(data.message || "Prompts execution started!");
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message || "Failed to execute prompts";
+      toast.error(errorMsg);
     } finally {
       setIsExecuting(false);
     }
@@ -140,16 +138,16 @@ export default function Page() {
 
   return (
     <div className="min-h-screen p-2 space-y-6">
-    <div className="bg-white border-b rounded-2xl border-gray-200 sticky top-0 mt-3  z-10">
-      <div className="px-6 py-4">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Prompts
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Monitor your brand performance and AI insights
-        </p>
+      <div className="bg-white border-b rounded-2xl border-gray-200 sticky top-0 mt-3  z-10">
+        <div className="px-6 py-4">
+          <h1 className="text-2xl font-bold text-gray-900">
+            Prompts
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Monitor your brand performance and AI insights
+          </p>
+        </div>
       </div>
-    </div>
       <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card shadow-sm">
         <h2 className="text-xl font-bold">Create New Prompt</h2>
         <form onSubmit={handleAddPrompt} className="flex flex-col gap-3">
@@ -182,9 +180,9 @@ export default function Page() {
                     }}
                     className="h-8"
                   />
-                  <Button 
-                    type="button" 
-                    variant="secondary" 
+                  <Button
+                    type="button"
+                    variant="secondary"
                     onClick={handleAddTopic}
                     size="sm"
                   >
@@ -223,7 +221,7 @@ export default function Page() {
       <div className="border rounded-lg p-4 bg-white shadow-sm">
         <div className="flex justify-between  mb-4 ">
           <h2 className="text-xl font-bold">Active Monitoring Prompts</h2>
-          <Button 
+          <Button
             onClick={handleExecuteAll}
             disabled={isExecuting}
             variant="default"

@@ -1,8 +1,9 @@
 export interface IBrand {
+  workspaceId?: string;
   brand_name: string;
   mentions: number;
   lastRank: number;
-  
+
   // Legacy fields (keep for backward compatibility)
   averageSentiment?: string;
   prominence_score?: number;
@@ -12,7 +13,7 @@ export interface IBrand {
     is_direct_brand_link: boolean;
     citation_type: string;
   }[];
-  
+
   // Comprehensive Brand Analysis
   found?: boolean;
   mention_context?: string;
@@ -23,7 +24,7 @@ export interface IBrand {
   funnel_stage?: string;
   attribute_mapping?: string[];
   recommendation_strength?: string;
-  
+
   // Domain & URL Citations
   associated_domain?: Array<{
     domain_citation: string;
@@ -37,6 +38,6 @@ export interface IBrand {
       url_placement: string;
     }>;
   }>;
-  
+
   alignment_analysis?: string;
 }

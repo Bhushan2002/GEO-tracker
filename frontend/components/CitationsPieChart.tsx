@@ -31,7 +31,7 @@ interface Props {
 }
 
 export default function CitationsPieChart({ data, totalCitations }: Props) {
-  
+
 
   return (
     <div className="w-full h-[400px] flex flex-col items-center justify-center">
@@ -49,9 +49,9 @@ export default function CitationsPieChart({ data, totalCitations }: Props) {
               paddingAngle={2}
               labelLine={true}
               label={({ name, percent }) =>
-              `${name} ${(percent * 100).toFixed(0)}%`
-            }
-              
+                `${name} ${!isNaN(percent) ? (percent * 100).toFixed(0) : 0}%`
+              }
+
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />

@@ -3,14 +3,15 @@ import { IBrand } from "../types/brand.type";
 
 const brandSchema = new Schema<IBrand>(
   {
-    brand_name: { type: String, required: true, unique: true, sparse: true },
+    workspaceId: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
+    brand_name: { type: String, required: true },
     mentions: { type: Number, default: 0 },
     lastRank: {
       type: Number,
       default: undefined,
       sparse: true,
     },
-    
+
     // Legacy fields (keep for backward compatibility)
     averageSentiment: { type: String },
     prominence_score: { type: Number },
@@ -20,7 +21,7 @@ const brandSchema = new Schema<IBrand>(
       is_direct_brand_link: { type: Boolean },
       citation_type: { type: String },
     }],
-    
+
     // Comprehensive Brand Analysis
     found: { type: Boolean },
     mention_context: { type: String },
@@ -31,7 +32,7 @@ const brandSchema = new Schema<IBrand>(
     funnel_stage: { type: String },
     attribute_mapping: [String],
     recommendation_strength: { type: String },
-    
+
     // Domain & URL Citations
     associated_domain: [{
       domain_citation: String,
@@ -45,10 +46,12 @@ const brandSchema = new Schema<IBrand>(
         url_placement: String
       }]
     }],
-    
+
     alignment_analysis: { type: String }
   },
   { timestamps: true }
 );
+
+brandSchema.index({ brand_name: 1, workspaceId: 1 }, { unique: true });
 
 export const Brand = models.Brand || model("Brand", brandSchema);

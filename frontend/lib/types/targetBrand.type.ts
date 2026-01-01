@@ -1,4 +1,5 @@
 export interface ITargetBrand {
+  workspaceId?: string;
   brand_name: string;
   official_url: string;
   actual_brand_name?: string;

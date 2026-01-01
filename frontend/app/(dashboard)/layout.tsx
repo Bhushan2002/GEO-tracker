@@ -1,6 +1,22 @@
+"use client";
 
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { WorkspaceProvider, useWorkspace } from "@/lib/contexts/workspace-context";
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { activeWorkspace } = useWorkspace();
+
+  return (
+    <div
+      key={activeWorkspace?._id}
+      className="flex-1 overflow-y-auto bg-gray-100"
+      suppressHydrationWarning
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -8,16 +24,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full">
-        <AppSidebar />
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-  
-          <div className="flex-1 overflow-y-auto bg-gray-100">
-            {children}
-          </div>
-        </main>
-      </div>
-    </SidebarProvider>
+    <WorkspaceProvider>
+      <SidebarProvider>
+        <div className="min-h-screen flex w-full">
+          <AppSidebar />
+          <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <DashboardContent>
+              {children}
+            </DashboardContent>
+          </main>
+        </div>
+      </SidebarProvider>
+    </WorkspaceProvider>
   );
 }

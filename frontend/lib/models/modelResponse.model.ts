@@ -3,18 +3,19 @@ import { IModelResponse } from "../types/modelResponse.type";
 
 const modelResponseSchema = new mongoose.Schema<IModelResponse>(
   {
+    workspaceId: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
     promptRunId: {
       type: Schema.Types.ObjectId,
       ref: "PromptRun",
       required: true
     },
     modelName: { type: String, required: true },
-    identifiedBrands: [{ type: Schema.Types.ObjectId , ref: 'Brand' }],
+    identifiedBrands: [{ type: Schema.Types.ObjectId, ref: 'Brand' }],
     responseText: { type: String },
     latencyMs: { type: Number },
     tokenUsage: { type: Object },
     error: { type: String },
-    
+
     // Strategic Analysis Summary (response-level insights)
     audit_summary: {
       total_brands_detected: Number,
