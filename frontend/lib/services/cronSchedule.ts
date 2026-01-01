@@ -89,8 +89,8 @@ export const executePromptTask = async (promptId: string) => {
       const competitorBrandDoc = await TargetBrand.findOne().sort({ mentions: -1 });
       const competitorBrand = competitorBrandDoc ? [competitorBrandDoc.actual_brand_name] : [];
 
-      const targetBrandUrl = competitorBrandDoc.official_url || "";
-      console.log(` target brand url : ${targetBrandUrl.join(", ")}`);
+      const targetBrandUrl = competitorBrandDoc?.official_url || "";
+      console.log(` target brand url : ${targetBrandUrl}`);
 
       // // STEP 3: Batch extract all responses - first call warms the cache, rest benefit
       // console.log(` Starting batch extraction for ${validResponses.length} responses...`);
@@ -199,6 +199,9 @@ export const executePromptTask = async (promptId: string) => {
             },
             { upsert: true, new: true }
           );
+
+          console.log(` Brand ${data.brand_name} - sentiment_text: ${data.sentiment_text || 'MISSING'}`);
+          console.log(` Brand ${data.brand_name} - associated_domain count: ${data.associated_domain?.length || 0}`);
 
           if (brand && brand._id) {
             brandIds.push(brand._id);

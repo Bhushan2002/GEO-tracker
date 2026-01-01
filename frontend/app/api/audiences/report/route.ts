@@ -62,7 +62,7 @@ export async function GET() {
 
     console.log('Report response received with', response.data.rows?.length || 0, 'rows');
 
-    // Transform the raw API response into a clean format
+    
     const formattedRows = response.data.rows?.map((row: any) => ({
       audience: row.dimensionValues?.[0]?.value || "Unknown",
       users: row.metricValues?.[0]?.value || "0",

@@ -143,11 +143,17 @@ export default function GoogleAnalyticsPage() {
       );
       const aiModels = await aiModelsRes.json();
 
-      // Filter for specific models
-      const allowedModels = ["ChatGPT", "Copilot", "Perplexity"];
-      const filteredAiModels = aiModels.filter((item: any) =>
-        allowedModels.includes(item.model)
-      );
+      // Filter for specific models and ensure all models are present
+      const allowedModels = ["ChatGPT", "Copilot", "Perplexity", "Gemini", "Claude"];
+      const filteredAiModels = allowedModels.map(modelName => {
+        const existingData = aiModels.find((item: any) => item.model === modelName);
+        return existingData || {
+          model: modelName,
+          users: 0,
+          sessions: 0,
+          conversionRate: "0%"
+        };
+      });
       setAiModelsData(filteredAiModels);
 
       // Fetch First Touch data
@@ -409,7 +415,7 @@ export default function GoogleAnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={aiModelsData}>
+                      <BarChart data={aiModelsData.filter(item => item.users > 0)}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="model" tick={{ fontSize: 12 }} />
                         <YAxis tick={{ fontSize: 12 }} />
@@ -429,7 +435,7 @@ export default function GoogleAnalyticsPage() {
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
-                          data={aiModelsData}
+                          data={aiModelsData.filter(item => item.users > 0)}
                           cx="50%"
                           cy="50%"
                           labelLine={false}
@@ -438,8 +444,8 @@ export default function GoogleAnalyticsPage() {
                           fill="#8884d8"
                           dataKey="users"
                         >
-                          {aiModelsData.map((entry: any, index: number) => {
-                            const colors = ["#1e40af", "#059669", "#dc2626"];
+                          {aiModelsData.filter(item => item.users > 0).map((entry: any, index: number) => {
+                            const colors = ["#1e40af", "#059669", "#dc2626", "#8b5cf6", "#f59e0b"];
                             return (
                               <Cell
                                 key={`cell-${index}`}
@@ -481,9 +487,9 @@ export default function GoogleAnalyticsPage() {
                           <TableCell className="font-medium">
                             {row.model}
                           </TableCell>
-                          <TableCell>{row.users}</TableCell>
-                          <TableCell>{row.sessions}</TableCell>
-                          <TableCell>{row.conversionRate}</TableCell>
+                          <TableCell>{row.users || 0}</TableCell>
+                          <TableCell>{row.sessions || 0}</TableCell>
+                          <TableCell>{row.conversionRate || "0%"}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

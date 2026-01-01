@@ -2,8 +2,8 @@ import axios from "axios";
 
 const Models = [
   "openai/gpt-5.2",
-  "google/gemini-3-flash-preview",
-  // "anthropic/claude-sonnet-4.5",
+  // "google/gemini-3-flash-preview",
+  "anthropic/claude-sonnet-4.5",
   // "x-ai/grok-4.1-fast",
 ];
 
@@ -92,7 +92,7 @@ export const extractBrandFromText = async (
   mainBrandDescription: string,
   retries = 3
 ) => {
-  const extractionModel = "google/gemini-3-flash-preview";
+  const extractionModel = "openai/gpt-5.2";
 
   const extractionPrompt = `
 You are an advanced AEO (Answer Engine Optimization) and GEO (Generative Engine Optimization) Intelligence Audit Agent with more than 10 years of experience having worked at top SEO/GEO/AEO tools company. Your purpose is to analyze AI-generated chat transcripts to extract competitive intelligence, brand visibility metrics, brand sentiment and technical citation audits with high precision.
@@ -135,13 +135,13 @@ Mention Count: Number of times the brand name occurred in the chat transcript. (
 Mention Context: Brief summary of how the brand was framed and context of it. (Data Type: String)
 Sentiment: Label as "Positive", "Neutral" or "Negative". (Data Type: String)
 Sentiment Score: Integer (0-100, where 50 is neutral, above 50 is positive and below 50 is negative). (Data Type: Integer)
-Sentiment Text: Highlight the exact part of the text responsible for that sentiment, an exact short section from the chat so that we can highlight it. (Data Type: String)
+Sentiment Text: **CRITICAL** - Extract the EXACT 4-8 consecutive words from the transcript that show sentiment. Do NOT write summaries or generic text. Copy word-for-word from the transcript. Example: If transcript says "Novo Nordisk, a Danish multinational pharmaceutical company, is the manufacturer", extract "Danish multinational pharmaceutical company, is the". If brand is not found, set to null. (Data Type: String or Null)
 Rank Position: Numerical rank if part of a list (e.g., 1, 2, 3); otherwise use null. (Data Type: Integer or Null)
 Prominence Score: (1-100) Based on how much text/detail depth is dedicated to this brand. (Data Type: Integer)
 Funnel Stage: Determine if the context of brand mention is which stage of funnel Awareness, Acquisition, Activation, Revenue, Retention, Referral. (Data Type: String)
 Attribute Mapping: Identify specific features attached to the brand (e.g., "Affordable," "Premium," "Slow," "Complex"). (Data Type: Array of Strings)
 Recommendation Strength: How the brand is recommended in chat (Strongly Recommended, Alternative Option, Mentioned Only, Warned Against, Barely Mentioned). (Data Type: String)
-Domain Citation: List specific domain from the AI chat which talks about this brand. (Data Type: String)
+Domain Citation: **CRITICAL** - Extract the EXACT domain name from URLs in the transcript (e.g., "en.wikipedia.org", "novomedlink.com"). If no URLs mention this brand, set associated_domain to empty array []. (Data Type: String)
 Domain Citation Source: Is that domain part of that particular brand website or some other website, yes or no. (Data Type: Boolean)
 Domain Citation Type: categories that domain, any one only (You, UGC, Competitor, Editorial, Institutional, Reference, Review, Other). (Data Type: String)
 Associated URL section (associated_url): URL Citation, URL Citation Source, URL Citation Type & URL Placement. Group these under their respective Domain.
