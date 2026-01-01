@@ -3,13 +3,17 @@ import { brandAPI } from "@/api/brand.api";
 import { DashBrandTable } from "@/components/dash-brandTable";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useWorkspace } from "@/lib/contexts/workspace-context";
 
 function AllBrands() {
+  const { activeWorkspace } = useWorkspace();
   const [brands, setBrands] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
+    setIsLoading(true);
     loadBrands();
-  }, []);
+  }, [activeWorkspace?._id]);
 
   const loadBrands = async () => {
     try {

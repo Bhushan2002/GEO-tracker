@@ -6,7 +6,7 @@ export const PromptAPI = {
     return api.post<Prompt>("/api/prompt", data);
   },
   getAll() {
-    return api.get<Prompt[]>("/api/prompt/getprompts");
+    return api.get<Prompt[]>("/api/prompt");
   },
   toggleSchedule(id: string, start: boolean) {
     const action = start ? "start-schedule" : "stop-schedule";

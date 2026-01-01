@@ -8,6 +8,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  Radar,
+  BarChart4
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -24,6 +26,8 @@ import {
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { LayoutGrid } from "lucide-react";
 
 const items = [
   {
@@ -73,13 +77,16 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-gray-200 bg-white">
-      <SidebarHeader className="h-14 flex items-center px-4 border-b border-gray-100">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <span className="text-lg font-bold tracking-tight text-gray-900 group-data-[collapsible=icon]:hidden whitespace-nowrap">
-            AI Search Analytics
-          </span>
+    <Sidebar collapsible="icon" className="border-r border-gray-200 bg-white shadow-sm">
+      <SidebarHeader className="p-4 group-data-[collapsible=icon]:p-2 transition-all">
+        <div className="flex items-center gap-3 mb-5 group-data-[collapsible=icon]:mb-0 overflow-hidden px-1">
+          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
+            <span className="text-xl font-bold tracking-tight text-slate-900">
+              AI Search Analytics
+            </span>
+          </div>
         </div>
+        <WorkspaceSwitcher />
       </SidebarHeader>
       <SidebarContent className="px-2 py-4">
         <SidebarGroup>

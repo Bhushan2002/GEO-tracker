@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { migrateToWorkspaces } from "./migrate-workspaces";
 
 const MONGO_URL = process.env.MONGO_URL!;
 
@@ -27,8 +28,9 @@ export async function connectDatabase() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGO_URL, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGO_URL, opts).then(async (mongoose) => {
       console.log("Database Connected");
+      await migrateToWorkspaces();
       return mongoose;
     });
   }

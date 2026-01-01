@@ -1,27 +1,27 @@
 import { api } from "./api";
 
 export const analyticsAPI = {
-  getAudienceReport: async () => {
-    return await api.get("/api/audiences/report");
+  getAudienceReport: async (accountId: string) => {
+    return await api.get(`/api/audiences/report?accountId=${accountId}`);
   },
 
-  getAudienceTimeseries: async () => {
-    return await api.get("/api/audiences/timeseries");
+  getAudienceTimeseries: async (accountId: string) => {
+    return await api.get(`/api/audiences/timeseries?accountId=${accountId}`);
   },
 
-  getAiModelsReport: async () => {
-    return await api.get("/api/audiences/ai-models-report");
+  getAiModelsReport: async (accountId: string) => {
+    return await api.get(`/api/audiences/ai-models-report?accountId=${accountId}`);
   },
 
   setupAiAudiences: async (data: any) => {
     return await api.post("/api/audiences/setup-ai", data);
   },
 
-  setupAiModelsAudience: async () => {
-    return await api.post("/api/audiences/setup-ai-models");
+  setupAiModelsAudience: async (accountId: string) => {
+    return await api.post(`/api/audiences/setup-ai-models?accountId=${accountId}`);
   },
 
-  listAudiences: async () => {
-    return await api.get("/api/audiences");
+  listAudiences: async (accountId: string) => {
+    return await api.get(`/api/audiences?accountId=${accountId}`);
   },
 };

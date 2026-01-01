@@ -2,6 +2,7 @@ import mongoose, { models } from "mongoose";
 import { IPrompt } from "../types/prompt.type";
 
 const PromptSchema = new mongoose.Schema<IPrompt>({
+  workspaceId: { type: mongoose.Schema.Types.ObjectId, ref: "Workspace", required: true },
   promptText: { type: String, required: true },
   topic: { type: String, required: true },
   ipAddress: String,

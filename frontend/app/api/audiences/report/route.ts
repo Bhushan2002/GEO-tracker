@@ -1,53 +1,63 @@
 import { google } from "googleapis";
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { connectDatabase } from "@/lib/db/mongodb";
+import { GAAccount } from "@/lib/models/gaAccount.model";
+import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
-export async function GET() {
+async function refreshTokenIfNeeded(account: any) {
+  const now = new Date();
+  if (account.expiresAt > now) {
+    return account.accessToken;
+  }
+
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.NEXT_PUBLIC_GA_CLIENT_ID,
+    process.env.GA_CLIENT_SECRET,
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
+  );
+
+  oauth2Client.setCredentials({ refresh_token: account.refreshToken });
+  const { credentials } = await oauth2Client.refreshAccessToken();
+
+  account.accessToken = credentials.access_token;
+  account.expiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
+  await account.save();
+
+  return credentials.access_token;
+}
+
+export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    let accessToken = cookieStore.get('ga_access_token')?.value;
-    const refreshToken = cookieStore.get('ga_refresh_token')?.value;
-    const propertyId = cookieStore.get('ga_property_id')?.value;
-    
-    console.log('Report API - Access Token present:', !!accessToken);
-    console.log('Report API - Property ID:', propertyId);
-    
-    // Try to refresh token if access token is missing
-    if (!accessToken && refreshToken) {
-      try {
-        const oauth2Client = new google.auth.OAuth2(
-          process.env.NEXT_PUBLIC_GA_CLIENT_ID,
-          process.env.GA_CLIENT_SECRET,
-          `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
-        );
-        oauth2Client.setCredentials({ refresh_token: refreshToken });
-        const { credentials } = await oauth2Client.refreshAccessToken();
-        accessToken = credentials.access_token || undefined;
-        console.log('Token refreshed successfully:', !!accessToken);
-      } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
-      }
+    const { searchParams } = new URL(request.url);
+    const accountId = searchParams.get('accountId');
+
+    if (!accountId) {
+      return NextResponse.json({ error: "Account ID is required" }, { status: 400 });
     }
-    
-    if (!accessToken || !propertyId) {
-      console.error('Missing credentials - accessToken:', !!accessToken, 'propertyId:', propertyId);
-      return NextResponse.json(
-        { error: "Not authenticated. Please connect Google Analytics first." },
-        { status: 401 }
-      );
+
+    await connectDatabase();
+    const workspaceId = await getWorkspaceId(request);
+    if (!workspaceId) return workspaceError();
+
+    const account = await GAAccount.findOne({ _id: accountId, workspaceId });
+
+    if (!account || !account.isActive) {
+      return NextResponse.json({ error: "Account not found or inactive" }, { status: 404 });
     }
+
+    const accessToken = await refreshTokenIfNeeded(account);
 
     // Use user's OAuth token
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({ access_token: accessToken });
-    
+
     const analyticsData = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
 
-    console.log('Fetching report for property:', propertyId);
+    console.log('Fetching report for property:', account.propertyId);
 
     // Execute the report request
     const response = await analyticsData.properties.runReport({
-      property: `properties/${propertyId}`,
+      property: `properties/${account.propertyId}`,
       requestBody: {
         dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
         dimensions: [{ name: "audienceName" }],
@@ -71,25 +81,13 @@ export async function GET() {
       conversions: row.metricValues?.[3]?.value || "0",
     }));
 
-    const result = NextResponse.json(formattedRows || []);
-    
-    // Update access token cookie if it was refreshed
-    if (accessToken && !cookieStore.get('ga_access_token')?.value) {
-      result.cookies.set('ga_access_token', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60,
-      });
-    }
-
-    return result;
+    return NextResponse.json(formattedRows || []);
   } catch (error: any) {
     console.error("Audience Report Error:", error);
     console.error("Error message:", error.message);
     console.error("Error response:", error.response?.data);
     console.error("Error stack:", error.stack);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: error.message || "Failed to fetch audience report",
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     }, { status: 500 });

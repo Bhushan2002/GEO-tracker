@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
+import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
@@ -14,14 +15,14 @@ async function refreshTokenIfNeeded(account: any) {
     process.env.GA_CLIENT_SECRET,
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
   );
-  
+
   oauth2Client.setCredentials({ refresh_token: account.refreshToken });
   const { credentials } = await oauth2Client.refreshAccessToken();
-  
+
   account.accessToken = credentials.access_token;
   account.expiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
   await account.save();
-  
+
   return credentials.access_token;
 }
 
@@ -38,7 +39,10 @@ export async function GET(request: NextRequest) {
     }
 
     await connectDatabase();
-    const account = await GAAccount.findById(accountId);
+    const workspaceId = await getWorkspaceId(request);
+    if (!workspaceId) return workspaceError();
+
+    const account = await GAAccount.findOne({ _id: accountId, workspaceId });
 
     if (!account || !account.isActive) {
       return NextResponse.json(

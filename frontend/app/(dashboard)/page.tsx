@@ -15,8 +15,10 @@ import { toast } from "sonner";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Button } from "@/components/ui/button";
 import { SentimentChart } from "@/components/SentimentChart";
+import { useWorkspace } from "@/lib/contexts/workspace-context";
 
 export default function Overview() {
+  const { activeWorkspace } = useWorkspace();
   const [brands, setBrands] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mentionsData, setMentionsData] = useState<any[]>([]);
@@ -180,11 +182,12 @@ export default function Overview() {
   };
 
   useEffect(() => {
+    setIsLoading(true);
     loadBrands();
     fetchMentionsData();
     fetchSentimentsData();
     fetchPositionData();
-  }, []);
+  }, [activeWorkspace?._id]);
 
 
 
@@ -218,19 +221,19 @@ export default function Overview() {
                 </p>
               </div>
               <ButtonGroup>
-                <Button 
+                <Button
                   variant={chartType === 'mentions' ? 'default' : 'outline'}
                   onClick={() => setChartType('mentions')}
                 >
                   Mentions
                 </Button>
-                <Button 
+                <Button
                   variant={chartType === 'sentiments' ? 'default' : 'outline'}
                   onClick={() => setChartType('sentiments')}
                 >
                   Sentiments
                 </Button>
-                <Button 
+                <Button
                   variant={chartType === 'position' ? 'default' : 'outline'}
                   onClick={() => setChartType('position')}
                 >

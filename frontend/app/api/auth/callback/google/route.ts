@@ -6,6 +6,7 @@ import { GAAccount } from "@/lib/models/gaAccount.model";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const workspaceId = searchParams.get("state"); // Workspace ID passed in state
 
   if (!code) {
     return NextResponse.redirect(
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
   try {
     console.log("OAuth callback received with code");
     console.log("Redirect URI:", `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`);
-    
+
     // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken(code);
     console.log("Tokens received successfully");
@@ -76,11 +77,12 @@ export async function GET(request: Request) {
     console.log("Connecting to database...");
     await connectDatabase();
     console.log("Database connected");
-    
+
     console.log("Saving account with propertyId:", propertyId);
     const gaAccount = await GAAccount.findOneAndUpdate(
       { propertyId: propertyId },
       {
+        workspaceId: workspaceId,
         accountName: firstAccount.displayName || "Google Analytics Account",
         accountId: accountId,
         propertyId: propertyId,

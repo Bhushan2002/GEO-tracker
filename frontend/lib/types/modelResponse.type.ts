@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 export interface IModelResponse {
+  workspaceId?: mongoose.Types.ObjectId;
   promptRunId: mongoose.Types.ObjectId;
   modelName: string;
   responseText: string;
@@ -8,7 +9,7 @@ export interface IModelResponse {
   identifiedBrands: mongoose.Types.ObjectId[];
   tokenUsage?: object;
   error?: string;
-  
+
   // Strategic Analysis Summary (response-level insights only)
   audit_summary?: {
     total_brands_detected: number;

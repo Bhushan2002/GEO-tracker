@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { api } from "@/api/api";
+import { useWorkspace } from "@/lib/contexts/workspace-context";
 import {
   Table,
   TableHeader,
@@ -51,6 +53,7 @@ interface GAAccountType {
 }
 
 export default function GoogleAnalyticsPage() {
+  const { activeWorkspace } = useWorkspace();
   const [gaAccounts, setGaAccounts] = useState<GAAccountType[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -67,10 +70,29 @@ export default function GoogleAnalyticsPage() {
     { segment: "First Touch AI", users: 0, convRate: 0 },
     { segment: "Zero Touch AI", users: 0, convRate: 0 },
   ]);
+
   useEffect(() => {
-    loadGAAccounts();
-    checkForNewConnection();
-  }, []);
+    let isCancelled = false;
+
+    const initialize = async () => {
+      setSelectedAccountId("");
+      setGaAccounts([]);
+      setAttributionData([]);
+      setFirstTouchData([]);
+      setZeroTouchData([]);
+
+      await loadGAAccounts();
+      if (!isCancelled) {
+        checkForNewConnection();
+      }
+    };
+
+    initialize();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeWorkspace?._id]);
 
   useEffect(() => {
     if (selectedAccountId) {
@@ -100,21 +122,26 @@ export default function GoogleAnalyticsPage() {
   const loadGAAccounts = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/ga-accounts");
-      const accounts = await response.json();
+      const response = await api.get("/api/ga-accounts");
+      const accounts = response.data;
 
       setGaAccounts(accounts);
 
-      // Auto-select first account if available
-      if (accounts.length > 0 && !selectedAccountId) {
-        setSelectedAccountId(accounts[0]._id);
+      // Auto-select first account if available and current selection is invalid
+      if (accounts.length > 0) {
+        const currentlySelectedExists = accounts.some((a: any) => a._id === selectedAccountId);
+        if (!currentlySelectedExists) {
+          setSelectedAccountId(accounts[0]._id);
+        }
+      } else {
+        setSelectedAccountId("");
       }
-      const attributionRes = await fetch(
-        `/api/audiences/report?accountId=${accounts[0]._id}`
-      );
-      const attribution = await attributionRes.json();
-      setAttributionData(attribution);
-    } catch (error) {
+
+      if (accounts.length > 0) {
+        const attributionRes = await api.get(`/api/audiences/report?accountId=${accounts[0]._id}`);
+        setAttributionData(attributionRes.data);
+      }
+    } catch (error: any) {
       console.error("Failed to load GA accounts:", error);
       toast.error("Failed to load accounts");
     } finally {
@@ -127,10 +154,8 @@ export default function GoogleAnalyticsPage() {
       setLoading(true);
 
       // Fetch analytics data
-      const analyticsRes = await fetch(
-        `/api/analytics-by-account?accountId=${accountId}`
-      );
-      const analyticsData = await analyticsRes.json();
+      const analyticsRes = await api.get(`/api/analytics-by-account?accountId=${accountId}`);
+      const analyticsData = analyticsRes.data;
 
       if (analyticsData.chartData) {
         setChartData(analyticsData.chartData);
@@ -138,10 +163,8 @@ export default function GoogleAnalyticsPage() {
       }
 
       // Fetch AI models data
-      const aiModelsRes = await fetch(
-        `/api/ai-models-by-account?accountId=${accountId}`
-      );
-      const aiModels = await aiModelsRes.json();
+      const aiModelsRes = await api.get(`/api/ai-models-by-account?accountId=${accountId}`);
+      const aiModels = aiModelsRes.data;
 
       // Filter for specific models
       const allowedModels = ["ChatGPT", "Copilot", "Perplexity"];
@@ -152,22 +175,16 @@ export default function GoogleAnalyticsPage() {
 
       // Fetch First Touch data
       try {
-        const firstTouchRes = await fetch(
-          `/api/analytics/first-touch?accountId=${accountId}`
-        );
-        const firstTouch = await firstTouchRes.json();
-        setFirstTouchData(firstTouch);
+        const firstTouchRes = await api.get(`/api/analytics/first-touch?accountId=${accountId}`);
+        setFirstTouchData(firstTouchRes.data);
       } catch (err) {
         console.error("Failed to load first touch data:", err);
       }
 
       // Fetch Zero Touch data
       try {
-        const zeroTouchRes = await fetch(
-          `/api/analytics/zero-touch?accountId=${accountId}`
-        );
-        const zeroTouch = await zeroTouchRes.json();
-        setZeroTouchData(zeroTouch);
+        const zeroTouchRes = await api.get(`/api/analytics/zero-touch?accountId=${accountId}`);
+        setZeroTouchData(zeroTouchRes.data);
       } catch (err) {
         console.error("Failed to load zero touch data:", err);
       }
@@ -186,7 +203,8 @@ export default function GoogleAnalyticsPage() {
       "https://www.googleapis.com/auth/analytics.readonly",
       "https://www.googleapis.com/auth/analytics.edit",
     ].join(" ");
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+    const state = activeWorkspace?._id || "";
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
 
     toast.info("Redirecting to Google sign-in...");
     window.location.href = authUrl;
@@ -196,7 +214,7 @@ export default function GoogleAnalyticsPage() {
     if (!confirm("Are you sure you want to remove this account?")) return;
 
     try {
-      await fetch(`/api/ga-accounts?id=${accountId}`, { method: "DELETE" });
+      await api.delete(`/api/ga-accounts?id=${accountId}`);
       toast.success("Account removed successfully");
       loadGAAccounts();
 
@@ -605,7 +623,7 @@ export default function GoogleAnalyticsPage() {
                   )}
                 </CardContent>
               </Card>
-              
+
             </div>
           </>
         )}

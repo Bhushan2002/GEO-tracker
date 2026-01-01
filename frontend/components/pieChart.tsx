@@ -34,7 +34,7 @@ export default function CustomPieChart({ data }: Props) {
             innerRadius={80}
             outerRadius={90}
             label={({ name, percent }) =>
-              `${name} ${(percent * 100).toFixed(0)}%`
+              `${name} ${!isNaN(percent) ? (percent * 100).toFixed(0) : 0}%`
             }
           >
             {data.map((entry, index) => (
@@ -45,7 +45,7 @@ export default function CustomPieChart({ data }: Props) {
             ))}
           </Pie>
           <Tooltip />
-          <Legend  />
+          <Legend />
         </PieChart>
       </ResponsiveContainer>
     </div>
