@@ -58,21 +58,22 @@ export function WorkspaceSwitcher() {
                 <Popover.Trigger asChild>
                     <button
                         className={cn(
-                            "flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white p-2 text-left shadow-sm transition-all hover:bg-gray-50 outline-none focus:ring-2 focus:ring-black/5",
-                            state === "collapsed" && "justify-center p-0 h-9 border-none shadow-none bg-transparent"
+                            "flex w-full items-center gap-2 rounded-lg p-2 text-left transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50",
+                            state === "collapsed" && "justify-center p-0 h-9 w-9 bg-transparent",
+                            open && "bg-sidebar-accent text-sidebar-accent-foreground"
                         )}
                     >
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-black text-[10px] font-bold text-white uppercase">
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground uppercase shadow-sm">
                             {activeWorkspace.name.substring(0, 1)}
                         </div>
                         {state === "expanded" && (
                             <>
-                                <div className="flex flex-1 flex-col">
-                                    <span className="text-sm font-semibold text-gray-900 leading-tight break-words">
+                                <div className="flex flex-1 flex-col overflow-hidden">
+                                    <span className="text-sm font-semibold truncate leading-none">
                                         {activeWorkspace.name}
                                     </span>
                                 </div>
-                                <ChevronDown className={cn("h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200", open && "rotate-180")} />
+                                <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
                             </>
                         )}
                     </button>
@@ -83,26 +84,26 @@ export function WorkspaceSwitcher() {
                         side="bottom"
                         align="start"
                         sideOffset={8}
-                        className="z-[100] w-[260px] animate-in fade-in zoom-in-95 rounded-xl border border-gray-200 bg-white p-1 shadow-xl outline-none"
+                        className="z-[100] w-[220px] rounded-lg border border-border bg-popover p-1 shadow-md outline-none"
                     >
-                        <div className="p-2">
+                        <div className="p-1">
                             <div className="px-2 py-1.5 text-left">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                                <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                                     Workspaces
                                 </span>
                             </div>
 
-                            <div className="relative mb-2">
-                                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                            <div className="relative mb-2 px-1">
+                                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                                 <input
-                                    className="w-full rounded-md border border-gray-100 bg-gray-50 py-1.5 pl-8 pr-3 text-xs outline-none focus:border-gray-200"
-                                    placeholder="Search workspace"
+                                    className="w-full rounded-md border border-input bg-muted/50 py-1.5 pl-8 pr-3 text-xs outline-none focus:bg-background focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                                    placeholder="Search..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
 
-                            <div className="max-h-[240px] overflow-y-auto space-y-1 mt-2">
+                            <div className="max-h-[200px] overflow-y-auto space-y-0.5 mt-1">
                                 {filteredWorkspaces.map((workspace) => (
                                     <div
                                         key={workspace._id}
@@ -111,56 +112,52 @@ export function WorkspaceSwitcher() {
                                             setOpen(false);
                                         }}
                                         className={cn(
-                                            "flex w-full items-center gap-3 rounded-md p-2 text-left text-sm transition-colors hover:bg-gray-50 group relative cursor-pointer",
-                                            activeWorkspace._id === workspace._id && "bg-gray-50 shadow-sm"
+                                            "flex w-full items-center gap-2 rounded-sm p-2 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground cursor-pointer outline-none",
+                                            activeWorkspace._id === workspace._id && "bg-accent text-accent-foreground"
                                         )}
                                     >
-                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gray-200 text-xs font-bold text-gray-600 uppercase">
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-muted text-[10px] font-medium uppercase border border-border">
                                             {workspace.name.substring(0, 1)}
                                         </div>
-                                        <div className="flex flex-1 flex-col">
-                                            <div className="flex items-center justify-between w-full">
-                                                <span className="font-medium text-gray-900 leading-tight break-words">
-                                                    {workspace.name}
-                                                </span>
-                                            </div>
-                                        </div>
+                                        <span className="flex-1 truncate text-sm">
+                                            {workspace.name}
+                                        </span>
                                         {activeWorkspace._id === workspace._id && (
-                                            <Check className="h-4 w-4 text-black" />
+                                            <Check className="h-4 w-4 shrink-0" />
                                         )}
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="mt-2 border-t border-gray-100 pt-2 px-1">
+                            <div className="mt-2 border-t border-border pt-2">
                                 {!isCreating ? (
                                     <button
                                         onClick={() => setIsCreating(true)}
-                                        className="flex w-full items-center gap-2 rounded-md bg-black px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-black/90 active:scale-[0.98]"
+                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
                                     >
                                         <Plus className="h-4 w-4" />
-                                        Create Workspace
+                                        Create New
                                     </button>
                                 ) : (
-                                    <form onSubmit={handleCreateWorkspace} className="space-y-2">
+                                    <form onSubmit={handleCreateWorkspace} className="space-y-2 p-1">
                                         <input
                                             autoFocus
-                                            className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-black/5"
-                                            placeholder="Workspace name..."
+                                            className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ring"
+                                            placeholder="Name..."
                                             value={newWorkspaceName}
                                             onChange={(e) => setNewWorkspaceName(e.target.value)}
                                         />
                                         <div className="flex items-center gap-2">
                                             <button
                                                 type="submit"
-                                                className="flex-1 rounded-md bg-black py-1.5 text-xs font-medium text-white hover:bg-black/90"
+                                                className="flex-1 rounded-sm bg-primary py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                                             >
                                                 Create
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setIsCreating(false)}
-                                                className="flex-1 rounded-md border border-gray-200 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                                                className="flex-1 rounded-sm border border-input bg-background py-1 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
                                             >
                                                 Cancel
                                             </button>

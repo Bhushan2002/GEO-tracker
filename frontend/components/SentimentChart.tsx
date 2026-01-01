@@ -11,165 +11,217 @@ import {
   Tooltip,
 } from "recharts";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
 interface SentimentChartProp {
   data: any[];
 }
 
+/* ---- Refined Soft Colors (Same as Visibility) ---- */
 const BRAND_COLORS = [
-  "#3b82f6", // blue
-  "#6366f1", // indigo
-  "#f97316", // orange
-  "#10b981", // green
-  "#06b6d4", // cyan
-  "#8b5cf6", // purple
-  "#ec4899", // pink
-  "#f59e0b", // amber
-  "#ef4444", // red
-  "#14b8a6", // teal
+  "#60A5FA", // Blue 400 – clear, confident
+  "#34D399", // Emerald 400 – fresh, positive
+  "#818CF8", // Indigo 400 – modern, premium
+  "#22D3EE", // Cyan 400 – clean, techy
+  "#FACC15", // Amber 400 – attention without noise
+  "#FB7185", // Rose 400 – subtle contrast
 ];
+
+
+/* ---------- Custom Tooltip ---------- */
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || payload.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        backgroundColor: "#E5E7EB",
+        border: "1px solid #D1D5DB",
+        borderRadius: "10px",
+        padding: "10px 12px",
+        fontSize: "12px",
+        boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
+        minWidth: "180px",
+      }}
+    >
+      {/* Date */}
+      <div
+        style={{
+          fontWeight: 600,
+          color: "#111827",
+          marginBottom: "6px",
+        }}
+      >
+        {label}
+      </div>
+
+      {/* Brand rows */}
+      {payload.map((item: any) => (
+        <div
+          key={item.name}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+            marginBottom: "4px",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            {/* Color indicator (matches line) */}
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: item.stroke,
+              }}
+            />
+
+            <span style={{ color: "#111827" }}>
+              {item.name}
+            </span>
+          </div>
+
+          <span
+            style={{
+              fontWeight: 500,
+              color: "#111827",
+            }}
+          >
+            {item.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export function SentimentChart({ data }: SentimentChartProp) {
   const { chartData, top5Brands, hasData } = React.useMemo(() => {
-    if (!data || data.length === 0) return { chartData: [], top5Brands: [], hasData: false };
-    
-    // Check if the data has sentiment_score field
-    const hasRequiredField = data.some(row => row.sentiment_score !== undefined && row.sentiment_score !== null);
-    
-    if (!hasRequiredField) {
+    if (!data || data.length === 0)
       return { chartData: [], top5Brands: [], hasData: false };
-    }
-    
-    // Calculate average sentiment scores for each brand
-    const brandData: { [key: string]: { sum: number; count: number; dataPoints: any[] } } = {};
-    
-    data.forEach(row => {
-      const brandName = row.name;
-      const sentiment = parseFloat(row.sentiment_score) || 0;
-      
-      if (!brandData[brandName]) {
-        brandData[brandName] = { sum: 0, count: 0, dataPoints: [] };
+
+    const valid = data.some(
+      (row) =>
+        row.sentiment_score !== undefined &&
+        row.sentiment_score !== null
+    );
+    if (!valid)
+      return { chartData: [], top5Brands: [], hasData: false };
+
+    const brandTotals: Record<string, { sum: number; count: number }> = {};
+
+    data.forEach((row) => {
+      const value = parseFloat(row.sentiment_score) || 0;
+      if (!brandTotals[row.name]) {
+        brandTotals[row.name] = { sum: 0, count: 0 };
       }
-      
-      brandData[brandName].sum += sentiment;
-      brandData[brandName].count += 1;
-      brandData[brandName].dataPoints.push({
-        timeStamp: row.timeStamp,
-        sentiment: sentiment
-      });
+      brandTotals[row.name].sum += value;
+      brandTotals[row.name].count += 1;
     });
-    
-    // Get top 5 brands by average sentiment
-    const top5 = Object.entries(brandData)
+
+    const top5 = Object.entries(brandTotals)
       .map(([brand, stats]) => ({
         brand,
-        avgSentiment: stats.sum / stats.count
+        avg: stats.sum / stats.count,
       }))
-      .sort((a, b) => b.avgSentiment - a.avgSentiment)
-      .slice(0, 5)
-      .map(item => item.brand);
-    
-    // Group data by timestamp
-    const timeStampMap: { [key: string]: any } = {};
-    Object.entries(brandData).forEach(([brandName, stats]) => {
-      if (top5.includes(brandName)) {
-        stats.dataPoints.forEach(point => {
-          if (!timeStampMap[point.timeStamp]) {
-            timeStampMap[point.timeStamp] = { timeStamp: point.timeStamp };
-          }
-          timeStampMap[point.timeStamp][brandName] = point.sentiment;
-        });
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 6)
+      .map((b) => b.brand);
+
+    const map: Record<string, any> = {};
+    data.forEach((row) => {
+      if (!top5.includes(row.name)) return;
+      if (!map[row.timeStamp]) {
+        map[row.timeStamp] = { timeStamp: row.timeStamp };
       }
+      map[row.timeStamp][row.name] =
+        parseFloat(row.sentiment_score) || 0;
     });
-    
-    // Convert to array and sort by timestamp
-    const transformed = Object.values(timeStampMap).sort((a, b) => {
-      const dateA = new Date(a.timeStamp.split('/').reverse().join('-'));
-      const dateB = new Date(b.timeStamp.split('/').reverse().join('-'));
-      return dateA.getTime() - dateB.getTime();
+
+    const transformed = Object.values(map).sort((a: any, b: any) => {
+      const da = new Date(a.timeStamp.split("/").reverse().join("-"));
+      const db = new Date(b.timeStamp.split("/").reverse().join("-"));
+      return da.getTime() - db.getTime();
     });
-    
+
     return { chartData: transformed, top5Brands: top5, hasData: true };
   }, [data]);
 
-  if (!hasData || !chartData || chartData.length === 0) {
+  if (!hasData || chartData.length === 0) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Brand Sentiment Trends</CardTitle>
-          <CardDescription>Top 5 brands by sentiment scores over time</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[350px] text-gray-500">
-            No sentiment data available in the current dataset
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+        No sentiment data available
+      </div>
     );
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Brand Sentiment Trends</CardTitle>
-        <CardDescription>Top 5 brands by sentiment scores over time</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={350}>
-          <LineChart
-            data={chartData}
-            margin={{ left: 0, right: 20, top: 10, bottom: 10 }}
-          >
-            <CartesianGrid
-              vertical={false}
-              strokeDasharray="3 3"
-              stroke="#e5e7eb"
-              opacity={0.5}
-            />
-            <XAxis
-              dataKey="timeStamp"
-              tickLine={false}
-              axisLine={{ stroke: "#e5e7eb" }}
-              tickMargin={12}
-              tick={{ fill: "#6b7280", fontSize: 12 }}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tick={{ fill: "#6b7280", fontSize: 12 }}
-              tickMargin={8}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #e5e7eb",
-                borderRadius: "6px",
-              }}
-            />
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart
+        data={chartData}
+        margin={{ left: -20, right: 10, top: 5, bottom: 0 }}
+      >
+        <CartesianGrid
+          strokeDasharray="2 6"
+          stroke="hsl(var(--border))"
+          opacity={0.28}
+        />
 
-            {/* Lines for top 5 brands */}
-            {top5Brands.map((brandName, index) => (
-              <Line
-                key={brandName}
-                type="monotone"
-                dataKey={brandName}
-                stroke={BRAND_COLORS[index % BRAND_COLORS.length]}
-                strokeWidth={2}
-                dot={{ r: 2 }}
-                activeDot={{ r: 6 }}
-                name={brandName}
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+        <XAxis
+          dataKey="timeStamp"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={12}
+          minTickGap={20}
+          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+        />
+
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+        />
+
+        <Tooltip
+                  content={<CustomTooltip />}
+                  cursor={{
+                    stroke: "#9CA3AF",
+                    strokeDasharray: "3 3",
+                  }}
+                />
+
+        {top5Brands.map((brand, index) => (
+          <Line
+            key={brand}
+            type="monotone"
+            dataKey={brand}
+            stroke={BRAND_COLORS[index]}
+            strokeWidth={2}
+            dot={{
+              r: 2.4,
+              strokeWidth: 1.6,
+              fill: "white",
+              stroke: BRAND_COLORS[index],
+            }}
+            activeDot={{
+              r: 3.4,
+              strokeWidth: 1.6,
+              fill: "white",
+              stroke: BRAND_COLORS[index],
+            }}
+            isAnimationActive
+            animationDuration={650}
+            name={brand}
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
   );
 }
