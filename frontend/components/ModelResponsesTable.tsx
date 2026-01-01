@@ -42,9 +42,9 @@ export function ModelResponsesTable() {
   ];
 
   const highlightBrandsInText = (text: string, brands: any[]) => {
-    console.log("highlightBrandsInText CALLED ");
-    console.log("Text length:", text.length);
-    console.log("Brands count:", brands?.length || 0);
+    // console.log("highlightBrandsInText CALLED ");
+    // console.log("Text length:", text.length);
+    // console.log("Brands count:", brands?.length || 0);
     
     if (!brands || brands.length === 0) return text;
 
@@ -64,10 +64,10 @@ export function ModelResponsesTable() {
       const color = BRAND_COLORS[index % BRAND_COLORS.length];
       const brandName = brand.brand_name;
 
-      console.log(`\n Brand ${index + 1}: ${brandName} `);
-      console.log("Brand object:", brand);
-      console.log("Has sentiment_text:", !!brand.sentiment_text);
-      console.log("sentiment_text value:", brand.sentiment_text);
+      // console.log(`\n Brand ${index + 1}: ${brandName} `);
+      // console.log("Brand object:", brand);
+      // console.log("Has sentiment_text:", !!brand.sentiment_text);
+      // console.log("sentiment_text value:", brand.sentiment_text);
 
       // Escape special regex characters in brand name
       const escapedBrandName = brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -84,7 +84,7 @@ export function ModelResponsesTable() {
       // Also highlight sentiment_text if it exists
       if (brand.sentiment_text && brand.sentiment_text.trim()) {
         const sentimentText = brand.sentiment_text.trim();
-        console.log("✓ Sentiment text to highlight:", sentimentText);
+        // console.log("✓ Sentiment text to highlight:", sentimentText);
         const escapedSentimentText = sentimentText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         
         // Use a more flexible regex for sentiment text (may contain multiple words)
@@ -92,9 +92,9 @@ export function ModelResponsesTable() {
         
         // Check if it matches
         const matches = text.match(sentimentRegex);
-        console.log("Sentiment text matches found:", matches ? matches.length : 0);
+        // console.log("Sentiment text matches found:", matches ? matches.length : 0);
         if (matches) {
-          console.log("Matched texts:", matches);
+          // console.log("Matched texts:", matches);
         }
         
         // Replace with highlighted span with a slightly different style (border instead of just background)
@@ -103,13 +103,13 @@ export function ModelResponsesTable() {
           sentimentRegex,
           `<mark style="background-color: ${color}20; color: ${color}; border: 1px solid ${color}; padding: 2px 4px; border-radius: 3px; font-style: italic;">$1</mark>`
         );
-        console.log("Text changed after sentiment replace:", beforeReplace !== highlightedText);
+        // console.log("Text changed after sentiment replace:", beforeReplace !== highlightedText);
       } else {
         console.log("✗ No sentiment_text or empty");
       }
     });
 
-    console.log("=== highlightBrandsInText COMPLETE ===\n");
+    // console.log("=== highlightBrandsInText COMPLETE ===\n");
     return highlightedText;
   };
 
@@ -144,8 +144,8 @@ export function ModelResponsesTable() {
 
   const handleCardClick = (response: ModelResponse) => {
     setSelectedResponse(response);
-    console.log("Selected Response:", response);
-    console.log("Identified Brands:", response.identifiedBrands);
+    // console.log("Selected Response:", response);
+    // console.log("Identified Brands:", response.identifiedBrands);
     setIsDialogOpen(true);
   };
 

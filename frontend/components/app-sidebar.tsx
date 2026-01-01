@@ -134,7 +134,7 @@ export function AppSidebar() {
       <SidebarFooter className="p-2 px-4 border-t border-gray-100">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
+            {/* <SidebarMenuButton
               asChild
               tooltip="Settings"
               className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
@@ -145,7 +145,7 @@ export function AppSidebar() {
                   Settings
                 </span>
               </Link>
-            </SidebarMenuButton>
+            </SidebarMenuButton> */}
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton

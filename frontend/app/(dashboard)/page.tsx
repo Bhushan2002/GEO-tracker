@@ -20,6 +20,7 @@ import { useWorkspace } from "@/lib/contexts/workspace-context";
 export default function Overview() {
   const { activeWorkspace } = useWorkspace();
   const [brands, setBrands] = useState<any[]>([]);
+  const [topBrands, setTopBrands] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [mentionsData, setMentionsData] = useState<any[]>([]);
   const [sentimentsData, setSentimentsData] = useState<any[]>([]);
@@ -169,11 +170,15 @@ export default function Overview() {
   const loadBrands = async () => {
     try {
       const res = await brandAPI.getBrands();
-      const data = res.data.slice(0, 10).sort((a: any, b: any) => {
+      // Store all brands for charts and calculations
+      setBrands(res.data);
+      
+      // Keep top 10 sorted brands for the table display
+      const top10 = res.data.slice(0, 10).sort((a: any, b: any) => {
         if (a.lastRank !== b.lastRank) return a.lastRank - b.lastRank;
         return b.mentions - a.mentions;
       });
-      setBrands(data);
+      setTopBrands(top10);
     } catch (error) {
       toast.error("Failed to load brands.");
     } finally {
@@ -261,7 +266,7 @@ export default function Overview() {
               </p>
             </div>
             <div className="p-5">
-              <DashBrandTable data={brands} loading={isLoading} />
+              <DashBrandTable data={topBrands} loading={isLoading} />
             </div>
           </div>
         </div>
