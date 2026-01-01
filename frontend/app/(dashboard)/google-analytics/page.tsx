@@ -182,17 +182,31 @@ export default function GoogleAnalyticsPage() {
       // Fetch First Touch data
       try {
         const firstTouchRes = await api.get(`/api/analytics/first-touch?accountId=${accountId}`);
+        console.log("First touch response:", firstTouchRes.data);
         setFirstTouchData(firstTouchRes.data);
-      } catch (err) {
+        if (!firstTouchRes.data || firstTouchRes.data.length === 0) {
+          console.warn("No first touch data available");
+        }
+      } catch (err: any) {
         console.error("Failed to load first touch data:", err);
+        if (err.response?.data?.error) {
+          toast.error(`First Touch: ${err.response.data.error}`);
+        }
       }
 
       // Fetch Zero Touch data
       try {
         const zeroTouchRes = await api.get(`/api/analytics/zero-touch?accountId=${accountId}`);
+        console.log("Zero touch response:", zeroTouchRes.data);
         setZeroTouchData(zeroTouchRes.data);
-      } catch (err) {
+        if (!zeroTouchRes.data || zeroTouchRes.data.length === 0) {
+          console.warn("No zero touch data available");
+        }
+      } catch (err: any) {
         console.error("Failed to load zero touch data:", err);
+        if (err.response?.data?.error) {
+          toast.error(`Zero Touch: ${err.response.data.error}`);
+        }
       }
     } catch (error) {
       console.error("Failed to load account data:", error);

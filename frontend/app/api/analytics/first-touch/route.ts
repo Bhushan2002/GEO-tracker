@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
             fieldName: "audienceName",
             stringFilter: {
               matchType: "EXACT",
-              value: account.aiAudienceId,
+              value: account.aiAudienceName || "AI Traffic",
               caseSensitive: false,
             },
           },

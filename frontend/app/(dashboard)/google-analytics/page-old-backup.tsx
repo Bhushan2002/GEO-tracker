@@ -198,7 +198,7 @@ export default function page() {
   const loadAudiences = async () => {
     try {
       setLoading(true);
-      const res = await analyticsAPI.listAudiences();
+      const res = await analyticsAPI.listAudiences(""); // TODO: Pass actual accountId
       console.log("Audiences loaded:", res.data);
       setAudiences(res.data);
     } catch (error) {
@@ -211,7 +211,7 @@ export default function page() {
 
   const loadAudienceReport = async () => {
     try {
-      const res = await analyticsAPI.getAudienceReport();
+      const res = await analyticsAPI.getAudienceReport(""); // TODO: Pass actual accountId
       console.log("Audience report loaded:", res.data);
       setAudienceReportData(res.data);
     } catch (error) {
@@ -221,7 +221,7 @@ export default function page() {
 
   const loadAudienceTimeseries = async () => {
     try {
-      const res = await analyticsAPI.getAudienceTimeseries();
+      const res = await analyticsAPI.getAudienceTimeseries(""); // TODO: Pass actual accountId
       console.log("Audience timeseries loaded:", res.data);
       setAudienceTimeseriesData(res.data.chartData || []);
       setAudienceNames(res.data.audiences || []);
@@ -314,7 +314,7 @@ export default function page() {
 
   const loadAiModelsReport = async () => {
     try {
-      const res = await analyticsAPI.getAiModelsReport();
+      const res = await analyticsAPI.getAiModelsReport(""); // TODO: Pass actual accountId
       console.log("AI models report loaded:", res.data);
       // Filter to only include specific models: ChatGPT, Copilot, Perplexity
       const allowedModels = ["ChatGPT", "Copilot", "Perplexity"];
