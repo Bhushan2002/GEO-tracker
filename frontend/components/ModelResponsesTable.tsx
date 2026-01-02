@@ -18,7 +18,7 @@ import {
   AlertDialogDescription,
 } from "./ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { Bot, MessageSquare, Loader, ChevronRight } from "lucide-react";
+import { Bot, MessageSquare, Loader, ChevronRight, Globe, Smile, ExternalLink, FileText, CheckCircle2, User, Share2, Download } from "lucide-react";
 
 export function ModelResponsesTable() {
   const [modelRes, setModelRes] = useState<ModelResponse[]>([]);
@@ -111,128 +111,153 @@ export function ModelResponsesTable() {
         <AlertDialogContent
           className="
             max-w-none sm:max-w-none
-            w-[98vw] h-[96vh]
+            w-[80vw] h-[85vh]
             p-0 bg-white rounded-2xl
             border border-border shadow-2xl
             overflow-hidden flex flex-col
           "
         >
           {/* Header */}
-          <div className="px-10 py-5 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
-                <span className="h-2 w-2 bg-emerald-500 rounded-full" />
+          <div className="px-10 py-5 border-b border-border flex items-center justify-between bg-white">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-[11px] font-bold">
+                <CheckCircle2 className="h-3.5 w-3.5" />
                 Succeeded
               </span>
-              <div>
-                <AlertDialogTitle className="text-sm font-semibold">
-                  {selectedResponse?.modelName}
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-xs text-muted-foreground">
-                  {selectedResponse && formatDate(selectedResponse.createdAt)}
-                </AlertDialogDescription>
-              </div>
+
+              <span className="flex items-center gap-2 px-3 py-1.5 bg-sky-50 text-sky-700 rounded-full text-[11px] font-bold">
+                <Bot className="h-3.5 w-3.5" />
+                {selectedResponse?.modelName}
+              </span>
+
+
+              <span className={cn(
+                "flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm border",
+                (() => {
+                  const avg = selectedResponse?.identifiedBrands?.length
+                    ? Math.round(selectedResponse.identifiedBrands.reduce((acc, b) => acc + (b.sentiment_score || 0), 0) / selectedResponse.identifiedBrands.length)
+                    : 0;
+                  if (avg >= 60) return "bg-emerald-50 text-emerald-700 border-emerald-100";
+                  if (avg >= 40) return "bg-amber-50 text-amber-700 border-amber-100";
+                  return "bg-rose-50 text-rose-700 border-rose-100";
+                })()
+              )}>
+                <Smile className="h-3.5 w-3.5" />
+                Avg Sentiment: {(() => {
+                  const avgSentiment = selectedResponse?.identifiedBrands?.length
+                    ? Math.round(selectedResponse.identifiedBrands.reduce((acc, b) => acc + (b.sentiment_score || 0), 0) / selectedResponse.identifiedBrands.length)
+                    : 0;
+                  return `${avgSentiment}%`;
+                })()}
+              </span>
             </div>
             <button
               onClick={() => setIsDialogOpen(false)}
-              className="text-2xl text-muted-foreground hover:text-foreground"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors"
             >
-              ×
+              <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
-          {/* BODY: Split into two horizontal halves */}
-          <div className="flex-1 flex flex-row overflow-hidden min-h-0">
-
+          <div className="flex flex-1 overflow-hidden">
             {/* LEFT COLUMN: Chat Timeline */}
-            <div className="flex-[2.2] overflow-y-auto bg-white border-r border-border/40">
-              <div className="max-w-[780px] mx-auto px-6 py-10 space-y-10">
+            <div className="flex-[2.5] overflow-y-auto bg-white border-r border-border/40">
+              <div className="max-w-[850px] mx-auto px-8 py-10 space-y-12">
 
-                {/* USER MESSAGE */}
-                <div className="flex gap-4 items-start">
-                  {/* Avatar */}
-                  <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-slate-700">U</span>
+                {/* USER MESSAGE - Bubble Style */}
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="h-8 w-8 rounded-full bg-slate-900 flex items-center justify-center">
+                      <User className="h-4 w-4 text-white" />
+                    </div>
                   </div>
-
-                  {/* Message */}
-                  <div className="flex-1">
-                    <div className="text-xs text-slate-400 mb-1">You</div>
-                    <div className="rounded-2xl bg-slate-100 px-5 py-3 text-[15px] leading-relaxed text-slate-800">
-                      {selectedResponse?.promptRunId &&
+                  <div className="max-w-[80%] rounded-2xl rounded-tr-none bg-slate-50 border border-slate-100 px-6 py-4 shadow-sm">
+                    <p className="text-[15px] font-medium text-slate-700 leading-relaxed italic">
+                      "{selectedResponse?.promptRunId &&
                         typeof selectedResponse.promptRunId === "object"
                         ? selectedResponse.promptRunId.promptId?.promptText
-                        : "Prompt unavailable"}
-                    </div>
+                        : "Prompt unavailable"}"
+                    </p>
                   </div>
                 </div>
 
                 {/* AI MESSAGE */}
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-5 items-start">
                   {/* Avatar */}
-                  <div className="h-8 w-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0">
-                    <Bot className="h-4 w-4 text-white" />
+                  <div className="h-10 w-10 rounded-xl bg-slate-950 flex items-center justify-center shrink-0 shadow-lg shadow-slate-200">
+                    <Bot className="h-6 w-6 text-white" />
                   </div>
 
                   {/* Message */}
-                  <div className="flex-1 space-y-3">
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <span className="font-semibold">
-                        {selectedResponse?.modelName || "AI Assistant"}
-                      </span>
-                      <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
-                    </div>
+                  <div className="flex-1 space-y-6">
+                    <div className="prose prose-slate max-w-none">
+                      <div className="text-[16px] leading-[1.8] text-slate-800 space-y-6">
+                        {(() => {
+                          if (!selectedResponse?.responseText) {
+                            return (
+                              <div className="flex items-center gap-3 text-slate-400 py-4">
+                                <Loader className="h-5 w-5 animate-spin" />
+                                <span className="text-sm font-medium tracking-tight">Generating premium response…</span>
+                              </div>
+                            );
+                          }
 
-                    <div className="text-[15px] leading-[1.85] text-slate-800 space-y-5">
-                      {(() => {
-                        if (!selectedResponse?.responseText) {
+                          const brands = selectedResponse.identifiedBrands || [];
+
+                          const highlightBrands = (text: string) => {
+                            if (!brands.length) return text;
+
+                            const regex = new RegExp(
+                              `(${brands.map(b =>
+                                b.brand_name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+                              ).join("|")})`,
+                              "gi"
+                            );
+
+                            return text.split(regex).map((part, i) => {
+                              const brand = brands.find(
+                                b => b.brand_name.toLowerCase() === part.toLowerCase()
+                              );
+
+                              if (!brand) return part;
+
+                              return (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1.5 px-2 py-0.5 mx-0.5 rounded-md border border-dashed border-slate-300 bg-slate-50/50 text-slate-900 font-bold text-sm hover:bg-slate-100 transition-colors cursor-default"
+                                >
+                                  <div className="h-3.5 w-3.5 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
+                                    <img
+                                      src={`https://www.google.com/s2/favicons?domain=${brand.brand_name.toLowerCase().replace(/\s+/g, '')}.com&sz=32`}
+                                      alt=""
+                                      className="h-full w-full object-cover"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${brand.brand_name}&background=random`;
+                                      }}
+                                    />
+                                  </div>
+                                  {part}
+                                </span>
+                              );
+                            });
+                          };
+
                           return (
-                            <div className="flex items-center gap-2 text-slate-400">
-                              <span className="h-4 w-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
-                              <span className="text-sm">Generating response…</span>
+                            <div className="space-y-6">
+                              {selectedResponse.responseText
+                                .split("\n\n")
+                                .map((p, i) => (
+                                  <p key={i} className="last:mb-0">
+                                    {highlightBrands(p)}
+                                  </p>
+                                ))}
+
                             </div>
                           );
-                        }
-
-                        const brands =
-                          selectedResponse.identifiedBrands?.map(b => b.brand_name) || [];
-
-                        const highlightBrands = (text: string) => {
-                          if (!brands.length) return text;
-
-                          const regex = new RegExp(
-                            `(${brands.map(b =>
-                              b.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-                            ).join("|")})`,
-                            "gi"
-                          );
-
-                          return text.split(regex).map((part, i) => {
-                            const isBrand = brands.some(
-                              b => b.toLowerCase() === part.toLowerCase()
-                            );
-
-                            if (!isBrand) return part;
-
-                            return (
-                              <span
-                                key={i}
-                                className="px-1.5 py-0.5 mx-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold"
-                              >
-                                {part}
-                              </span>
-                            );
-                          });
-                        };
-
-                        return selectedResponse.responseText
-                          .split("\n\n")
-                          .map((p, i) => (
-                            <p key={i}>
-                              {highlightBrands(p)}
-                            </p>
-                          ));
-                      })()}
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -241,67 +266,66 @@ export function ModelResponsesTable() {
             </div>
 
             {/* RIGHT COLUMN: Metadata (Independent Scroll) */}
-            <div className="flex-1 overflow-y-auto bg-slate-50/40 px-8 py-12 space-y-10 min-w-[400px]">
+            <div className="flex-1 overflow-y-auto bg-slate-50/30 px-6 py-10 space-y-12 min-w-[380px]">
 
               {/* Brands Section */}
               <section>
-                <div className="flex items-center gap-2 mb-6">
-                  <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    Identified Brands
+                <div className="flex justify-between items-center mb-6">
+                  <h4 className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                    Brands
                   </h4>
-                  <div className="h-[1px] flex-1 bg-border/40" />
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-1.5">
                   {selectedResponse?.identifiedBrands?.length ? (
                     selectedResponse.identifiedBrands.map((brand, idx) => (
-                      <div key={idx} className="bg-white rounded-xl p-4 border border-border/60 shadow-sm hover:shadow-md transition-all">
-                        <div className="flex justify-between items-start mb-3">
-                          <span className="font-semibold text-sm">{brand.brand_name}</span>
+                      <div key={idx} className="group flex items-center justify-between p-2.5 rounded-xl hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-100 transition-all cursor-default">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-lg bg-white border border-slate-100 flex items-center justify-center p-1.5 shadow-sm">
+                            <img
+                              src={`https://www.google.com/s2/favicons?domain=${brand.brand_name.toLowerCase().replace(/\s+/g, '')}.com&sz=64`}
+                              alt=""
+                              className="h-full w-full object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${brand.brand_name}&background=random`;
+                              }}
+                            />
+                          </div>
+                          <span className="font-semibold text-sm text-slate-700">{brand.brand_name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
                           <span className={cn(
-                            "text-[10px] px-2 py-0.5 rounded-full font-bold",
-                            (brand.sentiment_score || 0) >= 60 ? "bg-emerald-50 text-emerald-700" :
-                              (brand.sentiment_score || 0) >= 40 ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-700"
+                            "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tight border",
+                            (brand.sentiment_score || 0) >= 60
+                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                              : (brand.sentiment_score || 0) >= 40
+                                ? "bg-amber-50 text-amber-600 border-amber-100"
+                                : "bg-rose-50 text-rose-600 border-rose-100"
                           )}>
-                            {brand.sentiment_score}/100
+                            {(brand.sentiment_score || 0) >= 60 ? "Positive" :
+                              (brand.sentiment_score || 0) >= 40 ? "Neutral" : "Negative"}
                           </span>
-                        </div>
-
-                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-3">
-                          <div
-                            className={cn(
-                              "h-full rounded-full transition-all duration-1000",
-                              (brand.sentiment_score || 0) >= 60 ? "bg-emerald-500" :
-                                (brand.sentiment_score || 0) >= 40 ? "bg-amber-500" : "bg-rose-500"
-                            )}
-                            style={{ width: `${brand.sentiment_score || 0}%` }}
-                          />
-                        </div>
-
-                        <div className="flex justify-between text-[11px] font-medium text-muted-foreground">
-                          <span className="capitalize">{brand.sentiment}</span>
-                          <span>{brand.mentions} Mentions</span>
+                          <span className="text-[11px] font-semibold text-slate-400 w-8 text-right">
+                            {brand.sentiment_score || 0}%
+                          </span>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8 border border-dashed border-border/50 rounded-xl">
-                      <p className="text-xs text-muted-foreground">No brands detected</p>
+                    <div className="text-center py-8 bg-white/50 rounded-xl border border-dashed border-slate-200">
+                      <p className="text-xs text-slate-400">No brands detected</p>
                     </div>
                   )}
                 </div>
               </section>
 
-              {/* Domain Citations Section */}
+              {/* Sources Section */}
               <section>
-                <div className="flex items-center gap-2 mb-6">
-                  <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    Domain Citations
-                  </h4>
-                  <div className="h-[1px] flex-1 bg-border/40" />
-                </div>
+                <h4 className="text-xs font-bold text-slate-800 mb-6">
+                  Sources
+                </h4>
 
-                <div className="grid grid-cols-1 gap-2">
+                <div className="space-y-4">
                   {(() => {
                     const domains = Array.from(
                       new Map(
@@ -314,74 +338,42 @@ export function ModelResponsesTable() {
 
                     if (domains.length === 0) {
                       return (
-                        <div className="text-center py-8 border border-dashed border-border/50 rounded-xl">
-                          <p className="text-xs text-muted-foreground">No citations detected</p>
+                        <div className="text-center py-8 bg-white/50 rounded-xl border border-dashed border-slate-200">
+                          <p className="text-xs text-slate-400">No sources detected</p>
                         </div>
                       );
                     }
 
                     return domains.map((domain: any, idx) => (
-                      <div key={idx} className="bg-white/70 border border-border/40 rounded-lg px-4 py-3 flex items-center justify-between hover:bg-white transition-colors">
-                        <div className="font-medium text-[13px]">{domain.domain_citation}</div>
-                        <div className="text-[10px] font-bold bg-slate-200/50 px-2 py-0.5 rounded text-muted-foreground">
-                          {domain.associated_url?.length || 0} SOURCE
+                      <div key={idx} className="space-y-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-6 w-6 rounded bg-white border border-slate-100 flex items-center justify-center p-1 shadow-sm">
+                            <img
+                              src={`https://www.google.com/s2/favicons?domain=${domain.domain_citation}&sz=64`}
+                              alt=""
+                              className="h-full w-full object-contain"
+                            />
+                          </div>
+                          <div className="font-bold text-[13px] text-slate-800">{domain.domain_citation}</div>
+                        </div>
+
+                        <div className="pl-9 space-y-2">
+                          {(domain.associated_url ?? []).slice(0, 2).map((urlObj: any, uIdx: number) => (
+                            <a
+                              key={uIdx}
+                              href={urlObj.url_citation}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="block group"
+                            >
+                              <p className="text-[12px] text-slate-500 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                {urlObj.url_citation}
+                              </p>
+                            </a>
+                          ))}
                         </div>
                       </div>
                     ));
-                  })()}
-                </div>
-              </section>
-
-              {/* Associated Links Section */}
-              <section>
-                <div className="flex items-center gap-2 mb-6">
-                  <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                    Associated Links
-                  </h4>
-                  <div className="h-[1px] flex-1 bg-border/40" />
-                </div>
-
-                <div className="space-y-2">
-                  {(() => {
-                    const links = Array.from(
-                      new Set(
-                        (selectedResponse?.identifiedBrands ?? [])
-                          .flatMap((b) =>
-                            (b.associated_domain ?? []).flatMap((d) =>
-                              (d.associated_url ?? []).map((u) => u.url_citation)
-                            )
-                          )
-                          .filter((u): u is string => !!u)
-                      )
-                    );
-
-                    if (links.length === 0) {
-                      return (
-                        <div className="text-center py-8 border border-dashed border-border/50 rounded-xl">
-                          <p className="text-xs text-muted-foreground">No links detected</p>
-                        </div>
-                      );
-                    }
-
-                    return links.map((url, idx) => {
-                      let hostname = url;
-                      try { hostname = new URL(url).hostname; } catch { }
-                      return (
-                        <a
-                          key={idx}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="group block bg-white border border-border shadow-sm rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all"
-                        >
-                          <div className="text-[13px] text-blue-600 font-medium truncate group-hover:underline">{url}</div>
-                          <div className="text-[11px] text-muted-foreground/70 mt-1 flex items-center gap-1">
-                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                            {hostname}
-                          </div>
-                        </a>
-                      );
-                    });
                   })()}
                 </div>
               </section>
