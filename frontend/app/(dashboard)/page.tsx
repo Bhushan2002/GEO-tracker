@@ -154,6 +154,22 @@ export default function Overview() {
     }
   };
 
+  const loadAllData = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        loadBrands(),
+        fetchMentionsData(),
+        fetchSentimentsData(),
+        fetchPositionData(),
+      ]);
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const loadBrands = async () => {
     try {
       const res = await brandAPI.getBrands();
@@ -165,17 +181,12 @@ export default function Overview() {
       setTopBrands(top10);
     } catch (error) {
       toast.error("Failed to load brands.");
-    } finally {
-      setIsLoading(false);
+      throw error;
     }
   };
 
   useEffect(() => {
-    setIsLoading(true);
-    loadBrands();
-    fetchMentionsData();
-    fetchSentimentsData();
-    fetchPositionData();
+    loadAllData();
   }, [activeWorkspace?._id]);
 
 
@@ -191,11 +202,11 @@ export default function Overview() {
       </div>
 
       {/* Main Grid */}
-      <div className="space-y-8">
+      <div className={cn("space-y-8", !isLoading && "animate-in fade-in slide-in-from-bottom-2 duration-700")}>
         {/* Top Row: Visibility Chart and Brand Table */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* Main Chart Card */}
-          <div className="xl:col-span-7 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-[350px]">
+          <div className="xl:col-span-7 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-[400px]">
             <div className="p-4 border-b border-border flex flex-row justify-between items-center shrink-0 bg-muted/20">
               <div className="flex items-center gap-2">
                 <Eye className="h-4 w-4 text-muted-foreground/70" />
@@ -261,19 +272,29 @@ export default function Overview() {
           </div>
 
           {/* Industry Ranking Card */}
-          <div className="xl:col-span-5 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-[350px]">
+          <div className="xl:col-span-5 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-[400px]">
             <div className="p-4 border-b border-border flex flex-row justify-between items-center shrink-0 bg-muted/20">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-0.5">
                 <h3 className="font-bold text-[11px] uppercase tracking-wider text-foreground">
                   Industry Ranking
                 </h3>
+                <p className="text-[10px] text-muted-foreground font-medium">Displaying top 10 performers</p>
               </div>
-              <Link href="/brand/all-brands" className="text-[10px] font-bold uppercase text-muted-foreground hover:text-foreground transition-all flex items-center gap-1 px-2 py-1 hover:bg-white rounded-md border border-transparent hover:border-border">
+              <Link href="/industry-ranking" className="text-[10px] font-bold uppercase text-muted-foreground hover:text-foreground transition-all flex items-center gap-1 px-2 py-1 hover:bg-white rounded-md border border-transparent hover:border-border">
                 Show All <ChevronRight className="h-3 w-3" strokeWidth={3} />
               </Link>
             </div>
             <div className="p-0 flex-1 overflow-auto min-h-0">
-              <DashBrandTable data={topBrands} loading={isLoading} />
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-foreground/40">
+                  <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
+                  <p className="text-sm font-medium">Ranking market leaders...</p>
+                </div>
+              ) : (
+                <div className="animate-in fade-in duration-700">
+                  <DashBrandTable data={topBrands} loading={false} />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -299,82 +320,90 @@ export default function Overview() {
                     <p className="text-sm font-medium">Analyzing sources...</p>
                   </div>
                 ) : (
-                  <CitationsPieChart
-                    data={citationsPieData.data}
-                    totalCitations={citationsPieData.total}
-                  />
+                  <div className="w-full h-full animate-in fade-in zoom-in-95 duration-700">
+                    <CitationsPieChart
+                      data={citationsPieData.data}
+                      totalCitations={citationsPieData.total}
+                    />
+                  </div>
                 )}
               </div>
             </div>
 
             {/* Domain Table */}
             <div className="xl:col-span-8 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-border flex justify-between items-center bg-muted/20">
-                <div className="flex items-center gap-2">
+              <div className="p-4 border-b border-border flex items-center bg-muted/20">
+                <div className="min-w-[200px] flex items-center gap-2">
                   <h4 className="font-bold text-[11px] uppercase tracking-wider text-foreground">Domain</h4>
                 </div>
-                <div className="flex items-center gap-8 text-[11px] font-bold text-muted-foreground uppercase mr-12 hidden md:flex">
-                  <span className="tracking-wider">Used</span>
-                  <span className="tracking-wider">Avg. Citations</span>
-                  <span className="tracking-wider">Type</span>
+                <div className="flex-1 flex items-center justify-end px-4">
+                  <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase hidden md:flex">
+                    <span className="w-16 text-center tracking-wider">Used</span>
+                    <span className="w-28 text-center tracking-wider px-2">Avg. Citations</span>
+                    <span className="w-24 text-center tracking-wider">Type</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex-1 overflow-auto">
-                {domainTableData.slice(0, 6).map((item: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-4 border-b border-border last:border-0 hover:bg-muted/80 transition-colors text-sm">
-                    <div className="flex items-center gap-3 min-w-[200px]">
-                      <div className="h-7 w-7 rounded-lg border border-border/50 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
-                        <img
-                          src={`https://logo.clearbit.com/${item.domain}`}
-                          alt={item.domain}
-                          className="h-4 w-4 object-contain"
-                          onError={(e) => {
-                            (e.target as any).style.display = 'none';
-                            const parent = (e.target as any).parentElement;
-                            if (parent) {
-                              parent.classList.add('bg-muted/50');
-                              parent.innerHTML = `<span class="text-[10px] font-bold text-muted-foreground">${item.domain.charAt(0).toUpperCase()}</span>`;
-                            }
-                          }}
-                        />
+            <div className="flex-1 overflow-auto min-h-[300px]">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40">
+                  <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
+                  <p className="text-sm font-medium">Fetching domain insights...</p>
+                </div>
+              ) : (
+                <div className="animate-in fade-in duration-700">
+                  {domainTableData.slice(0, 8).map((item: any, index: number) => (
+                    <div key={index} className="flex items-center p-1.5 border-b border-border/50 last:border-0 hover:bg-muted/80 transition-colors text-sm">
+                      <div className="flex items-center gap-2.5 min-w-[200px]">
+                        <div className="h-6 w-6 rounded-md border border-border/50 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                          <img
+                            src={`https://logo.clearbit.com/${item.domain}`}
+                            alt={item.domain}
+                            className="h-3.5 w-3.5 object-contain"
+                            onError={(e) => {
+                              (e.target as any).style.display = 'none';
+                              const parent = (e.target as any).parentElement;
+                              if (parent) {
+                                parent.classList.add('bg-muted/50');
+                                parent.innerHTML = `<span class="text-[9px] font-bold text-muted-foreground">${item.domain.charAt(0).toUpperCase()}</span>`;
+                              }
+                            }}
+                          />
+                        </div>
+                        <span className="font-semibold text-foreground truncate text-[13px]">{item.domain}</span>
                       </div>
-                      <span className="font-medium text-foreground truncate">{item.domain}</span>
-                    </div>
 
-                    <div className="flex items-center gap-12">
-                      <div className="w-12 text-right font-semibold text-foreground">{item.used}%</div>
-                      <div className="w-12 text-center text-muted-foreground">{item.avgCitations}</div>
-                      <div className="w-20 flex justify-end">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded text-[10px] font-medium border text-center min-w-[70px]",
-                          item.type === 'Competitor' ? "bg-red-50 text-red-700 border-red-100" :
-                            item.type === 'You' ? "bg-green-50 text-green-700 border-green-100" :
-                              item.type === 'UGC' ? "bg-cyan-50 text-cyan-700 border-cyan-100" :
-                                item.type === 'Editorial' ? "bg-blue-50 text-blue-700 border-blue-100" :
-                                  "bg-gray-50 text-gray-700 border-gray-100"
-                        )}>
-                          {item.type}
-                        </span>
+                      <div className="flex-1 flex items-center justify-end px-4">
+                        <div className="flex items-center hidden md:flex">
+                          <div className="w-16 text-center font-bold text-foreground text-[13px]">{item.used}%</div>
+                          <div className="w-28 text-center text-muted-foreground text-[13px] px-2">{item.avgCitations}</div>
+                          <div className="w-24 flex justify-center">
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-[10px] font-bold border text-center min-w-[75px]",
+                              item.type === 'Competitor' ? "bg-red-50 text-red-700 border-red-100" :
+                                item.type === 'You' ? "bg-green-50 text-green-700 border-green-100" :
+                                  item.type === 'UGC' ? "bg-cyan-50 text-cyan-700 border-cyan-100" :
+                                    item.type === 'Editorial' ? "bg-blue-50 text-blue-700 border-blue-100" :
+                                      "bg-gray-50 text-gray-700 border-gray-100"
+                            )}>
+                              {item.type}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                {isLoading ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40">
-                    <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-                    <p className="text-sm font-medium">Fetching domain insights...</p>
-                  </div>
-                ) : (
-                  domainTableData.length === 0 && (
+                  ))}
+                  {domainTableData.length === 0 && (
                     <div className="p-8 text-center text-muted-foreground">
                       No domain data available
                     </div>
-                  )
-                )}
-              </div>
-              <div className="p-2 border-t border-border bg-muted/10 text-right">
-                <Link href="#" className="flex items-center justify-end gap-1 text-xs font-medium text-muted-foreground hover:text-foreground px-4 py-1">
-                  Show All <ChevronRight className="h-3 w-3" />
+                  )}
+                </div>
+              )}
+            </div>
+              <div className="p-3 border-t border-border bg-white flex justify-end shrink-0">
+                <Link href="/sources" className="text-[10px] font-bold uppercase text-muted-foreground hover:text-foreground transition-all flex items-center gap-1 px-2 py-1 hover:bg-muted rounded-md pointer-events-auto">
+                  Show All <ChevronRight className="h-3 w-3" strokeWidth={3} />
                 </Link>
               </div>
             </div>
@@ -391,7 +420,16 @@ export default function Overview() {
           </div>
 
           <div className="w-full">
-            <ModelResponsesTable />
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40 bg-card rounded-xl border border-border border-dashed">
+                <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+                <p className="text-sm font-medium">Fetching AI responses...</p>
+              </div>
+            ) : (
+              <div className="animate-in fade-in duration-1000">
+                <ModelResponsesTable />
+              </div>
+            )}
           </div>
         </div>
 

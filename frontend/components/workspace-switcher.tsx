@@ -4,7 +4,6 @@ import * as React from "react";
 import {
     Check,
     ChevronDown,
-    Plus,
     Search,
 } from "lucide-react";
 import * as Popover from "@radix-ui/react-popover";
@@ -20,35 +19,11 @@ export function WorkspaceSwitcher() {
     const { state } = useSidebar();
     const [open, setOpen] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState("");
-    const [isCreating, setIsCreating] = React.useState(false);
-    const [newWorkspaceName, setNewWorkspaceName] = React.useState("");
 
     const filteredWorkspaces = workspaces.filter((w) =>
         w.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const handleCreateWorkspace = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newWorkspaceName.trim()) return;
-
-        try {
-            const res = await fetch("/api/workspaces", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: newWorkspaceName }),
-            });
-
-            if (res.ok) {
-                await refreshWorkspaces();
-                setNewWorkspaceName("");
-                setIsCreating(false);
-                toast.success("Workspace created successfully");
-            }
-        } catch (err) {
-            console.error("Failed to create workspace:", err);
-            toast.error("Failed to create workspace");
-        }
-    };
 
     if (!activeWorkspace) return null;
 
@@ -63,13 +38,13 @@ export function WorkspaceSwitcher() {
                             open && "bg-sidebar-accent text-sidebar-accent-foreground"
                         )}
                     >
-                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground uppercase shadow-sm">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground uppercase shadow-sm">
                             {activeWorkspace.name.substring(0, 1)}
                         </div>
                         {state === "expanded" && (
                             <>
-                                <div className="flex flex-1 flex-col overflow-hidden">
-                                    <span className="text-sm font-semibold truncate leading-none">
+                                <div className="flex flex-1 flex-col">
+                                    <span className="text-sm font-semibold whitespace-normal break-words leading-tight">
                                         {activeWorkspace.name}
                                     </span>
                                 </div>
@@ -116,10 +91,10 @@ export function WorkspaceSwitcher() {
                                             activeWorkspace._id === workspace._id && "bg-accent text-accent-foreground"
                                         )}
                                     >
-                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-muted text-[10px] font-medium uppercase border border-border">
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground uppercase shadow-sm">
                                             {workspace.name.substring(0, 1)}
                                         </div>
-                                        <span className="flex-1 truncate text-sm">
+                                        <span className="flex-1 whitespace-normal break-words text-sm leading-tight">
                                             {workspace.name}
                                         </span>
                                         {activeWorkspace._id === workspace._id && (
@@ -129,42 +104,6 @@ export function WorkspaceSwitcher() {
                                 ))}
                             </div>
 
-                            <div className="mt-2 border-t border-border pt-2">
-                                {!isCreating ? (
-                                    <button
-                                        onClick={() => setIsCreating(true)}
-                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        Create New
-                                    </button>
-                                ) : (
-                                    <form onSubmit={handleCreateWorkspace} className="space-y-2 p-1">
-                                        <input
-                                            autoFocus
-                                            className="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm outline-none focus:ring-1 focus:ring-ring"
-                                            placeholder="Name..."
-                                            value={newWorkspaceName}
-                                            onChange={(e) => setNewWorkspaceName(e.target.value)}
-                                        />
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                type="submit"
-                                                className="flex-1 rounded-sm bg-primary py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                                            >
-                                                Create
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsCreating(false)}
-                                                className="flex-1 rounded-sm border border-input bg-background py-1 text-xs font-medium hover:bg-accent hover:text-accent-foreground"
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
-                            </div>
                         </div>
                     </Popover.Content>
                 </Popover.Portal>

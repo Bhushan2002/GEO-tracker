@@ -27,7 +27,7 @@ import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 
 const generalItems = [
   {
-    title: "Overview",
+    title: "Dashboard",
     href: "/",
     icon: LayoutDashboard,
   },
@@ -37,7 +37,7 @@ const generalItems = [
     icon: MessageSquare,
   },
   {
-    title: "Sources",
+    title: "Google Analytics",
     href: "/google-analytics",
     icon: Globe,
   },

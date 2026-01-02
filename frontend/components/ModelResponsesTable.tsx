@@ -144,94 +144,99 @@ export function ModelResponsesTable() {
           {/* BODY: Split into two horizontal halves */}
           <div className="flex-1 flex flex-row overflow-hidden min-h-0">
 
-            {/* LEFT COLUMN: Prompt + Response (Independent Scroll) */}
-            <div className="flex-[2.2] overflow-y-auto bg-white border-r border-border/50">
-              <div className="max-w-[1400px] mx-auto px-16 py-12 space-y-14">
-                {/* Prompt Section */}
-                <section>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div className="h-5 w-1 bg-blue-500 rounded-full" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80">
-                      Input Prompt
-                    </h3>
+            {/* LEFT COLUMN: Chat Timeline */}
+            <div className="flex-[2.2] overflow-y-auto bg-white border-r border-border/40">
+              <div className="max-w-[780px] mx-auto px-6 py-10 space-y-10">
+
+                {/* USER MESSAGE */}
+                <div className="flex gap-4 items-start">
+                  {/* Avatar */}
+                  <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-slate-700">U</span>
                   </div>
-                  <div className="rounded-2xl border border-border/60 bg-slate-50/50 p-8 shadow-sm">
-                    <p className="text-[17px] text-foreground/90 leading-relaxed font-medium italic">
-                      “{selectedResponse?.promptRunId &&
+
+                  {/* Message */}
+                  <div className="flex-1">
+                    <div className="text-xs text-slate-400 mb-1">You</div>
+                    <div className="rounded-2xl bg-slate-100 px-5 py-3 text-[15px] leading-relaxed text-slate-800">
+                      {selectedResponse?.promptRunId &&
                         typeof selectedResponse.promptRunId === "object"
                         ? selectedResponse.promptRunId.promptId?.promptText
-                        : "Prompt unavailable"}”
-                    </p>
+                        : "Prompt unavailable"}
+                    </div>
                   </div>
-                </section>
+                </div>
 
-                {/* Response Section */}
-                <section>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="h-5 w-1 bg-emerald-500 rounded-full" />
-                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80">
-                      Model Response
-                    </h3>
+                {/* AI MESSAGE */}
+                <div className="flex gap-4 items-start">
+                  {/* Avatar */}
+                  <div className="h-8 w-8 rounded-full bg-slate-900 flex items-center justify-center shrink-0">
+                    <Bot className="h-4 w-4 text-white" />
                   </div>
 
-                  <div className="prose prose-slate max-w-none text-[16px] leading-[1.8] text-foreground/80 space-y-6">
-                    {(() => {
-                      if (!selectedResponse?.responseText) {
-                        return (
-                          <div className="flex flex-col items-center py-24 text-muted-foreground">
-                            <Bot className="h-12 w-12 mb-4 animate-spin opacity-20" />
-                            <p className="text-sm font-medium">Generating response...</p>
-                          </div>
-                        );
-                      }
+                  {/* Message */}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <span className="font-semibold">
+                        {selectedResponse?.modelName || "AI Assistant"}
+                      </span>
+                      <span className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+                    </div>
 
-                      const brands = selectedResponse.identifiedBrands?.map(b => b.brand_name) || [];
-                      const highlightBrands = (text: string) => {
-                        if (!brands.length) return text;
+                    <div className="text-[15px] leading-[1.85] text-slate-800 space-y-5">
+                      {(() => {
+                        if (!selectedResponse?.responseText) {
+                          return (
+                            <div className="flex items-center gap-2 text-slate-400">
+                              <span className="h-4 w-4 border-2 border-slate-300 border-t-transparent rounded-full animate-spin" />
+                              <span className="text-sm">Generating response…</span>
+                            </div>
+                          );
+                        }
 
-                        // Create a regex to match any of the brand names (case sensitive or insensitive based on your preference)
-                        const regex = new RegExp(`(${brands.map(b => b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
-                        const parts = text.split(regex);
+                        const brands =
+                          selectedResponse.identifiedBrands?.map(b => b.brand_name) || [];
 
-                        const colors = [
-                          'bg-blue-100 text-blue-700 border-blue-200',
-                          'bg-purple-100 text-purple-700 border-purple-200',
-                          'bg-orange-100 text-orange-700 border-orange-200',
-                          'bg-emerald-100 text-emerald-700 border-emerald-200',
-                          'bg-pink-100 text-pink-700 border-pink-200',
-                        ];
+                        const highlightBrands = (text: string) => {
+                          if (!brands.length) return text;
 
-                        return parts.map((part, i) => {
-                          const isBrand = brands.some(b => b.toLowerCase() === part.toLowerCase());
-                          if (isBrand) {
-                            const brandIdx = brands.findIndex(b => b.toLowerCase() === part.toLowerCase());
-                            const colorClass = colors[brandIdx % colors.length];
+                          const regex = new RegExp(
+                            `(${brands.map(b =>
+                              b.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+                            ).join("|")})`,
+                            "gi"
+                          );
+
+                          return text.split(regex).map((part, i) => {
+                            const isBrand = brands.some(
+                              b => b.toLowerCase() === part.toLowerCase()
+                            );
+
+                            if (!isBrand) return part;
+
                             return (
                               <span
                                 key={i}
-                                className={cn(
-                                  "px-1.5 py-0.5 rounded-md font-bold border mx-0.5 transition-all text-[15px]",
-                                  colorClass
-                                )}
+                                className="px-1.5 py-0.5 mx-0.5 rounded-md bg-blue-50 text-blue-700 font-semibold"
                               >
                                 {part}
                               </span>
                             );
-                          }
-                          return part;
-                        });
-                      };
+                          });
+                        };
 
-                      return selectedResponse.responseText
-                        .split("\n\n")
-                        .map((p, i) => (
-                          <p key={i} className="first-of-type:text-foreground">
-                            {highlightBrands(p)}
-                          </p>
-                        ));
-                    })()}
+                        return selectedResponse.responseText
+                          .split("\n\n")
+                          .map((p, i) => (
+                            <p key={i}>
+                              {highlightBrands(p)}
+                            </p>
+                          ));
+                      })()}
+                    </div>
                   </div>
-                </section>
+                </div>
+
               </div>
             </div>
 
