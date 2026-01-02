@@ -91,10 +91,10 @@ function SourcesPage() {
                         <h4 className="font-bold text-[11px] uppercase tracking-wider text-foreground">Domain</h4>
                     </div>
                     <div className="flex-1 flex items-center justify-end px-4">
-                        <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase hidden md:flex">
-                            <span className="w-24 text-center tracking-wider">Used</span>
-                            <span className="w-32 text-center tracking-wider px-2">Avg. Citations</span>
-                            <span className="w-32 text-center tracking-wider">Type</span>
+                        <div className="flex items-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider hidden md:flex">
+                            <span className="w-24 text-center">Used</span>
+                            <span className="w-32 text-center px-2">Avg. Citations</span>
+                            <span className="w-32 text-center">Type</span>
                         </div>
                     </div>
                 </div>

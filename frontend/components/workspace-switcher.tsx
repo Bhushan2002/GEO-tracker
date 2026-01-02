@@ -38,7 +38,7 @@ export function WorkspaceSwitcher() {
                             open && "bg-sidebar-accent text-sidebar-accent-foreground"
                         )}
                     >
-                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground uppercase shadow-sm">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-sidebar-primary text-[10px] font-bold text-sidebar-primary-foreground uppercase shadow-sm">
                             {activeWorkspace.name.substring(0, 1)}
                         </div>
                         {state === "expanded" && (
@@ -91,7 +91,7 @@ export function WorkspaceSwitcher() {
                                             activeWorkspace._id === workspace._id && "bg-accent text-accent-foreground"
                                         )}
                                     >
-                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-primary text-[10px] font-bold text-primary-foreground uppercase shadow-sm">
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm bg-sidebar text-[10px] font-bold text-sidebar-foreground uppercase shadow-sm">
                                             {workspace.name.substring(0, 1)}
                                         </div>
                                         <span className="flex-1 whitespace-normal break-words text-sm leading-tight">

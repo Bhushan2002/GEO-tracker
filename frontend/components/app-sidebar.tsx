@@ -79,7 +79,7 @@ export function AppSidebar() {
       <SidebarContent className="px-3 py-2 bg-sidebar gap-6">
         {/* General Group */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-xs font-medium text-muted-foreground mb-2 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="px-2 text-xs font-medium text-sidebar-foreground/50 mb-2 group-data-[collapsible=icon]:hidden">
             General
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -110,7 +110,7 @@ export function AppSidebar() {
 
         {/* Preferences Group */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-xs font-medium text-muted-foreground mb-2 group-data-[collapsible=icon]:hidden">
+          <SidebarGroupLabel className="px-2 text-xs font-medium text-sidebar-foreground/50 mb-2 group-data-[collapsible=icon]:hidden">
             Preferences
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -147,7 +147,7 @@ export function AppSidebar() {
             <SidebarMenuButton
               onClick={handleLogout}
               tooltip="Log Out"
-              className="text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-colors w-full justify-start"
+              className="text-sidebar-foreground/70 hover:bg-red-500/10 hover:text-red-400 transition-colors w-full justify-start select-none"
             >
               <LogOut className="h-4 w-4" />
               <span className="group-data-[collapsible=icon]:hidden font-medium">

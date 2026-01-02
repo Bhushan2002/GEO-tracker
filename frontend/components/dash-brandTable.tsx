@@ -53,11 +53,11 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
     <Table className="border-collapse">
       <TableHeader className="bg-white">
         <TableRow className="border-b border-border">
-          <TableHead className="w-12 text-center text-xs font-semibold text-muted-foreground uppercase py-1.5 border-r border-border/50">#</TableHead>
-          <TableHead className="text-xs font-semibold text-muted-foreground uppercase py-1.5 pl-4 border-r border-border/50">Brand</TableHead>
-          <TableHead className="text-center text-xs font-semibold text-muted-foreground uppercase py-1.5 w-[15%] border-r border-border/50">Visibility</TableHead>
-          <TableHead className="text-center text-xs font-semibold text-muted-foreground uppercase py-1.5 w-[15%] border-r border-border/50">Sentiment</TableHead>
-          <TableHead className="text-center text-xs font-semibold text-muted-foreground uppercase py-1.5 w-[15%]">Position</TableHead>
+          <TableHead className="w-12 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 border-r border-border/50">#</TableHead>
+          <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 pl-4 border-r border-border/50">Brand</TableHead>
+          <TableHead className="text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 w-[15%] border-r border-border/50">Visibility</TableHead>
+          <TableHead className="text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 w-[15%] border-r border-border/50">Sentiment</TableHead>
+          <TableHead className="text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 w-[15%]">Position</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -72,7 +72,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
             const logoUrl = getLogoUrl(brand);
             return (
               <TableRow key={brand._id || index} className="hover:bg-muted/80 transition-colors border-b border-border/50 group">
-                <TableCell className="text-center text-muted-foreground text-xs font-medium py-1 border-r border-border/50">
+                <TableCell className="text-center text-muted-foreground text-sm font-medium py-1 border-r border-border/50">
                   {index + 1}
                 </TableCell>
                 <TableCell className="font-medium text-foreground py-1 pl-4 border-r border-border/50">
@@ -113,7 +113,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                         </div>
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-gray-700 truncate">{brand.brand_name}</span>
+                    <span className="text-sm font-semibold text-foreground truncate">{brand.brand_name}</span>
                   </div>
                 </TableCell>
 
@@ -124,7 +124,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                 <TableCell className="py-1 border-r border-border/50">
                   <div className="flex justify-center">
                     <span className={cn(
-                      "inline-flex items-center justify-center px-2 py-0.5 rounded-md text-xs font-semibold",
+                      "inline-flex items-center justify-center px-2 py-0.5 rounded-md text-sm font-bold",
                       (brand.sentiment_score || 0) >= 60 ? "bg-green-50 text-green-700 border border-green-200" :
                         (brand.sentiment_score || 0) >= 40 ? "bg-yellow-50 text-yellow-700 border border-yellow-200" :
                           "bg-red-50 text-red-700 border border-red-200"

@@ -337,70 +337,70 @@ export default function Overview() {
                   <h4 className="font-bold text-[11px] uppercase tracking-wider text-foreground">Domain</h4>
                 </div>
                 <div className="flex-1 flex items-center justify-end px-4">
-                  <div className="flex items-center text-[10px] font-bold text-muted-foreground uppercase hidden md:flex">
-                    <span className="w-16 text-center tracking-wider">Used</span>
-                    <span className="w-28 text-center tracking-wider px-2">Avg. Citations</span>
-                    <span className="w-24 text-center tracking-wider">Type</span>
+                  <div className="flex items-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider hidden md:flex">
+                    <span className="w-16 text-center">Used</span>
+                    <span className="w-28 text-center px-2">Avg. Citations</span>
+                    <span className="w-24 text-center">Type</span>
                   </div>
                 </div>
               </div>
-            <div className="flex-1 overflow-auto min-h-[300px]">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40">
-                  <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-                  <p className="text-sm font-medium">Fetching domain insights...</p>
-                </div>
-              ) : (
-                <div className="animate-in fade-in duration-700">
-                  {domainTableData.slice(0, 8).map((item: any, index: number) => (
-                    <div key={index} className="flex items-center p-1.5 border-b border-border/50 last:border-0 hover:bg-muted/80 transition-colors text-sm">
-                      <div className="flex items-center gap-2.5 min-w-[200px]">
-                        <div className="h-6 w-6 rounded-md border border-border/50 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
-                          <img
-                            src={`https://logo.clearbit.com/${item.domain}`}
-                            alt={item.domain}
-                            className="h-3.5 w-3.5 object-contain"
-                            onError={(e) => {
-                              (e.target as any).style.display = 'none';
-                              const parent = (e.target as any).parentElement;
-                              if (parent) {
-                                parent.classList.add('bg-muted/50');
-                                parent.innerHTML = `<span class="text-[9px] font-bold text-muted-foreground">${item.domain.charAt(0).toUpperCase()}</span>`;
-                              }
-                            }}
-                          />
+              <div className="flex-1 overflow-auto min-h-[300px]">
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40">
+                    <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
+                    <p className="text-sm font-medium">Fetching domain insights...</p>
+                  </div>
+                ) : (
+                  <div className="animate-in fade-in duration-700">
+                    {domainTableData.slice(0, 8).map((item: any, index: number) => (
+                      <div key={index} className="flex items-center p-1.5 border-b border-border/50 last:border-0 hover:bg-muted/80 transition-colors text-sm">
+                        <div className="flex items-center gap-2.5 min-w-[200px]">
+                          <div className="h-6 w-6 rounded-md border border-border/50 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                            <img
+                              src={`https://logo.clearbit.com/${item.domain}`}
+                              alt={item.domain}
+                              className="h-3.5 w-3.5 object-contain"
+                              onError={(e) => {
+                                (e.target as any).style.display = 'none';
+                                const parent = (e.target as any).parentElement;
+                                if (parent) {
+                                  parent.classList.add('bg-muted/50');
+                                  parent.innerHTML = `<span class="text-[9px] font-bold text-muted-foreground">${item.domain.charAt(0).toUpperCase()}</span>`;
+                                }
+                              }}
+                            />
+                          </div>
+                          <span className="font-semibold text-foreground truncate text-[13px]">{item.domain}</span>
                         </div>
-                        <span className="font-semibold text-foreground truncate text-[13px]">{item.domain}</span>
-                      </div>
 
-                      <div className="flex-1 flex items-center justify-end px-4">
-                        <div className="flex items-center hidden md:flex">
-                          <div className="w-16 text-center font-bold text-foreground text-[13px]">{item.used}%</div>
-                          <div className="w-28 text-center text-muted-foreground text-[13px] px-2">{item.avgCitations}</div>
-                          <div className="w-24 flex justify-center">
-                            <span className={cn(
-                              "px-2 py-0.5 rounded text-[10px] font-bold border text-center min-w-[75px]",
-                              item.type === 'Competitor' ? "bg-red-50 text-red-700 border-red-100" :
-                                item.type === 'You' ? "bg-green-50 text-green-700 border-green-100" :
-                                  item.type === 'UGC' ? "bg-cyan-50 text-cyan-700 border-cyan-100" :
-                                    item.type === 'Editorial' ? "bg-blue-50 text-blue-700 border-blue-100" :
-                                      "bg-gray-50 text-gray-700 border-gray-100"
-                            )}>
-                              {item.type}
-                            </span>
+                        <div className="flex-1 flex items-center justify-end px-4">
+                          <div className="flex items-center hidden md:flex">
+                            <div className="w-16 text-center font-bold text-foreground text-[13px]">{item.used}%</div>
+                            <div className="w-28 text-center text-muted-foreground text-[13px] px-2">{item.avgCitations}</div>
+                            <div className="w-24 flex justify-center">
+                              <span className={cn(
+                                "px-2 py-0.5 rounded text-[10px] font-bold border text-center min-w-[75px]",
+                                item.type === 'Competitor' ? "bg-red-50 text-red-700 border-red-100" :
+                                  item.type === 'You' ? "bg-green-50 text-green-700 border-green-100" :
+                                    item.type === 'UGC' ? "bg-cyan-50 text-cyan-700 border-cyan-100" :
+                                      item.type === 'Editorial' ? "bg-blue-50 text-blue-700 border-blue-100" :
+                                        "bg-gray-50 text-gray-700 border-gray-100"
+                              )}>
+                                {item.type}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                  {domainTableData.length === 0 && (
-                    <div className="p-8 text-center text-muted-foreground">
-                      No domain data available
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    ))}
+                    {domainTableData.length === 0 && (
+                      <div className="p-8 text-center text-muted-foreground">
+                        No domain data available
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="p-3 border-t border-border bg-white flex justify-end shrink-0">
                 <Link href="/sources" className="text-[10px] font-bold uppercase text-muted-foreground hover:text-foreground transition-all flex items-center gap-1 px-2 py-1 hover:bg-muted rounded-md pointer-events-auto">
                   Show All <ChevronRight className="h-3 w-3" strokeWidth={3} />
