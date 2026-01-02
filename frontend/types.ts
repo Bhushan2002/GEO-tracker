@@ -4,6 +4,7 @@ export interface Prompt {
   promptText: string;
   topic?: string;
   tags: string[];
+  isScheduled: boolean;
   createdAt: string;
 }
 
