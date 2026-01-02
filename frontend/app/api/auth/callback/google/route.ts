@@ -112,12 +112,12 @@ export async function GET(request: Request) {
       );
 
       if (!aiAudience) {
-        // Create new AI Traffic audience
+        // Create new AI Traffic audience with comprehensive filters
         const createResponse = await admin.properties.audiences.create({
           parent: firstProperty.name,
           requestBody: {
             displayName: "AI Traffic",
-            description: "Users who came from AI tools (ChatGPT, Copilot, Perplexity, etc.)",
+            description: "Users coming from various AI model sources (ChatGPT, Claude, Gemini, etc)",
             membershipDurationDays: 30,
             filterClauses: [
               {
@@ -125,56 +125,22 @@ export async function GET(request: Request) {
                 simpleFilter: {
                   scope: "AUDIENCE_FILTER_SCOPE_ACROSS_ALL_SESSIONS",
                   filterExpression: {
-                    orGroup: {
+                    andGroup: {
                       filterExpressions: [
                         {
-                          dimensionOrMetricFilter: {
-                            fieldName: "firstUserSource",
-                            stringFilter: {
-                              matchType: "CONTAINS",
-                              value: "chatgpt",
-                              caseSensitive: false,
-                            },
-                          },
-                        },
-                        {
-                          dimensionOrMetricFilter: {
-                            fieldName: "firstUserSource",
-                            stringFilter: {
-                              matchType: "CONTAINS",
-                              value: "copilot",
-                              caseSensitive: false,
-                            },
-                          },
-                        },
-                        {
-                          dimensionOrMetricFilter: {
-                            fieldName: "firstUserSource",
-                            stringFilter: {
-                              matchType: "CONTAINS",
-                              value: "perplexity",
-                              caseSensitive: false,
-                            },
-                          },
-                        },
-                        {
-                          dimensionOrMetricFilter: {
-                            fieldName: "firstUserSource",
-                            stringFilter: {
-                              matchType: "CONTAINS",
-                              value: "claude",
-                              caseSensitive: false,
-                            },
-                          },
-                        },
-                        {
-                          dimensionOrMetricFilter: {
-                            fieldName: "firstUserSource",
-                            stringFilter: {
-                              matchType: "CONTAINS",
-                              value: "gemini",
-                              caseSensitive: false,
-                            },
+                          orGroup: {
+                            filterExpressions: [
+                              {
+                                dimensionOrMetricFilter: {
+                                  fieldName: "firstUserSource",
+                                  stringFilter: {
+                                    matchType: "FULL_REGEXP",
+                                    value:
+                                      "(chatgpt|openai|anthropic|deepseek|grok)\\.com|(gemini|bard)\\.google\\.com|(perplexity|claude)\\.ai|(copilot\\.microsoft|edgeservices\\.bing)\\.com|edge.*copilot",
+                                  },
+                                },
+                              },
+                            ],
                           },
                         },
                       ],

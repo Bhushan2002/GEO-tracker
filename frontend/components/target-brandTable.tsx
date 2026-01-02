@@ -137,6 +137,8 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
                 {brand.isScheduled ? "Tracking" : "Not Tracked"}
               </span>
             </div>
+              {brand.mainBrand ? 
+              <span className="text-gray-800 font-bold">Main Brand</span> : <span></span>}
           </div>
 
           <div className="flex gap-2 p-4 pt-3 border-t bg-gray-50">

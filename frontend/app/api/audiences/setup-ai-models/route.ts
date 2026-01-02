@@ -62,14 +62,24 @@ export async function POST(request: NextRequest) {
     const existingAudiences = audiencesResponse.data.audiences || [];
     const aiAudience = existingAudiences.find((aud: any) => {
       const dName = aud.displayName?.toLowerCase() || "";
-      return dName.includes("ai traffic") || (dName.includes("ai") && dName.includes("traffic"));
+      return dName === "ai traffic" || dName.includes("ai traffic");
     });
 
     if (aiAudience) {
-      // If audience already exists, return it
-      return NextResponse.json({ success: true, audience: aiAudience });
+      // Update the account with the audience info if not already set
+      if (!account.aiAudienceId) {
+        account.aiAudienceId = aiAudience.name;
+        account.aiAudienceName = aiAudience.displayName;
+        await account.save();
+      }
+      return NextResponse.json({ 
+        success: true, 
+        audience: aiAudience,
+        message: "AI Traffic audience already exists"
+      });
     }
 
+    // Create the audience with comprehensive AI source filters
     const audience = await admin.properties.audiences.create({
       parent: propertyPath,
       requestBody: {
@@ -108,21 +118,36 @@ export async function POST(request: NextRequest) {
         ],
       },
     });
-    return NextResponse.json({ success: true, audience: audience.data });
-  } catch (error: any) {
-    console.error("Setup AI Models Error Details:", error);
 
-    if (error.message?.includes("already exists")) {
+    // Save the audience info to the account
+    account.aiAudienceId = audience.data.name;
+    account.aiAudienceName = audience.data.displayName;
+    await account.save();
+
+    console.log('AI Traffic audience created and saved:', audience.data.name);
+
+    return NextResponse.json({ 
+      success: true, 
+      audience: audience.data,
+      message: "AI Traffic audience created successfully"
+    });
+  } catch (error: any) {
+    console.error("Setup AI Models Error:", error.message);
+    console.error("Error details:", error.response?.data);
+
+    if (error.message?.includes("already exists") || error.code === 6) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "AI Models audience already exists. Please delete it from Google Analytics first or use a different name.",
+          error: "AI Traffic audience already exists for this property."
         },
         { status: 409 }
       );
     }
 
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: error.message || "Failed to create AI Traffic audience"
+    }, { status: 500 });
   }
 }
