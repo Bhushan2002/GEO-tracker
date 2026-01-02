@@ -41,7 +41,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { Trash2 } from "lucide-react";
+import { Loader, Trash2 } from "lucide-react";
 
 interface GAAccountType {
   _id: string;
@@ -263,16 +263,12 @@ export default function GoogleAnalyticsPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="bg-white border-b sticky top-0 z-10">
+      
         <div className="px-6 py-4">
           <h1 className="text-2xl font-bold text-gray-900">
             Google Analytics Dashboard
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Monitor your brand performance and AI insights across multiple
-            accounts
-          </p>
-        </div>
+          
       </div>
 
       <div className="space-y-4 p-6">
@@ -296,9 +292,10 @@ export default function GoogleAnalyticsPage() {
           </CardHeader>
           <CardContent>
             {loading && gaAccounts.length === 0 ? (
-              <div className="flex items-center justify-center py-8">
-                <p>Loading accounts...</p>
-              </div>
+             <div className="flex flex-col items-center gap-3 text-foreground/40">
+                  <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+                  <p>Loading accounts...</p>
+                </div>
             ) : gaAccounts.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>No accounts connected yet</p>
@@ -389,7 +386,8 @@ export default function GoogleAnalyticsPage() {
               </CardHeader>
               <CardContent>
                 {loading ? (
-                  <div className="flex items-center justify-center h-64">
+                  <div className="flex items-center justify-center gap-3 h-64">
+                    <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
                     <p>Loading analytics...</p>
                   </div>
                 ) : (
@@ -438,6 +436,12 @@ export default function GoogleAnalyticsPage() {
             {/* AI Models Traffic */}
             {aiModelsData.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {loading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+                    <p>Loading analytics...</p>
+                  </div>
+                ) : (
                 <Card>
                   <CardHeader>
                     <CardTitle>Traffic by AI Model</CardTitle>
@@ -457,7 +461,15 @@ export default function GoogleAnalyticsPage() {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
+                )}
 
+                {/* AI Models Pie Chart */}
+                {loading ? (
+                  <div className="flex items-center justify-center h-64">
+                    <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+                    <p>Loading analytics...</p>
+                  </div>
+                ) : (
                 <Card>
                   <CardHeader>
                     <CardTitle>AI Model Distribution</CardTitle>
@@ -491,11 +503,12 @@ export default function GoogleAnalyticsPage() {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
+                )}
               </div>
             )}
 
             {/* AI Models Performance Table */}
-            {aiModelsData.length > 0 && (
+            {(loading || aiModelsData.length > 0) && (
               <Card>
                 <CardHeader>
                   <CardTitle>AI Models Performance</CardTitle>
@@ -504,6 +517,12 @@ export default function GoogleAnalyticsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center h-64 gap-3 text-foreground/40">
+                      <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+                      <p>Loading AI models data...</p>
+                    </div>
+                  ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -526,6 +545,7 @@ export default function GoogleAnalyticsPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -541,7 +561,12 @@ export default function GoogleAnalyticsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {firstTouchData.length > 0 ? (
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center h-[300px] gap-3 text-foreground/40">
+                      <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+                      <p>Loading first touch data...</p>
+                    </div>
+                  ) : firstTouchData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={firstTouchData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -588,6 +613,8 @@ export default function GoogleAnalyticsPage() {
                 </CardContent>
               </Card>
 
+             
+
               {/* Zero Touch Chart */}
               <Card>
                 <CardHeader>
@@ -597,7 +624,12 @@ export default function GoogleAnalyticsPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {zeroTouchData.length > 0 ? (
+                  {loading ? (
+                    <div className="flex flex-col items-center justify-center h-[300px] gap-3 text-foreground/40">
+                      <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+                      <p>Loading zero touch data...</p>
+                    </div>
+                  ) : zeroTouchData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <LineChart data={zeroTouchData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />

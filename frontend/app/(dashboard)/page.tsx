@@ -16,18 +16,12 @@ import { Button } from "@/components/ui/button";
 import { SentimentChart } from "@/components/SentimentChart";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import {
-  LayoutDashboard,
-  Calendar,
-  Tag,
   Globe,
-  BarChart3,
   ChevronRight,
-  Download,
-  Info,
-  MessageSquare,
   Eye,
-  Upload,
-  Loader
+  Loader,
+  ChartArea,
+  MessageCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -411,12 +405,12 @@ export default function Overview() {
         </div>
 
         {/* Third Row: AI Model Responses */}
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
-              <h3 className="text-lg font-bold text-foreground">AI Model Responses</h3>
-              <span className="text-sm text-muted-foreground">Detailed insights from different AI models</span>
-            </div>
+      
+          <div className="flex flex-col space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <MessageCircle className="h-5 w-5 text-muted-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Recent Chats</h3>
+            <span className="text-sm text-muted-foreground hidden sm:inline-block">• AI model interactions and responses</span>
           </div>
 
           <div className="w-full">
