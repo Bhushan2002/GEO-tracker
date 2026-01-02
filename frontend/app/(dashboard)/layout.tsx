@@ -3,6 +3,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { WorkspaceProvider, useWorkspace } from "@/lib/contexts/workspace-context";
+import * as React from "react";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { activeWorkspace } = useWorkspace();
@@ -10,7 +11,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   return (
     <div
       key={activeWorkspace?._id}
-      className="flex-1 overflow-y-auto bg-gray-100"
+      className="flex-1 overflow-y-auto bg-background"
       suppressHydrationWarning
     >
       {children}

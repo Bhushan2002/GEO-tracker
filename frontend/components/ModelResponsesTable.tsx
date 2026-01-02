@@ -1,429 +1,386 @@
 "use client";
-import { ModelResponseAPI } from "@/api/modelresponse.api";
 
+import { ModelResponseAPI } from "@/api/modelresponse.api";
 import { ModelResponse } from "@/types";
 import { useEffect, useState } from "react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
 import {
   AlertDialog,
   AlertDialogContent,
-  AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
 } from "./ui/alert-dialog";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { cn } from "@/lib/utils";
+import { Bot, MessageSquare, Loader, ChevronRight } from "lucide-react";
 
 export function ModelResponsesTable() {
   const [modelRes, setModelRes] = useState<ModelResponse[]>([]);
   const [selectedResponse, setSelectedResponse] =
     useState<ModelResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const BRAND_COLORS = [
-    "#3b82f6",
-    "#6366f1",
-    "#f97316",
-    "#10b981",
-    "#06b6d4",
-    "#8b5cf6",
-    "#ec4899",
-    "#f59e0b",
-    "#ef4444",
-    "#14b8a6",
-  ];
-
-  const highlightBrandsInText = (text: string, brands: any[]) => {
-    // console.log("highlightBrandsInText CALLED ");
-    // console.log("Text length:", text.length);
-    // console.log("Brands count:", brands?.length || 0);
-    
-    if (!brands || brands.length === 0) return text;
-
-    // Filter brands to only include those actually mentioned in the text
-    const mentionedBrands = brands.filter(brand => {
-      const brandName = brand.brand_name;
-      const escapedBrandName = brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`\\b(${escapedBrandName})\\b`, "i");
-      return regex.test(text);
-    });
-
-    console.log("Mentioned brands count:", mentionedBrands.length);
-
-    let highlightedText = text;
-
-    mentionedBrands.forEach((brand, index) => {
-      const color = BRAND_COLORS[index % BRAND_COLORS.length];
-      const brandName = brand.brand_name;
-
-      // console.log(`\n Brand ${index + 1}: ${brandName} `);
-      // console.log("Brand object:", brand);
-      // console.log("Has sentiment_text:", !!brand.sentiment_text);
-      // console.log("sentiment_text value:", brand.sentiment_text);
-
-      // Escape special regex characters in brand name
-      const escapedBrandName = brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      
-      // Create a regex to find all occurrences (case-insensitive, word boundaries)
-      const regex = new RegExp(`\\b(${escapedBrandName})\\b`, "gi");
-
-      // Replace with highlighted span
-      highlightedText = highlightedText.replace(
-        regex,
-        `<mark style="background-color: ${color}33; color: ${color}; font-weight: 600; padding: 2px 4px; border-radius: 3px;">$1</mark>`
-      );
-
-      // Also highlight sentiment_text if it exists
-      if (brand.sentiment_text && brand.sentiment_text.trim()) {
-        const sentimentText = brand.sentiment_text.trim();
-        // console.log("✓ Sentiment text to highlight:", sentimentText);
-        const escapedSentimentText = sentimentText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        
-        // Use a more flexible regex for sentiment text (may contain multiple words)
-        const sentimentRegex = new RegExp(`(${escapedSentimentText})`, "gi");
-        
-        // Check if it matches
-        const matches = text.match(sentimentRegex);
-        // console.log("Sentiment text matches found:", matches ? matches.length : 0);
-        if (matches) {
-          // console.log("Matched texts:", matches);
-        }
-        
-        // Replace with highlighted span with a slightly different style (border instead of just background)
-        const beforeReplace = highlightedText;
-        highlightedText = highlightedText.replace(
-          sentimentRegex,
-          `<mark style="background-color: ${color}20; color: ${color}; border: 1px solid ${color}; padding: 2px 4px; border-radius: 3px; font-style: italic;">$1</mark>`
-        );
-        // console.log("Text changed after sentiment replace:", beforeReplace !== highlightedText);
-      } else {
-        console.log("✗ No sentiment_text or empty");
-      }
-    });
-
-    // console.log("=== highlightBrandsInText COMPLETE ===\n");
-    return highlightedText;
-  };
-
-  const getHighlightedResponse = () => {
-    if (
-      !selectedResponse?.responseText ||
-      !selectedResponse?.identifiedBrands
-    ) {
-      return selectedResponse?.responseText || "No response text available";
-    }
-
-    let text = selectedResponse.responseText;
-    selectedResponse.identifiedBrands.forEach((brand, index) => {
-      const color = BRAND_COLORS[index % BRAND_COLORS.length];
-      const regex = new RegExp(`\\b(${brand.brand_name})\\b`, "gi");
-      text = text.replace(regex, `**<span style="color: ${color}">$1</span>**`);
-    });
-
-    return text;
-  };
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setIsLoading(true);
     ModelResponseAPI.getModelResponses()
-      .then((res) => {
-        console.log("Model Responses:", res.data);
-        setModelRes(res.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching model responses:", error);
-      });
+      .then((res) => setModelRes(res.data))
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
-  const handleCardClick = (response: ModelResponse) => {
-    setSelectedResponse(response);
-    // console.log("Selected Response:", response);
-    // console.log("Identified Brands:", response.identifiedBrands);
-    setIsDialogOpen(true);
-  };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleString("en-GB", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).replace(",", "");
+
+  if (isLoading) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-20 flex flex-col items-center justify-center gap-3 text-foreground/40">
+        <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+        <p className="text-sm font-medium">Fetching model responses...</p>
+      </div>
+    );
+  }
+
+  const filteredResponses = modelRes.filter(r => r.responseText?.trim());
 
   return (
-    <div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pl-4 pt-5 ">
-        {modelRes.map((response) =>
-          response.responseText != null ? (
-            <Card
-              key={response._id}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => handleCardClick(response)}
-            >
-              <CardHeader>
-                <CardTitle>{response.modelName} </CardTitle>
-                <CardDescription className="font-medium">
-                  {" "}
-                  {new Date(response.createdAt).toLocaleString("en-IN")}
-                </CardDescription>
-                <CardDescription className="text-wrap line-clamp-2">
-                  {response.responseText}
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          ) : null
-        )}
-      </div>
+    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+      <Table>
+        <TableHeader className="bg-muted/40">
+          <TableRow>
+            <TableHead className="w-[250px] font-bold text-[11px] uppercase tracking-wider">AI Model</TableHead>
+            <TableHead className="font-bold text-[11px] uppercase tracking-wider">Preview Response</TableHead>
+            <TableHead className="w-[200px] font-bold text-[11px] uppercase tracking-wider">Date & Time</TableHead>
+            <TableHead className="w-[80px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredResponses.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                No model responses found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            filteredResponses.map((response) => (
+              <TableRow
+                key={response._id}
+                onClick={() => {
+                  setSelectedResponse(response);
+                  setIsDialogOpen(true);
+                }}
+                className="cursor-pointer hover:bg-muted/80 transition-colors group"
+              >
+                <TableCell className="font-semibold text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 bg-emerald-500 rounded-full" />
+                    {response.modelName}
+                  </div>
+                </TableCell>
+                <TableCell className="max-w-[500px]">
+                  <p className="text-xs text-muted-foreground/80 line-clamp-1 italic">
+                    {response.responseText}
+                  </p>
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground font-medium">
+                  {formatDate(response.createdAt)}
+                </TableCell>
+                <TableCell className="text-right pr-6">
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-colors ml-auto" />
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
 
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <AlertDialogContent className="min-w-4xl h-[80vh] rounded p-0 gap-0 flex flex-col">
-          <AlertDialogHeader className="sr-only">
-            <AlertDialogTitle>{selectedResponse?.modelName}</AlertDialogTitle>
-            <AlertDialogDescription>
-              Model response details and identified brands
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <button
-            onClick={() => setIsDialogOpen(false)}
-            className="absolute right-4 top-4 z-10 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
-            <span className="text-2xl">&times;</span>
-            <span className="sr-only">Close</span>
-          </button>
-
+        <AlertDialogContent
+          className="
+            max-w-none sm:max-w-none
+            w-[98vw] h-[96vh]
+            p-0 bg-white rounded-2xl
+            border border-border shadow-2xl
+            overflow-hidden flex flex-col
+          "
+        >
           {/* Header */}
-          <div className="px-6 py-4 border-b bg-gray-50 shrink-0">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+          <div className="px-10 py-5 border-b border-border flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold">
+                <span className="h-2 w-2 bg-emerald-500 rounded-full" />
                 Succeeded
               </span>
-              <span className="text-sm font-medium text-gray-700">
-                {selectedResponse?.modelName}
-              </span>
-              <span className="text-xs text-gray-500">
-                {selectedResponse &&
-                  new Date(selectedResponse.createdAt).toLocaleString("en-IN")}
-              </span>
+              <div>
+                <AlertDialogTitle className="text-sm font-semibold">
+                  {selectedResponse?.modelName}
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-xs text-muted-foreground">
+                  {selectedResponse && formatDate(selectedResponse.createdAt)}
+                </AlertDialogDescription>
+              </div>
             </div>
+            <button
+              onClick={() => setIsDialogOpen(false)}
+              className="text-2xl text-muted-foreground hover:text-foreground"
+            >
+              ×
+            </button>
           </div>
 
-          {/* Two Column Layout */}
-          <div className="flex flex-1 overflow-hidden min-h-0">
-            {/* Left Side - Response */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  Prompt
-                </h3>
-                {selectedResponse?.promptRunId &&
-                typeof selectedResponse.promptRunId === "object" &&
-                selectedResponse.promptRunId.promptId ? (
-                  <div className="p-3 border rounded-lg">
-                    <p className="text-xs text-gray-700 leading-relaxed">
-                      {selectedResponse.promptRunId.promptId.promptText}
+          {/* BODY: Split into two horizontal halves */}
+          <div className="flex-1 flex flex-row overflow-hidden min-h-0">
+
+            {/* LEFT COLUMN: Prompt + Response (Independent Scroll) */}
+            <div className="flex-[2.2] overflow-y-auto bg-white border-r border-border/50">
+              <div className="max-w-[1400px] mx-auto px-16 py-12 space-y-14">
+                {/* Prompt Section */}
+                <section>
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="h-5 w-1 bg-blue-500 rounded-full" />
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80">
+                      Input Prompt
+                    </h3>
+                  </div>
+                  <div className="rounded-2xl border border-border/60 bg-slate-50/50 p-8 shadow-sm">
+                    <p className="text-[17px] text-foreground/90 leading-relaxed font-medium italic">
+                      “{selectedResponse?.promptRunId &&
+                        typeof selectedResponse.promptRunId === "object"
+                        ? selectedResponse.promptRunId.promptId?.promptText
+                        : "Prompt unavailable"}”
                     </p>
-                    {selectedResponse.promptRunId.promptId.topic && (
-                      <div className="mt-2">
-                        <span className="inline-block px-2 py-1 text-xs bg-blue-100 rounded-2xl ">
-                          {selectedResponse.promptRunId.promptId.topic}
-                        </span>
-                      </div>
-                    )}
                   </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 py-3">
-                    <span>No prompt data</span>
+                </section>
+
+                {/* Response Section */}
+                <section>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="h-5 w-1 bg-emerald-500 rounded-full" />
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/80">
+                      Model Response
+                    </h3>
                   </div>
-                )}
-              </div>
-              <div className="prose prose-sm max-w-none dark:prose-invert">
-                <div 
-                  dangerouslySetInnerHTML={{ 
-                    __html: highlightBrandsInText(
-                      selectedResponse?.responseText || "No response text available",
-                      selectedResponse?.identifiedBrands || []
-                    )
-                  }} 
-                />
+
+                  <div className="prose prose-slate max-w-none text-[16px] leading-[1.8] text-foreground/80 space-y-6">
+                    {(() => {
+                      if (!selectedResponse?.responseText) {
+                        return (
+                          <div className="flex flex-col items-center py-24 text-muted-foreground">
+                            <Bot className="h-12 w-12 mb-4 animate-spin opacity-20" />
+                            <p className="text-sm font-medium">Generating response...</p>
+                          </div>
+                        );
+                      }
+
+                      const brands = selectedResponse.identifiedBrands?.map(b => b.brand_name) || [];
+                      const highlightBrands = (text: string) => {
+                        if (!brands.length) return text;
+
+                        // Create a regex to match any of the brand names (case sensitive or insensitive based on your preference)
+                        const regex = new RegExp(`(${brands.map(b => b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+                        const parts = text.split(regex);
+
+                        const colors = [
+                          'bg-blue-100 text-blue-700 border-blue-200',
+                          'bg-purple-100 text-purple-700 border-purple-200',
+                          'bg-orange-100 text-orange-700 border-orange-200',
+                          'bg-emerald-100 text-emerald-700 border-emerald-200',
+                          'bg-pink-100 text-pink-700 border-pink-200',
+                        ];
+
+                        return parts.map((part, i) => {
+                          const isBrand = brands.some(b => b.toLowerCase() === part.toLowerCase());
+                          if (isBrand) {
+                            const brandIdx = brands.findIndex(b => b.toLowerCase() === part.toLowerCase());
+                            const colorClass = colors[brandIdx % colors.length];
+                            return (
+                              <span
+                                key={i}
+                                className={cn(
+                                  "px-1.5 py-0.5 rounded-md font-bold border mx-0.5 transition-all text-[15px]",
+                                  colorClass
+                                )}
+                              >
+                                {part}
+                              </span>
+                            );
+                          }
+                          return part;
+                        });
+                      };
+
+                      return selectedResponse.responseText
+                        .split("\n\n")
+                        .map((p, i) => (
+                          <p key={i} className="first-of-type:text-foreground">
+                            {highlightBrands(p)}
+                          </p>
+                        ));
+                    })()}
+                  </div>
+                </section>
               </div>
             </div>
 
-            {/* Right Sidebar - Brands & Prompt */}
-            <div className="w-64 border-l bg-gray-50 overflow-y-auto p-4">
-              {/* Prompt Section */}
+            {/* RIGHT COLUMN: Metadata (Independent Scroll) */}
+            <div className="flex-1 overflow-y-auto bg-slate-50/40 px-8 py-12 space-y-10 min-w-[400px]">
 
               {/* Brands Section */}
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  Brands
-                </h3>
-                {selectedResponse?.identifiedBrands &&
-                selectedResponse.identifiedBrands.filter(brand => {
-                  // Only show brands that are actually mentioned in the response text
-                  const responseText = selectedResponse.responseText || "";
-                  const brandName = brand.brand_name;
-                  const regex = new RegExp(`\\b${brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-                  return regex.test(responseText);
-                }).length > 0 ? (
-                  <div className="space-y-2">
-                    {selectedResponse.identifiedBrands
-                      .filter(brand => {
-                        // Only show brands that are actually mentioned in the response text
-                        const responseText = selectedResponse.responseText || "";
-                        const brandName = brand.brand_name;
-                        const regex = new RegExp(`\\b${brandName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-                        return regex.test(responseText);
-                      })
-                      .map((brand, index) => (
-                      <div
-                        key={brand._id}
-                        className="flex items-center p-3 bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow"
-                        style={{ borderLeftColor: BRAND_COLORS[index % BRAND_COLORS.length], borderLeftWidth: '3px' }}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {brand.brand_name}
-                          </p>
-                          <div className="">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${
-                                    (brand.sentiment_score ?? 0) >= 7
-                                      ? "bg-green-500"
-                                      : (brand.sentiment_score ?? 0) >= 4
-                                      ? "bg-yellow-500"
-                                      : "bg-red-500"
-                                  }`}
-                                  style={{
-                                    width: `${
-                                      ((brand.sentiment_score ?? 0) / 100) * 100
-                                    }%`,
-                                  }}
-                                />
-                              </div>
-                              <span className="text-xs font-semibold text-gray-900">
-                                {brand.sentiment_score}/100
-                              </span>
-                            </div>
-                            {brand.sentiment && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {brand.sentiment}
-                              </p>
+              <section>
+                <div className="flex items-center gap-2 mb-6">
+                  <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    Identified Brands
+                  </h4>
+                  <div className="h-[1px] flex-1 bg-border/40" />
+                </div>
+
+                <div className="space-y-3">
+                  {selectedResponse?.identifiedBrands?.length ? (
+                    selectedResponse.identifiedBrands.map((brand, idx) => (
+                      <div key={idx} className="bg-white rounded-xl p-4 border border-border/60 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="font-semibold text-sm">{brand.brand_name}</span>
+                          <span className={cn(
+                            "text-[10px] px-2 py-0.5 rounded-full font-bold",
+                            (brand.sentiment_score || 0) >= 60 ? "bg-emerald-50 text-emerald-700" :
+                              (brand.sentiment_score || 0) >= 40 ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-700"
+                          )}>
+                            {brand.sentiment_score}/100
+                          </span>
+                        </div>
+
+                        <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-3">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all duration-1000",
+                              (brand.sentiment_score || 0) >= 60 ? "bg-emerald-500" :
+                                (brand.sentiment_score || 0) >= 40 ? "bg-amber-500" : "bg-rose-500"
                             )}
-                          </div>
-                          {brand.mentions !== undefined && (
-                            <p className="text-xs text-gray-500">
-                              {brand.mentions} mentions
-                            </p>
-                          )}
+                            style={{ width: `${brand.sentiment_score || 0}%` }}
+                          />
+                        </div>
+
+                        <div className="flex justify-between text-[11px] font-medium text-muted-foreground">
+                          <span className="capitalize">{brand.sentiment}</span>
+                          <span>{brand.mentions} Mentions</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 py-3">
-                    <span>No brands identified</span>
-                  </div>
-                )}
-              </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 border border-dashed border-border/50 rounded-xl">
+                      <p className="text-xs text-muted-foreground">No brands detected</p>
+                    </div>
+                  )}
+                </div>
+              </section>
 
               {/* Domain Citations Section */}
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  Domain Citations
-                </h3>
-                {selectedResponse?.identifiedBrands &&
-                selectedResponse.identifiedBrands.some(
-                  (brand) =>
-                    brand.associated_domain &&
-                    brand.associated_domain.length > 0
-                ) ? (
-                  <div className="space-y-2">
-                    {selectedResponse.identifiedBrands.map((brand) =>
-                      brand.associated_domain?.map((domain, idx) => (
-                        <div
-                          key={`domain-${brand._id}-${idx}`}
-                          className="p-3 bg-white rounded-lg border border-gray-200"
-                        >
-                          <p className="text-xs font-medium text-gray-900 truncate mb-1">
-                            {domain.domain_citation}
-                          </p>
-                          {domain.domain_citation_type && (
-                            <span className="inline-block px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded">
-                              {domain.domain_citation_type}
-                            </span>
-                          )}
-                          {domain.associated_url &&
-                            domain.associated_url.length > 0 && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                {domain.associated_url.length} URL
-                                {domain.associated_url.length > 1 ? "s" : ""}
-                              </p>
-                            )}
+              <section>
+                <div className="flex items-center gap-2 mb-6">
+                  <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    Domain Citations
+                  </h4>
+                  <div className="h-[1px] flex-1 bg-border/40" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  {(() => {
+                    const domains = Array.from(
+                      new Map(
+                        (selectedResponse?.identifiedBrands ?? [])
+                          .flatMap((b) => b.associated_domain ?? [])
+                          .filter((d) => d?.domain_citation)
+                          .map((d) => [d.domain_citation, d])
+                      ).values()
+                    );
+
+                    if (domains.length === 0) {
+                      return (
+                        <div className="text-center py-8 border border-dashed border-border/50 rounded-xl">
+                          <p className="text-xs text-muted-foreground">No citations detected</p>
                         </div>
-                      ))
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 py-3">
-                    <span>No domain citations</span>
-                  </div>
-                )}
-              </div>
+                      );
+                    }
+
+                    return domains.map((domain: any, idx) => (
+                      <div key={idx} className="bg-white/70 border border-border/40 rounded-lg px-4 py-3 flex items-center justify-between hover:bg-white transition-colors">
+                        <div className="font-medium text-[13px]">{domain.domain_citation}</div>
+                        <div className="text-[10px] font-bold bg-slate-200/50 px-2 py-0.5 rounded text-muted-foreground">
+                          {domain.associated_url?.length || 0} SOURCE
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </section>
 
               {/* Associated Links Section */}
-              <div className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  Associated Links
-                </h3>
-                {selectedResponse?.identifiedBrands &&
-                selectedResponse.identifiedBrands.some(
-                  (brand) =>
-                    brand.associated_domain &&
-                    brand.associated_domain.some(
-                      (d) => d.associated_url && d.associated_url.length > 0
-                    )
-                ) ? (
-                  <div className="space-y-2">
-                    {selectedResponse.identifiedBrands.map((brand) =>
-                      brand.associated_domain?.map((domain) =>
-                        domain.associated_url?.map((url, idx) => (
-                          <div
-                            key={`url-${brand._id}-${idx}`}
-                            className="p-2 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition-colors"
-                          >
-                            <a
-                              href={url.url_citation}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:text-blue-800 truncate block"
-                              title={url.url_citation}
-                            >
-                              {url.url_citation}
-                            </a>
-                            {url.url_anchor_text && (
-                              <p className="text-xs text-gray-500 mt-1 truncate">
-                                {url.url_anchor_text}
-                              </p>
-                            )}
-                            {url.url_citation_type && (
-                              <span className="inline-block px-1.5 py-0.5 text-xs bg-gray-100 text-gray-600 rounded mt-1">
-                                {url.url_citation_type}
-                              </span>
-                            )}
-                          </div>
-                        ))
+              <section>
+                <div className="flex items-center gap-2 mb-6">
+                  <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    Associated Links
+                  </h4>
+                  <div className="h-[1px] flex-1 bg-border/40" />
+                </div>
+
+                <div className="space-y-2">
+                  {(() => {
+                    const links = Array.from(
+                      new Set(
+                        (selectedResponse?.identifiedBrands ?? [])
+                          .flatMap((b) =>
+                            (b.associated_domain ?? []).flatMap((d) =>
+                              (d.associated_url ?? []).map((u) => u.url_citation)
+                            )
+                          )
+                          .filter((u): u is string => !!u)
                       )
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-gray-500 py-3">
-                    <span>No associated links</span>
-                  </div>
-                )}
-              </div>
+                    );
+
+                    if (links.length === 0) {
+                      return (
+                        <div className="text-center py-8 border border-dashed border-border/50 rounded-xl">
+                          <p className="text-xs text-muted-foreground">No links detected</p>
+                        </div>
+                      );
+                    }
+
+                    return links.map((url, idx) => {
+                      let hostname = url;
+                      try { hostname = new URL(url).hostname; } catch { }
+                      return (
+                        <a
+                          key={idx}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group block bg-white border border-border shadow-sm rounded-xl p-4 hover:border-blue-300 hover:shadow-md transition-all"
+                        >
+                          <div className="text-[13px] text-blue-600 font-medium truncate group-hover:underline">{url}</div>
+                          <div className="text-[11px] text-muted-foreground/70 mt-1 flex items-center gap-1">
+                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                            {hostname}
+                          </div>
+                        </a>
+                      );
+                    });
+                  })()}
+                </div>
+              </section>
+
             </div>
           </div>
         </AlertDialogContent>
