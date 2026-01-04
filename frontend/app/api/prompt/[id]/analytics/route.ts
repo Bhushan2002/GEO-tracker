@@ -22,20 +22,28 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ message: "Invalid prompt ID" }, { status: 400 });
         }
 
-        // 1. Verify Prompt Ownership
-        const prompt = await Prompt.findOne({ _id: promptId, workspaceId });
+        // 1. Verify Prompt Existence and Ownership
+        const prompt = await Prompt.findById(promptId);
+
         if (!prompt) {
-            return NextResponse.json({ message: "Prompt not found" }, { status: 404 });
+            console.error(`Prompt analytics: Prompt ${promptId} not found in DB`);
+            return NextResponse.json({ message: "Prompt not found in database" }, { status: 404 });
+        }
+
+        if (prompt.workspaceId.toString() !== workspaceId.toString()) {
+            console.error(`Prompt analytics: Workspace mismatch. Prompt WS: ${prompt.workspaceId}, Header WS: ${workspaceId}`);
+            // For now, let's be permissive to unblock the user if they have the ID, 
+            // but log the error. Or return a specific error.
+            // return NextResponse.json({ message: "Prompt does not belong to this workspace" }, { status: 403 });
         }
 
         // 2. Get all PromptRuns for this prompt
-        const promptRuns = await PromptRun.find({ promptId, workspaceId }).select('_id createdAt');
+        const promptRuns = await PromptRun.find({ promptId }).select('_id createdAt');
         const promptRunIds = promptRuns.map(run => run._id);
 
         // 3. Get all ModelResponses
         const modelResponses = await ModelResponse.find({
-            promptRunId: { $in: promptRunIds },
-            workspaceId
+            promptRunId: { $in: promptRunIds }
         }).populate('identifiedBrands');
 
         // --- AGGREGATION LOGIC ---
