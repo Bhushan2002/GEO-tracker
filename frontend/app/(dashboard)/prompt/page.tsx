@@ -117,7 +117,8 @@ export default function Page() {
     }
   };
 
-  const handleRowClick = async (prompt: Prompt) => {
+
+  const handleRowClick = (prompt: Prompt) => {
     router.push(`/prompt/${prompt._id}`);
   };
 
@@ -194,7 +195,12 @@ export default function Page() {
         </div>
       </div>
 
-      <PromptTable data={filteredPrompts} loading={isLoading} onRefresh={refreshPrompts} onRowClick={handleRowClick} />
+      <PromptTable
+        data={filteredPrompts}
+        loading={isLoading}
+        onRefresh={refreshPrompts}
+        onRowClick={handleRowClick}
+      />
 
       {/* Add Prompt Dialog */}
       <AlertDialog open={isAddPromptOpen} onOpenChange={setIsAddPromptOpen}>

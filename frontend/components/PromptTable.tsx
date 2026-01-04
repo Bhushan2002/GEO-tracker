@@ -90,8 +90,8 @@ export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTabl
             {data.map((prompt) => (
               <TableRow
                 key={prompt._id}
-                className="hover:bg-slate-50/30 border-b border-slate-100 last:border-0 transition-all cursor-pointer group h-14"
-                onClick={() => onRowClick(prompt)}
+                onClick={() => onRowClick?.(prompt)}
+                className="hover:bg-slate-50/30 border-b border-slate-100 last:border-0 transition-all group h-14 cursor-pointer"
               >
                 <TableCell className="pl-6 py-4 border-r border-slate-100">
                   <span className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-2">
