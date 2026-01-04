@@ -61,7 +61,7 @@ export default function PromptDetailPage() {
     useEffect(() => {
         if (params.id) {
             setLoading(true);
-            api.get<PromptAnalytics>(`/api/analytics/prompt/${params.id}`)
+            api.get<PromptAnalytics>(`/api/prompt-analytics/${params.id}`)
                 .then((res) => setData(res.data))
                 .catch((err) => console.error(err))
                 .finally(() => setLoading(false));
