@@ -44,7 +44,10 @@ import {
     XCircle,
     Activity,
     Cpu,
-    ChevronRight
+    ChevronRight,
+    Search,
+    RefreshCw,
+    MoreHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -58,6 +61,7 @@ export default function PromptDetailsPage() {
     const router = useRouter();
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [selectedRunBrands, setSelectedRunBrands] = useState<{ id: string, name: string[] } | null>(null);
 
     useEffect(() => {
         const fetchAnalytics = async () => {
@@ -111,7 +115,7 @@ export default function PromptDetailsPage() {
             <div className="space-y-6">
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-[0.2em] group"
+                    className="flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-[0.2em] group cursor-pointer"
                 >
                     <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
                     Back to dashboard
@@ -139,10 +143,10 @@ export default function PromptDetailsPage() {
                 </div>
             </div>
 
-            {/* Row 1: Visibility Chart (60%) + Brands Table (40%) */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                {/* Visibility Trend (xl:col-span-7 ~60%) */}
-                <Card className="xl:col-span-7 border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
+            {/* Row 1: Visibility Chart (48%) + Brands Table (52%) */}
+            <div className="grid grid-cols-1 xl:grid-cols-[48fr_52fr] gap-6">
+                {/* Visibility Trend (~48%) */}
+                <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
                     <CardHeader className="border-b border-slate-100 py-3 px-5 bg-slate-50/50 shrink-0">
                         <div className="flex items-center gap-2">
                             <TrendingUp className="h-3.5 w-3.5 text-slate-400" />
@@ -151,7 +155,7 @@ export default function PromptDetailsPage() {
                     </CardHeader>
                     <CardContent className="p-6 flex-1 relative bg-white">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={visibilityTrend}>
+                            <LineChart data={visibilityTrend} margin={{ left: -20, right: 10, top: 10, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis
                                     dataKey="date"
@@ -186,8 +190,8 @@ export default function PromptDetailsPage() {
                     </CardContent>
                 </Card>
 
-                {/* Brands Ranking (xl:col-span-5 ~40%) */}
-                <Card className="xl:col-span-5 border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
+                {/* Brands Ranking (~52%) */}
+                <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
                     <CardHeader className="border-b border-slate-100 py-3 px-5 bg-slate-50/50 shrink-0">
                         <div className="flex items-center gap-2">
                             <Layers className="h-3.5 w-3.5 text-slate-400" />
@@ -196,51 +200,55 @@ export default function PromptDetailsPage() {
                     </CardHeader>
                     <div className="flex-1 overflow-auto bg-white">
                         <Table className="border-collapse">
-                            <TableHeader className="bg-slate-50/20 sticky top-0 z-10">
-                                <TableRow className="border-b border-slate-200">
-                                    <TableHead className="w-10 text-center text-[9px] font-bold uppercase text-slate-400 py-2 border-r border-slate-100">#</TableHead>
-                                    <TableHead className="pl-4 text-[9px] font-bold uppercase text-slate-400 py-2 border-r border-slate-100">Brand</TableHead>
-                                    <TableHead className="text-center text-[9px] font-bold uppercase text-slate-400 py-2 border-r border-slate-100">VIS</TableHead>
-                                    <TableHead className="text-center text-[9px] font-bold uppercase text-slate-400 py-2 border-r border-slate-100">SNT</TableHead>
-                                    <TableHead className="text-center text-[9px] font-bold uppercase text-slate-400 py-2">POS</TableHead>
+                            <TableHeader className="bg-white">
+                                <TableRow className="hover:bg-transparent border-b border-slate-200">
+                                    <TableHead className="w-12 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest border-r border-slate-100 py-2.5">#</TableHead>
+                                    <TableHead className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-5 border-r border-slate-100 py-2.5">Brand</TableHead>
+                                    <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] border-r border-slate-100 py-2.5">Visibility</TableHead>
+                                    <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] border-r border-slate-100 py-2.5">Sentiment</TableHead>
+                                    <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] py-2.5">Position</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {brands.map((brand: any, idx: number) => {
                                     const logoUrl = `https://www.google.com/s2/favicons?domain=${brand.brand_name.toLowerCase().replace(/\s+/g, '')}.com&sz=128`;
                                     return (
-                                        <TableRow key={idx} className="hover:bg-slate-50/50 border-b border-slate-100 h-10 group">
-                                            <TableCell className="text-center text-[10px] font-bold text-slate-300 border-r border-slate-100">{idx + 1}</TableCell>
-                                            <TableCell className="pl-4 border-r border-slate-100">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className="h-6 w-6 rounded-full bg-white border border-slate-100 flex items-center justify-center p-0.5 shadow-sm shrink-0 overflow-hidden group-hover:scale-110 transition-transform">
+                                        <TableRow key={idx} className="hover:bg-slate-50/50 transition-all border-b border-slate-100 last:border-0 h-12 group">
+                                            <TableCell className="text-center text-slate-400 text-xs font-bold border-r border-slate-100">
+                                                {idx + 1}
+                                            </TableCell>
+                                            <TableCell className="border-r border-slate-100 pl-5">
+                                                <div className="flex items-center gap-3.5">
+                                                    <div className="h-8 w-8 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-110 transition-transform duration-300">
                                                         <img
                                                             src={logoUrl}
                                                             alt=""
-                                                            className="h-full w-full object-contain"
+                                                            className="h-5 w-5 object-contain"
                                                             onError={(e) => {
                                                                 (e.target as any).src = `https://ui-avatars.com/api/?name=${brand.brand_name}&background=f8fafc&color=cbd5e1&font-size=0.5`;
                                                             }}
                                                         />
                                                     </div>
-                                                    <span className="font-bold text-[12px] text-slate-700 truncate max-w-[120px]">{brand.brand_name}</span>
+                                                    <span className="text-[13px] font-bold text-slate-800 truncate">{brand.brand_name}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center border-r border-slate-100">
-                                                <span className="text-[12px] font-bold text-slate-900">{brand.visibility}%</span>
+                                                <span className="font-bold text-slate-900 text-[13px]">{brand.visibility}%</span>
                                             </TableCell>
-                                            <TableCell className="text-center border-r border-slate-100">
-                                                <span className={cn(
-                                                    "text-[10px] font-bold px-1.5 py-0.5 rounded-md border",
-                                                    brand.sentiment >= 60 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                                        brand.sentiment >= 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
-                                                            "bg-rose-50 text-rose-600 border-rose-100"
-                                                )}>
-                                                    {brand.sentiment}
-                                                </span>
+                                            <TableCell className="border-r border-slate-100">
+                                                <div className="flex justify-center">
+                                                    <span className={cn(
+                                                        "inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[11px] font-bold border min-w-[36px]",
+                                                        brand.sentiment >= 60 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                                            brand.sentiment >= 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                                                "bg-rose-50 text-rose-600 border-rose-100"
+                                                    )}>
+                                                        {brand.sentiment}
+                                                    </span>
+                                                </div>
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <span className="text-[12px] font-bold text-slate-900">{brand.position}</span>
+                                                <span className="font-bold text-slate-900 text-[13px]">{brand.position}</span>
                                             </TableCell>
                                         </TableRow>
                                     );
@@ -390,13 +398,10 @@ export default function PromptDetailsPage() {
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-slate-50/10 border-b border-slate-100">
-                                <TableHead className="w-16 text-center text-[10px] font-bold uppercase text-slate-400">Status</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase text-slate-400">Timestamp</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase text-slate-400 pl-6">Timestamp</TableHead>
                                 <TableHead className="text-center text-[10px] font-bold uppercase text-slate-400 pl-4 pr-4 border-l border-slate-50">Intelligence Detect</TableHead>
                                 <TableHead className="text-center text-[10px] font-bold uppercase text-slate-400 pl-4 pr-4 border-l border-slate-50">Sentiment</TableHead>
-                                <TableHead className="text-center text-[10px] font-bold uppercase text-slate-400 pl-4 pr-4 border-l border-slate-50">Performance</TableHead>
-                                <TableHead className="text-center text-[10px] font-bold uppercase text-slate-400 pl-4 pr-4 border-l border-slate-50">Coverage</TableHead>
-                                <TableHead className="text-right pr-6 text-[10px] font-bold uppercase text-slate-400">Run ID</TableHead>
+                                <TableHead className="text-right pr-6 text-[10px] font-bold uppercase text-slate-400 border-l border-slate-50">Execution Status</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -409,33 +414,19 @@ export default function PromptDetailsPage() {
                             ) : (
                                 executionHistory.map((run: any) => (
                                     <TableRow key={run.id} className="hover:bg-slate-50/30 border-b border-slate-50 last:border-0 h-14 transition-colors group">
-                                        <TableCell className="text-center">
-                                            <div className="flex justify-center">
-                                                {run.status === 'COMPLETED' ? (
-                                                    <div className="h-6 w-6 rounded-full bg-emerald-50 flex items-center justify-center border border-emerald-100">
-                                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                                                    </div>
-                                                ) : run.status === 'FAILED' ? (
-                                                    <div className="h-6 w-6 rounded-full bg-rose-50 flex items-center justify-center border border-rose-100">
-                                                        <XCircle className="h-3.5 w-3.5 text-rose-500" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="h-6 w-6 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100">
-                                                        <Activity className="h-3.5 w-3.5 text-blue-400 animate-pulse" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-[12px] font-bold text-slate-700">
+                                        <TableCell className="text-[12px] font-bold text-slate-700 pl-6">
                                             <div className="flex flex-col">
                                                 <span>{new Date(run.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                                                 <span className="text-[10px] text-slate-400 font-medium font-mono">{new Date(run.date).toLocaleTimeString('en-US', { hour12: false })}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-center border-l border-slate-50">
-                                            <div className="flex flex-col items-center gap-1">
+                                            <button
+                                                onClick={() => setSelectedRunBrands({ id: run.id, name: run.brandsDetected })}
+                                                className="flex flex-col items-center gap-1 mx-auto hover:opacity-70 transition-opacity p-2 rounded-lg hover:bg-slate-100/50 cursor-pointer"
+                                            >
                                                 <div className="flex -space-x-2 overflow-hidden">
-                                                    {run.brandsDetected?.map((brandName: string, i: number) => (
+                                                    {run.brandsDetected?.slice(0, 3).map((brandName: string, i: number) => (
                                                         <div key={i} className="inline-block h-5 w-5 rounded-full ring-2 ring-white bg-white border border-slate-100 overflow-hidden">
                                                             <img
                                                                 src={`https://www.google.com/s2/favicons?domain=${brandName.toLowerCase().replace(/\s+/g, '')}.com&sz=128`}
@@ -456,7 +447,7 @@ export default function PromptDetailsPage() {
                                                 <span className="text-[8px] font-bold uppercase text-slate-400 tracking-tighter">
                                                     {run.brandsDetectedCount} Brands Ident
                                                 </span>
-                                            </div>
+                                            </button>
                                         </TableCell>
                                         <TableCell className="text-center border-l border-slate-50">
                                             <div className="flex flex-col items-center">
@@ -470,27 +461,22 @@ export default function PromptDetailsPage() {
                                                 <span className="text-[8px] font-bold uppercase text-slate-400 tracking-tighter">Avg Sentiment</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-center border-l border-slate-50">
-                                            <div className="flex flex-col items-center">
-                                                <div className="flex items-center gap-1">
-                                                    <Cpu className="h-2.5 w-2.5 text-slate-300" />
-                                                    <span className="text-[12px] font-bold text-slate-700">{run.avgLatency}ms</span>
+                                        <TableCell className="text-right pr-6 border-l border-slate-50">
+                                            <div className="flex items-center justify-end gap-2.5">
+                                                <div className={cn(
+                                                    "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5",
+                                                    run.status === 'COMPLETED' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                                                        run.status === 'FAILED' ? "bg-rose-50 text-rose-600 border border-rose-100" :
+                                                            "bg-blue-50 text-blue-600 border border-blue-100"
+                                                )}>
+                                                    {run.status === 'COMPLETED' ? (
+                                                        <><CheckCircle2 className="h-3 w-3" /> Success</>
+                                                    ) : run.status === 'FAILED' ? (
+                                                        <><XCircle className="h-3 w-3" /> Failure</>
+                                                    ) : (
+                                                        <><Activity className="h-3 w-3 animate-pulse" /> Active</>
+                                                    )}
                                                 </div>
-                                                <span className="text-[8px] font-bold uppercase text-slate-400 tracking-tighter">Avg Latency</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-center border-l border-slate-50">
-                                            <div className="flex flex-col items-center">
-                                                <span className="text-[12px] font-bold text-slate-700">{run.modelsCount} / 5</span>
-                                                <span className="text-[8px] font-bold uppercase text-slate-400 tracking-tighter">Responses</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right pr-6">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <span className="text-[9px] font-mono text-slate-300 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    {run.id.substring(0, 8)}
-                                                </span>
-                                                <ChevronRight className="h-3 w-3 text-slate-300 group-hover:text-slate-900 transition-colors" />
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -500,6 +486,62 @@ export default function PromptDetailsPage() {
                     </Table>
                 </div>
             </Card>
+            {/* Brand List Modal Overlay */}
+            {selectedRunBrands && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm cursor-pointer" onClick={() => setSelectedRunBrands(null)} />
+                    <Card className="relative w-full max-w-sm border-slate-200 shadow-2xl overflow-hidden bg-white animate-in zoom-in-95 duration-300">
+                        <CardHeader className="border-b border-slate-100 py-4 px-6 bg-slate-50/50">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <ShieldCheck className="h-4 w-4 text-slate-400" />
+                                    <CardTitle className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Detected Brands</CardTitle>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 rounded-full hover:bg-slate-200"
+                                    onClick={() => setSelectedRunBrands(null)}
+                                >
+                                    <XCircle className="h-4 w-4 text-slate-400" />
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-4 max-h-[300px] overflow-auto">
+                            <div className="flex flex-wrap gap-2 justify-center">
+                                {selectedRunBrands.name.map((brand, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-100 text-[11px] font-bold text-slate-700 shadow-sm transition-all hover:bg-white hover:border-slate-200">
+                                        <div className="h-4 w-4 rounded-full bg-white border border-slate-100 flex items-center justify-center p-0.5 overflow-hidden shrink-0 shadow-sm">
+                                            <img
+                                                src={`https://www.google.com/s2/favicons?domain=${brand.toLowerCase().replace(/\s+/g, '')}.com&sz=128`}
+                                                alt=""
+                                                className="h-full w-full object-contain"
+                                                onError={(e) => {
+                                                    (e.target as any).src = `https://ui-avatars.com/api/?name=${brand}&background=f8fafc&color=cbd5e1&font-size=0.5`;
+                                                }}
+                                            />
+                                        </div>
+                                        <span>{brand}</span>
+                                    </div>
+                                ))}
+                                {selectedRunBrands.name.length === 0 && (
+                                    <p className="text-center py-4 text-slate-400 text-xs italic w-full">No brands detected in this run</p>
+                                )}
+                            </div>
+                        </CardContent>
+                        <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex justify-end">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-[10px] font-bold uppercase tracking-widest"
+                                onClick={() => setSelectedRunBrands(null)}
+                            >
+                                Close Registry
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 }

@@ -10,10 +10,20 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, props: any) {
     try {
-        const { id: promptId } = await params;
-        if (!promptId) return NextResponse.json({ message: "No Prompt ID provided" }, { status: 400 });
+        console.log("Analytics Route Hit. Props:", props);
+
+        // Safe params extraction for Next.js 15/16 (Promise) or 14 (Object)
+        const params = await props.params; // Awaiting a non-promise object is safe in JS
+        console.log("Resolved Params:", params);
+
+        if (!params?.id) {
+            console.error("Missing ID in params");
+            return NextResponse.json({ message: "No Prompt ID provided" }, { status: 400 });
+        }
+
+        const promptId = params.id;
 
         const workspaceId = await getWorkspaceId(req);
         if (!workspaceId) return workspaceError();
@@ -190,7 +200,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                     date: run.createdAt,
                     status: run.status,
                     brandsDetectedCount: distinctBrands.size,
-                    brandsDetected: Array.from(distinctBrands).slice(0, 3), // Top 3 brands for display
+                    brandsDetected: Array.from(distinctBrands), // Return all brand names
                     avgSentiment: sntCount > 0 ? Math.round(totalSnt / sntCount) : 0,
                     avgLatency: responses.length > 0 ? Math.round(totalLatency / responses.length) : 0,
                     modelsCount: responses.length
