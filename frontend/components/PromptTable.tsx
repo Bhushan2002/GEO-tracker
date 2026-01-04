@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { PromptAPI } from "@/api/prompt.api";
 import {
   Table,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { MoreHorizontal, Play, Pause, Plus } from "lucide-react";
+import { Play, Pause, Plus } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -64,24 +65,24 @@ export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTabl
 
   return (
     <TooltipProvider>
-      <div className="w-full">
-        <Table>
+      <div className="w-full border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+        <Table className="border-collapse">
           <TableHeader className="bg-slate-50/50">
-            <TableRow className="hover:bg-transparent border-slate-100">
-              <TableHead className="pl-6 py-3">
-                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Prompt</div>
+            <TableRow className="hover:bg-transparent border-b border-slate-200">
+              <TableHead className="pl-6 py-3 border-r border-slate-100 w-[50%]">
+                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Prompt Description</div>
               </TableHead>
-              <TableHead className="w-[140px]">
-                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Topic</div>
+              <TableHead className="w-[12%] border-r border-slate-100 text-center py-3">
+                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Topic</div>
               </TableHead>
-              <TableHead className="w-[180px]">
-                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Tags</div>
+              <TableHead className="w-[12%] border-r border-slate-100 text-center py-3">
+                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Tags</div>
               </TableHead>
-              <TableHead className="w-[120px] text-center">
-                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Status</div>
+              <TableHead className="w-[12%] border-r border-slate-100 text-center py-3">
+                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Status</div>
               </TableHead>
-              <TableHead className="w-[100px] pr-6 text-right">
-                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Actions</div>
+              <TableHead className="w-[14%] pr-6 text-center py-3">
+                <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Control</div>
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -89,88 +90,78 @@ export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTabl
             {data.map((prompt) => (
               <TableRow
                 key={prompt._id}
-                className="hover:bg-slate-50 border-slate-100 transition-colors"
+                className="hover:bg-slate-50/30 border-b border-slate-100 last:border-0 transition-all cursor-pointer group h-14"
+                onClick={() => onRowClick(prompt)}
               >
-                <TableCell className="pl-6 py-5">
-                  <span className="text-sm font-medium text-slate-800 leading-snug line-clamp-2 max-w-[600px]">
+                <TableCell className="pl-6 py-4 border-r border-slate-100">
+                  <span className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-2">
                     {prompt.promptText}
                   </span>
                 </TableCell>
 
-                <TableCell>
+                <TableCell className="border-r border-slate-100 text-center">
                   {prompt.topic ? (
-                    <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-tight">
+                    <span className="inline-flex bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest border border-slate-200">
                       {prompt.topic}
                     </span>
                   ) : (
-                    <span className="text-[10px] text-slate-300 italic">Uncategorized</span>
+                    <span className="text-[10px] text-slate-300 font-medium italic">General</span>
                   )}
                 </TableCell>
 
-                <TableCell>
-                  <div className="flex flex-wrap gap-1.5">
+                <TableCell className="border-r border-slate-100 text-center">
+                  <div className="flex flex-wrap justify-center gap-1.5">
                     {(prompt.tags || []).length > 0 ? (
-                      (prompt.tags || []).map((tag, i) => (
-                        <span key={i} className="text-[10px] text-slate-400 font-medium">#{tag}</span>
+                      (prompt.tags || []).slice(0, 2).map((tag, i) => (
+                        <span key={i} className="text-[10px] text-slate-500 font-bold bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">#{tag}</span>
                       ))
                     ) : (
-                      <span className="text-[10px] text-zinc-300 italic">—</span>
+                      <span className="text-[10px] text-slate-200 italic">—</span>
                     )}
                   </div>
                 </TableCell>
 
-                <TableCell className="text-center">
+                <TableCell className="border-r border-slate-100 text-center">
                   <div className="flex items-center justify-center">
                     <span className={cn(
-                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight",
+                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all border",
                       prompt.isScheduled
-                        ? "text-emerald-600 bg-emerald-50"
-                        : "text-slate-400 bg-slate-50"
+                        ? "text-emerald-700 bg-emerald-50 border-emerald-100"
+                        : "text-slate-400 bg-slate-50 border-slate-100"
                     )}>
                       <div className={cn(
                         "h-1.5 w-1.5 rounded-full",
-                        prompt.isScheduled ? "bg-emerald-500" : "bg-slate-300"
+                        prompt.isScheduled ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]" : "bg-slate-300"
                       )} />
                       {prompt.isScheduled ? "Active" : "Paused"}
                     </span>
                   </div>
                 </TableCell>
 
-                <TableCell className="pr-6 text-right">
-                  <div className="flex items-center justify-end gap-1">
+                <TableCell className="pr-6 text-center">
+                  <div className="flex items-center justify-center">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 rounded-md hover:bg-white hover:border-slate-200 border border-slate-100 shadow-sm cursor-pointer"
+                          className={cn(
+                            "h-9 w-9 rounded-lg transition-all border shadow-sm cursor-pointer group-hover:scale-105",
+                            prompt.isScheduled
+                              ? "bg-slate-50 text-slate-900 border-slate-200 hover:bg-slate-100"
+                              : "bg-white text-slate-400 border-slate-100 hover:text-slate-900 hover:border-slate-300"
+                          )}
                           onClick={(e) => handleToggle(e, prompt._id, prompt.isScheduled)}
                         >
                           {prompt.isScheduled ? (
-                            <Pause className="h-3.5 w-3.5 text-slate-600" />
+                            <Pause className="h-4 w-4 fill-slate-900" />
                           ) : (
-                            <Play className="h-3.5 w-3.5 text-slate-600" />
+                            <Play className="h-4 w-4 ml-0.5 fill-slate-400 group-hover:fill-slate-900" />
                           )}
                         </Button>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="bg-slate-900 px-3 py-1.5 text-[10px] font-bold">
-                        {prompt.isScheduled ? "Pause " : "Schedule Prompt"}
-                      </TooltipContent>
-                    </Tooltip>
-
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-md hover:bg-white hover:border-slate-200 border border-slate-100 shadow-sm cursor-pointer"
-                          onClick={() => onRowClick(prompt)}
-                        >
-                          <MoreHorizontal className="h-3.5 w-3.5 text-slate-400" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="bg-slate-900 px-3 py-1.5 text-[10px] font-bold">
-                        View Analytics
+                      <TooltipContent side="top" className="bg-slate-900 border-none px-3 py-1.5 text-[10px] font-bold text-white rounded-md shadow-lg">
+                        {prompt.isScheduled ? "Pause Execution" : "Start Execution"}
                       </TooltipContent>
                     </Tooltip>
                   </div>

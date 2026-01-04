@@ -5,12 +5,11 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { WorkspaceProvider, useWorkspace } from "@/lib/contexts/workspace-context";
 import * as React from "react";
 
-function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { activeWorkspace } = useWorkspace();
+import { DashboardDataProvider } from "@/lib/contexts/dashboard-data-context";
 
+function DashboardContent({ children }: { children: React.ReactNode }) {
   return (
     <div
-      key={activeWorkspace?._id}
       className="flex-1 overflow-y-auto bg-background"
       suppressHydrationWarning
     >
@@ -27,14 +26,16 @@ export default function DashboardLayout({
   return (
     <WorkspaceProvider>
       <SidebarProvider>
-        <div className="min-h-screen flex w-full">
-          <AppSidebar />
-          <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-            <DashboardContent>
-              {children}
-            </DashboardContent>
-          </main>
-        </div>
+        <DashboardDataProvider>
+          <div className="min-h-screen flex w-full">
+            <AppSidebar />
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+              <DashboardContent>
+                {children}
+              </DashboardContent>
+            </main>
+          </div>
+        </DashboardDataProvider>
       </SidebarProvider>
     </WorkspaceProvider>
   );

@@ -26,7 +26,14 @@ api.interceptors.response.use(
   (error) => {
     const data = error.response?.data;
     const errorMsg = data?.message || data?.error || (typeof data === 'string' ? data : null) || error.message;
-    console.error("API Error:", errorMsg);
+
+    // Don't log console.error for 429 (quota) to avoid the dev overlay popping up
+    if (error.response?.status !== 429) {
+      console.error("API Error:", errorMsg);
+    } else {
+      console.warn("API Quota Error (Ignored):", errorMsg);
+    }
+
     return Promise.reject(error);
   }
 );
