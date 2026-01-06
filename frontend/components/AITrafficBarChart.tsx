@@ -3,32 +3,22 @@
 import { useEffect, useState } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { DUMMY_TRAFFIC_DATA } from "@/lib/dummy-data"
 
 export function AITrafficBarChart() {
-  const [data, setData] = useState([])
+  const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function fetchTrafficData() {
       try {
-        // Fetch AI models traffic data from Google Analytics
-        const response = await fetch("/api/audiences/ai-models-report")
-        const result = await response.json()
-        
-        console.log("AI Models API Response:", result)
-        
-        // Transform GA data for Recharts
-        // API returns: [{ model: "ChatGPT", users: 150, sessions: 200, ... }]
-        const allowedModels = ["ChatGPT", "Copilot", "Perplexity"];
-        const formatted = result
-          .filter((item: any) => allowedModels.includes(item.model))
-          .map((item: any) => ({
-            model: item.model,
-            traffic: item.users,
-          })) || []
+        // SKIP API: const response = await fetch("/api/audiences/ai-models-report")
+        // SKIP API: const result = await response.json()
+        const result = DUMMY_TRAFFIC_DATA;
 
-        console.log("Formatted data for chart:", formatted)
-        setData(formatted)
+        console.log("Using Dummy AI Models Data:", result)
+
+        setData(result)
       } catch (error) {
         console.error("Failed to fetch GA traffic:", error)
       } finally {
@@ -72,10 +62,10 @@ export function AITrafficBarChart() {
             />
             <YAxis />
             <Tooltip />
-            <Bar 
-              dataKey="traffic" 
+            <Bar
+              dataKey="traffic"
               fill="#1e40af"
-              radius={[4, 4, 0, 0]} 
+              radius={[4, 4, 0, 0]}
               barSize={40}
             />
           </BarChart>

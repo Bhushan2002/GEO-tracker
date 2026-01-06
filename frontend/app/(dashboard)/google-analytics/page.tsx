@@ -5,6 +5,13 @@ import { toast } from "sonner";
 import { api } from "@/api/api";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import {
+    DUMMY_GA_ACCOUNTS,
+    DUMMY_GA_REPORT,
+    DUMMY_FIRST_TOUCH,
+    DUMMY_ZERO_TOUCH,
+    DUMMY_TRAFFIC_DATA
+} from "@/lib/dummy-data";
+import {
     Table,
     TableHeader,
     TableRow,
@@ -72,12 +79,14 @@ export default function GoogleAnalyticsPage() {
         }
     }, [selectedAccountId]);
 
+    // ... existing component lines ...
     const loadGAAccounts = async () => {
         try {
-            const response = await api.get("/api/ga-accounts");
-            setGaAccounts(response.data);
-            if (response.data.length > 0 && !selectedAccountId) {
-                setSelectedAccountId(response.data[0]._id);
+            // SKIP API: const response = await api.get("/api/ga-accounts");
+            const data = DUMMY_GA_ACCOUNTS;
+            setGaAccounts(data);
+            if (data.length > 0 && !selectedAccountId) {
+                setSelectedAccountId(data[0]._id);
             }
         } catch (error) {
             console.error("Failed to load GA accounts:", error);
@@ -85,56 +94,28 @@ export default function GoogleAnalyticsPage() {
     };
 
     const loadAccountData = async (accountId: string) => {
-        if (!accountId || isQuotaExceeded) return;
-
-        // Check cache first
-        const cacheKey = `ga_data_${accountId}`;
-        const cached = sessionStorage.getItem(cacheKey);
-        if (cached) {
-            try {
-                const parsed = JSON.parse(cached);
-                setChartData(parsed.chartData);
-                setKeyMetrics(parsed.keyMetrics);
-                setAiModelsData(parsed.aiModelsData);
-                setFirstTouchData(parsed.firstTouchData);
-                setZeroTouchData(parsed.zeroTouchData);
-                return;
-            } catch (e) {
-                sessionStorage.removeItem(cacheKey);
-            }
-        }
+        if (!accountId) return;
 
         setLoading(true);
         try {
-            // Fetch main analytics (traffic & metrics)
-            const analyticsRes = await api.get(`/api/analytics-by-account?accountId=${accountId}`);
-            const mainData = analyticsRes.data.chartData || [];
-            const metrics = analyticsRes.data.metrics || { activeUsers: 0, engagedSessions: 0, keyEvents: 0 };
+            // Using Dummy Data instead of multiple API calls
+            const mainData = DUMMY_GA_REPORT.chartData;
+            const metrics = DUMMY_GA_REPORT.metrics;
 
-            // Fetch AI models traffic
-            const aiModelsRes = await api.get(`/api/ai-models-by-account?accountId=${accountId}`);
+            // Transform DUMMY_TRAFFIC_DATA to match the expected format for this page
+            // Page expects: [{ model: "ChatGPT", users: 150, sessions: 200, conversionRate: "12%" }]
+            const formattedAIModels = DUMMY_TRAFFIC_DATA.map((item: any) => ({
+                model: item.model,
+                users: item.traffic,
+                sessions: Math.round(item.traffic * 1.4),
+                conversionRate: (Math.random() * 5 + 2).toFixed(1) + "%"
+            }));
 
-            // Ensure specific models are included, even if they have 0 data
-            const allowedModels = ["ChatGPT", "Copilot", "Perplexity", "Gemini", "Claude"];
-            const formattedAIModels = allowedModels.map(modelName => {
-                const existingData = aiModelsRes.data.find((item: any) => item.model === modelName);
-                if (existingData) return existingData;
-                return {
-                    model: modelName,
-                    users: 0,
-                    sessions: 0,
-                    conversionRate: "0%"
-                };
-            });
+            const fTouch = DUMMY_FIRST_TOUCH;
+            const zTouch = DUMMY_ZERO_TOUCH;
 
-            // Fetch First Touch & Zero Touch data
-            const [firstTouchRes, zeroTouchRes] = await Promise.all([
-                api.get(`/api/analytics/first-touch?accountId=${accountId}`),
-                api.get(`/api/analytics/zero-touch?accountId=${accountId}`),
-            ]);
-
-            const fTouch = firstTouchRes.data || [];
-            const zTouch = zeroTouchRes.data || [];
+            // Artificial delay for realism
+            await new Promise(r => setTimeout(r, 600));
 
             setChartData(mainData);
             setKeyMetrics(metrics);
@@ -142,29 +123,10 @@ export default function GoogleAnalyticsPage() {
             setFirstTouchData(fTouch);
             setZeroTouchData(zTouch);
 
-            // Save to cache
-            sessionStorage.setItem(cacheKey, JSON.stringify({
-                chartData: mainData,
-                keyMetrics: metrics,
-                aiModelsData: formattedAIModels,
-                firstTouchData: fTouch,
-                zeroTouchData: zTouch,
-                timestamp: Date.now()
-            }));
-
             setIsQuotaExceeded(false);
         } catch (error: any) {
-            const isQuotaError = error.response?.status === 429 || error.message?.includes("quota");
-
-            if (isQuotaError) {
-                setIsQuotaExceeded(true);
-                // Use warn instead of error to avoid the development overlay
-                console.warn("GA Quota limit reached:", error.message);
-                toast.error("Google Analytics quota exceeded. This view will refresh once the quota is available.");
-            } else {
-                console.error("Failed to load GA account data:", error);
-                toast.error("Failed to fetch analytics data");
-            }
+            console.error("Failed to load GA account data:", error);
+            toast.error("Failed to fetch analytics data");
         } finally {
             setLoading(false);
         }

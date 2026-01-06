@@ -6,6 +6,7 @@ import { PromptAPI } from "@/api/prompt.api";
 import { brandAPI } from "@/api/brand.api";
 import { ModelResponseAPI } from "@/api/modelresponse.api";
 import { useWorkspace } from "./workspace-context";
+import { DUMMY_ALL_BRANDS, DUMMY_BRAND_HISTORY, DUMMY_MODEL_RESPONSES, DUMMY_PROMPTS, DUMMY_TARGET_BRANDS } from "../dummy-data";
 
 interface DashboardDataContextType {
     prompts: Prompt[];
@@ -26,57 +27,31 @@ const DashboardDataContext = createContext<DashboardDataContextType | undefined>
 
 export function DashboardDataProvider({ children }: { children: React.ReactNode }) {
     const { activeWorkspace } = useWorkspace();
-    const [prompts, setPrompts] = useState<Prompt[]>([]);
-    const [targetBrands, setTargetBrands] = useState<any[]>([]);
-    const [modelResponses, setModelResponses] = useState<ModelResponse[]>([]);
-    const [allBrands, setAllBrands] = useState<any[]>([]);
-    const [brandHistory, setBrandHistory] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [hasLoaded, setHasLoaded] = useState(false);
+    const [prompts, setPrompts] = useState<Prompt[]>(DUMMY_PROMPTS as any);
+    const [targetBrands, setTargetBrands] = useState<any[]>(DUMMY_TARGET_BRANDS);
+    const [modelResponses, setModelResponses] = useState<ModelResponse[]>(DUMMY_MODEL_RESPONSES as any);
+    const [allBrands, setAllBrands] = useState<any[]>(DUMMY_ALL_BRANDS);
+    const [brandHistory, setBrandHistory] = useState<any[]>(DUMMY_BRAND_HISTORY);
+    const [isLoading, setIsLoading] = useState(false); // Initially false because we have dummy data
 
     const fetchPrompts = useCallback(async () => {
-        try {
-            const res = await PromptAPI.getAll();
-            setPrompts(res.data);
-        } catch (error) {
-            console.error("Failed to load prompts", error);
-        }
+        setPrompts(DUMMY_PROMPTS as any);
     }, []);
 
     const fetchBrands = useCallback(async () => {
-        try {
-            const res = await brandAPI.getTargetBrand();
-            setTargetBrands(res.data);
-        } catch (error) {
-            console.error("Failed to load brands", error);
-        }
+        setTargetBrands(DUMMY_TARGET_BRANDS);
     }, []);
 
     const fetchResponses = useCallback(async () => {
-        try {
-            const res = await ModelResponseAPI.getModelResponses();
-            setModelResponses(res.data);
-        } catch (error) {
-            console.error("Failed to load model responses", error);
-        }
+        setModelResponses(DUMMY_MODEL_RESPONSES as any);
     }, []);
 
     const fetchAllBrands = useCallback(async () => {
-        try {
-            const res = await brandAPI.getBrands();
-            setAllBrands(res.data);
-        } catch (error) {
-            console.error("Failed to load all brands", error);
-        }
+        setAllBrands(DUMMY_ALL_BRANDS);
     }, []);
 
     const fetchBrandHistory = useCallback(async () => {
-        try {
-            const res = await brandAPI.getBrandHistory(30);
-            setBrandHistory(res.data);
-        } catch (error) {
-            console.error("Failed to load brand history", error);
-        }
+        setBrandHistory(DUMMY_BRAND_HISTORY);
     }, []);
 
     const refreshAll = useCallback(async () => {
@@ -88,15 +63,12 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
             fetchAllBrands(),
             fetchBrandHistory(),
         ]);
-        setIsLoading(false);
-        setHasLoaded(true);
+        setTimeout(() => setIsLoading(false), 300); // Tiny artificial delay
     }, [fetchPrompts, fetchBrands, fetchResponses, fetchAllBrands, fetchBrandHistory]);
 
     useEffect(() => {
-        if (activeWorkspace?._id) {
-            refreshAll();
-        }
-    }, [activeWorkspace?._id, refreshAll]);
+        refreshAll();
+    }, [refreshAll]);
 
     return (
         <DashboardDataContext.Provider
@@ -106,7 +78,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
                 modelResponses,
                 allBrands,
                 brandHistory,
-                isLoading: isLoading && !hasLoaded,
+                isLoading,
                 refreshAll,
                 refreshPrompts: fetchPrompts,
                 refreshBrands: fetchBrands,
