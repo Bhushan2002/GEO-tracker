@@ -38,6 +38,11 @@ const generalItems = [
     icon: MessageSquare,
   },
   {
+    title: "Brands",
+    href: "/brand",
+    icon: Tag,
+  },
+  {
     title: "Google Analytics",
     href: "/google-analytics",
     icon: ChartBar,
@@ -50,6 +55,7 @@ const generalItems = [
   
 ];
 
+<<<<<<< HEAD
 const preferencesItems = [
   {
     title: "Brands",
@@ -58,6 +64,8 @@ const preferencesItems = [
   },
 
 ];
+=======
+>>>>>>> b45daada278e2185ba5ba89977d7bb7b6ccf1429
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -88,7 +96,7 @@ export function AppSidebar() {
         {/* General Group */}
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 text-xs font-medium text-sidebar-foreground/50 mb-2 group-data-[collapsible=icon]:hidden">
-            General
+            Pages
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -116,36 +124,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Preferences Group */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-2 text-xs font-medium text-sidebar-foreground/50 mb-2 group-data-[collapsible=icon]:hidden">
-            Preferences
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {preferencesItems.map((item) => {
-                const isActive = pathname.startsWith(item.href);
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      tooltip={item.title}
-                      className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground transition-colors"
-                    >
-                      <Link href={item.href} className="flex items-center gap-3 font-medium">
-                        <item.icon className="h-4 w-4" />
-                        <span className="group-data-[collapsible=icon]:hidden">
-                          {item.title}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
 
       </SidebarContent>
       {/* Footer with Log Out Only */}

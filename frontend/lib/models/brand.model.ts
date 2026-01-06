@@ -11,6 +11,8 @@ const brandSchema = new Schema<IBrand>(
       default: undefined,
       sparse: true,
     },
+    sentiment_sum: { type: Number, default: 0 },
+    total_evaluations: { type: Number, default: 0 },
 
     // Legacy fields (keep for backward compatibility)
     averageSentiment: { type: String },

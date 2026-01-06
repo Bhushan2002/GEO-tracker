@@ -57,21 +57,21 @@ export function ModelResponsesTable() {
   const filteredResponses = modelRes.filter(r => r.responseText?.trim());
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-      <Table>
-        <TableHeader className="bg-muted/40">
-          <TableRow>
-            <TableHead className="w-[250px] font-bold text-[11px] uppercase tracking-wider">AI Model</TableHead>
-            <TableHead className="font-bold text-[11px] uppercase tracking-wider">Preview Response</TableHead>
-            <TableHead className="w-[200px] font-bold text-[11px] uppercase tracking-wider">Date & Time</TableHead>
-            <TableHead className="w-[80px]"></TableHead>
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <Table className="border-collapse">
+        <TableHeader className="bg-slate-50/50">
+          <TableRow className="hover:bg-transparent border-b border-slate-200">
+            <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">AI Model</TableHead>
+            <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">Preview Response</TableHead>
+            <TableHead className="w-[160px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 text-center">Date & Time</TableHead>
+            <TableHead className="w-[80px] py-3 text-center"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredResponses.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
-                No model responses found.
+              <TableCell colSpan={4} className="h-40 text-center text-slate-400 font-medium italic">
+                No generated responses found
               </TableCell>
             </TableRow>
           ) : (
@@ -82,24 +82,26 @@ export function ModelResponsesTable() {
                   setSelectedResponse(response);
                   setIsDialogOpen(true);
                 }}
-                className="cursor-pointer hover:bg-muted/80 transition-colors group"
+                className="cursor-pointer hover:bg-slate-50/50 transition-all border-b border-slate-100 last:border-0 h-12 group"
               >
-                <TableCell className="font-semibold text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 bg-emerald-500 rounded-full" />
-                    {response.modelName}
+                <TableCell className="px-6 border-r border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                    <span className="font-bold text-[13px] text-slate-800">{response.modelName}</span>
                   </div>
                 </TableCell>
-                <TableCell className="max-w-[500px]">
-                  <p className="text-xs text-muted-foreground/80 line-clamp-1 italic">
+                <TableCell className="max-w-[500px] border-r border-slate-100 px-6">
+                  <p className="text-[12px] text-slate-500 line-clamp-1 font-medium italic">
                     {response.responseText}
                   </p>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground font-medium">
+                <TableCell className="text-[11px] text-slate-400 font-bold text-center border-r border-slate-100">
                   {formatDate(response.createdAt)}
                 </TableCell>
-                <TableCell className="text-right pr-6">
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-foreground transition-colors ml-auto" />
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all" />
+                  </div>
                 </TableCell>
               </TableRow>
             ))
@@ -126,37 +128,42 @@ export function ModelResponsesTable() {
           
           {/* Header */}
           <div className="px-10 py-5 border-b border-border flex items-center justify-between bg-white">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-[11px] font-bold">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Succeeded
-              </span>
+            <div className="flex flex-col gap-1">
+              <AlertDialogTitle className="text-lg font-bold text-slate-900">AI Model Response Detail</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs text-slate-500 hidden">
+                Detailed view of the AI model's response, identified brands, and source citations.
+              </AlertDialogDescription>
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-[11px] font-bold">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Succeeded
+                </span>
 
-              <span className="flex items-center gap-2 px-3 py-1.5 bg-sky-50 text-sky-700 rounded-full text-[11px] font-bold">
-                <Bot className="h-3.5 w-3.5" />
-                {selectedResponse?.modelName}
-              </span>
+                <span className="flex items-center gap-2 px-3 py-1.5 bg-sky-50 text-sky-700 rounded-full text-[11px] font-bold">
+                  <Bot className="h-3.5 w-3.5" />
+                  {selectedResponse?.modelName}
+                </span>
 
-
-              <span className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm border",
-                (() => {
-                  const avg = selectedResponse?.identifiedBrands?.length
-                    ? Math.round(selectedResponse.identifiedBrands.reduce((acc, b) => acc + (b.sentiment_score || 0), 0) / selectedResponse.identifiedBrands.length)
-                    : 0;
-                  if (avg >= 60) return "bg-emerald-50 text-emerald-700 border-emerald-100";
-                  if (avg >= 40) return "bg-amber-50 text-amber-700 border-amber-100";
-                  return "bg-rose-50 text-rose-700 border-rose-100";
-                })()
-              )}>
-                <Smile className="h-3.5 w-3.5" />
-                Avg Sentiment: {(() => {
-                  const avgSentiment = selectedResponse?.identifiedBrands?.length
-                    ? Math.round(selectedResponse.identifiedBrands.reduce((acc, b) => acc + (b.sentiment_score || 0), 0) / selectedResponse.identifiedBrands.length)
-                    : 0;
-                  return `${avgSentiment}%`;
-                })()}
-              </span>
+                <span className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm border",
+                  (() => {
+                    const avg = selectedResponse?.identifiedBrands?.length
+                      ? Math.round(selectedResponse.identifiedBrands.reduce((acc, b) => acc + (b.sentiment_score || 0), 0) / selectedResponse.identifiedBrands.length)
+                      : 0;
+                    if (avg >= 60) return "bg-emerald-50 text-emerald-700 border-emerald-100";
+                    if (avg >= 40) return "bg-amber-50 text-amber-700 border-amber-100";
+                    return "bg-rose-50 text-rose-700 border-rose-100";
+                  })()
+                )}>
+                  <Smile className="h-3.5 w-3.5" />
+                  Avg Sentiment: {(() => {
+                    const avgSentiment = selectedResponse?.identifiedBrands?.length
+                      ? Math.round(selectedResponse.identifiedBrands.reduce((acc, b) => acc + (b.sentiment_score || 0), 0) / selectedResponse.identifiedBrands.length)
+                      : 0;
+                    return `${avgSentiment}%`;
+                  })()}
+                </span>
+              </div>
             </div>
             <button
               onClick={() => setIsDialogOpen(false)}
@@ -235,7 +242,7 @@ export function ModelResponsesTable() {
                                   key={i}
                                   className="inline-flex items-center gap-1.5 px-2 py-0.5 mx-0.5 rounded-md border border-dashed border-slate-300 bg-slate-50/50 text-slate-900 font-bold text-sm hover:bg-slate-100 transition-colors cursor-default"
                                 >
-                                  <div className="h-3.5 w-3.5 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
+                                  <span className="h-3.5 w-3.5 bg-slate-200 rounded-full inline-flex items-center justify-center overflow-hidden">
                                     <img
                                       src={`https://www.google.com/s2/favicons?domain=${brand.brand_name.toLowerCase().replace(/\s+/g, '')}.com&sz=32`}
                                       alt=""
@@ -244,7 +251,7 @@ export function ModelResponsesTable() {
                                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${brand.brand_name}&background=random`;
                                       }}
                                     />
-                                  </div>
+                                  </span>
                                   {part}
                                 </span>
                               );
@@ -256,9 +263,9 @@ export function ModelResponsesTable() {
                               {selectedResponse.responseText
                                 .split("\n\n")
                                 .map((p, i) => (
-                                  <p key={i} className="last:mb-0">
+                                  <div key={i} className="last:mb-0">
                                     {highlightBrands(p)}
-                                  </p>
+                                  </div>
                                 ))}
 
                             </div>

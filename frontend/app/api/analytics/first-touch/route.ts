@@ -135,6 +135,15 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error("Error fetching first touch data:", error);
+
+    // Handle Google Analytics Quota Errors
+    if (error.message?.includes("quota") || error.code === 429 || error.status === 429) {
+      return NextResponse.json(
+        { error: "Google Analytics quota exceeded. Please try again in an hour.", isQuotaError: true },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
       { error: error.message || "Failed to fetch first touch data" },
       { status: 500 }

@@ -25,18 +25,38 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
+
 export default function Overview() {
   const { activeWorkspace } = useWorkspace();
-  const [brands, setBrands] = useState<any[]>([]);
+  const { allBrands, brandHistory, isLoading, refreshAll } = useDashboardData();
+
   const [topBrands, setTopBrands] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [mentionsData, setMentionsData] = useState<any[]>([]);
   const [sentimentsData, setSentimentsData] = useState<any[]>([]);
   const [positionData, setPositionData] = useState<any[]>([]);
   const [chartType, setChartType] = useState<'mentions' | 'sentiments' | 'position'>('mentions');
 
+  useEffect(() => {
+    if (allBrands.length > 0) {
+      const top10 = allBrands.slice(0, 10).sort((a: any, b: any) => {
+        if (a.lastRank !== b.lastRank) return a.lastRank - b.lastRank;
+        return b.mentions - a.mentions;
+      });
+      setTopBrands(top10);
+    }
+  }, [allBrands]);
+
+  useEffect(() => {
+    if (brandHistory.length > 0) {
+      setMentionsData(brandHistory);
+      setSentimentsData(brandHistory);
+      setPositionData(brandHistory);
+    }
+  }, [brandHistory]);
+
   const domainTableData = React.useMemo(() => {
-    if (!brands || brands.length === 0) return [];
+    if (!allBrands || allBrands.length === 0) return [];
 
     const domainMap: Record<
       string,
@@ -44,7 +64,7 @@ export default function Overview() {
     > = {};
     let totalLinks = 0;
 
-    brands.forEach((brand) => {
+    allBrands.forEach((brand) => {
       brand.associated_domain?.forEach((domainData: any) => {
         try {
           const domain = domainData.domain_citation || "";
@@ -76,10 +96,10 @@ export default function Overview() {
       }))
       .sort((a, b) => b.used - a.used)
       .slice(0, 6);
-  }, [brands]);
+  }, [allBrands]);
 
   const citationsPieData = React.useMemo(() => {
-    if (!brands || brands.length === 0) return { data: [], total: 0 };
+    if (!allBrands || allBrands.length === 0) return { data: [], total: 0 };
 
     const CITATION_COLORS: Record<string, string> = {
       Competitor: "#EF4444",
@@ -95,7 +115,7 @@ export default function Overview() {
     const typeMap: Record<string, number> = {};
     const uniqueDomains = new Set<string>();
 
-    brands.forEach((brand) => {
+    allBrands.forEach((brand) => {
       brand.associated_domain?.forEach((domainData: any) => {
         const domain = domainData.domain_citation || "";
         const type = domainData.domain_citation_type || "Other";
@@ -119,69 +139,7 @@ export default function Overview() {
       .sort((a, b) => b.value - a.value);
 
     return { data, total: totalCitations };
-  }, [brands]);
-
-  const fetchMentionsData = async () => {
-    try {
-      const response = await brandAPI.getBrandHistory(30);
-      setMentionsData(response.data);
-    } catch (error) {
-      console.error("Failed to load mentions data:", error);
-    }
-  };
-
-  const fetchSentimentsData = async () => {
-    try {
-      const response = await brandAPI.getBrandHistory(30);
-      setSentimentsData(response.data);
-    } catch (error) {
-      console.error("Failed to load sentiments data:", error);
-    }
-  };
-
-  const fetchPositionData = async () => {
-    try {
-      const response = await brandAPI.getBrandHistory(30);
-      setPositionData(response.data);
-    } catch (error) {
-      console.error("Failed to load position data:", error);
-    }
-  };
-
-  const loadAllData = async () => {
-    setIsLoading(true);
-    try {
-      await Promise.all([
-        loadBrands(),
-        fetchMentionsData(),
-        fetchSentimentsData(),
-        fetchPositionData(),
-      ]);
-    } catch (error) {
-      console.error("Error loading dashboard data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadBrands = async () => {
-    try {
-      const res = await brandAPI.getBrands();
-      setBrands(res.data);
-      const top10 = res.data.slice(0, 10).sort((a: any, b: any) => {
-        if (a.lastRank !== b.lastRank) return a.lastRank - b.lastRank;
-        return b.mentions - a.mentions;
-      });
-      setTopBrands(top10);
-    } catch (error) {
-      toast.error("Failed to load brands.");
-      throw error;
-    }
-  };
-
-  useEffect(() => {
-    loadAllData();
-  }, [activeWorkspace?._id]);
+  }, [allBrands]);
 
 
   return (
@@ -200,15 +158,15 @@ export default function Overview() {
         {/* Top Row: Visibility Chart and Brand Table */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* Main Chart Card */}
-          <div className="xl:col-span-7 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-[400px]">
-            <div className="p-4 border-b border-border flex flex-row justify-between items-center shrink-0 bg-muted/20">
+          <div className="xl:col-span-7 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
+            <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
               <div className="flex items-center gap-2">
-                <Eye className="h-4 w-4 text-muted-foreground/70" />
-                <h3 className="font-bold text-[11px] uppercase tracking-wider text-foreground">
+                <Eye className="h-4 w-4 text-slate-400" />
+                <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
                   {chartType === 'mentions' ? 'Visibility' : chartType === 'sentiments' ? 'Sentiment' : 'Position'}
                 </h3>
-                <span className="text-muted-foreground/50 mx-0.5 mt-0.5">•</span>
-                <p className="text-[10px] text-muted-foreground font-medium">
+                <span className="text-slate-300 mx-1.5">•</span>
+                <p className="text-[10px] text-slate-500 font-medium">
                   {chartType === 'mentions' ? 'Percentage of chats' :
                     chartType === 'sentiments' ? 'Average sentiment' : 'Average ranking'}
                 </p>
@@ -266,15 +224,15 @@ export default function Overview() {
           </div>
 
           {/* Industry Ranking Card */}
-          <div className="xl:col-span-5 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col h-[400px]">
-            <div className="p-4 border-b border-border flex flex-row justify-between items-center shrink-0 bg-muted/20">
+          <div className="xl:col-span-5 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
+            <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
               <div className="flex flex-col gap-0.5">
-                <h3 className="font-bold text-[11px] uppercase tracking-wider text-foreground">
+                <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
                   Industry Ranking
                 </h3>
-                <p className="text-[10px] text-muted-foreground font-medium">Displaying top 10 performers</p>
+                <p className="text-[10px] text-slate-500 font-medium">Displaying top 10 performers</p>
               </div>
-              <Link href="/industry-ranking" className="text-[10px] font-bold uppercase text-muted-foreground hover:text-foreground transition-all flex items-center gap-1 px-2 py-1 hover:bg-white rounded-md border border-transparent hover:border-border">
+              <Link href="/industry-ranking" className="text-[10px] font-bold uppercase text-slate-500 hover:text-slate-900 transition-all flex items-center gap-1 px-2.5 py-1 hover:bg-white rounded-md border border-transparent hover:border-slate-200">
                 Show All <ChevronRight className="h-3 w-3" strokeWidth={3} />
               </Link>
             </div>
@@ -303,9 +261,9 @@ export default function Overview() {
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* Sources Doughnut */}
-            <div className="xl:col-span-4 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-border bg-muted/20">
-                <h3 className="font-bold text-[11px] uppercase tracking-wider text-foreground">Sources Type</h3>
+            <div className="xl:col-span-4 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+              <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50">
+                <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Sources Type</h3>
               </div>
               <div className="p-5 flex items-center justify-center min-h-[300px]">
                 {isLoading ? (
@@ -325,13 +283,13 @@ export default function Overview() {
             </div>
 
             {/* Domain Table */}
-            <div className="xl:col-span-8 bg-card rounded-xl border border-border shadow-sm overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-border flex items-center bg-muted/20">
-                <div className="min-w-[200px] flex items-center gap-2">
-                  <h4 className="font-bold text-[11px] uppercase tracking-wider text-foreground">Domain</h4>
+            <div className="xl:col-span-8 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center bg-slate-50/50">
+                <div className="min-w-[240px] flex items-center gap-2">
+                  <h4 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Domain</h4>
                 </div>
                 <div className="flex-1 flex items-center justify-end px-4">
-                  <div className="flex items-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider hidden md:flex">
+                  <div className="flex items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden md:flex">
                     <span className="w-16 text-center">Used</span>
                     <span className="w-28 text-center px-2">Avg. Citations</span>
                     <span className="w-24 text-center">Type</span>
@@ -347,38 +305,38 @@ export default function Overview() {
                 ) : (
                   <div className="animate-in fade-in duration-700">
                     {domainTableData.slice(0, 8).map((item: any, index: number) => (
-                      <div key={index} className="flex items-center p-1.5 border-b border-border/50 last:border-0 hover:bg-muted/80 transition-colors text-sm">
-                        <div className="flex items-center gap-2.5 min-w-[200px]">
-                          <div className="h-6 w-6 rounded-md border border-border/50 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0">
+                      <div key={index} className="flex items-center h-12 px-5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors text-sm group">
+                        <div className="flex items-center gap-3 min-w-[240px] border-r border-slate-50 h-full">
+                          <div className="h-8 w-8 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
                             <img
                               src={`https://logo.clearbit.com/${item.domain}`}
                               alt={item.domain}
-                              className="h-3.5 w-3.5 object-contain"
+                              className="h-4 w-4 object-contain"
                               onError={(e) => {
                                 (e.target as any).style.display = 'none';
                                 const parent = (e.target as any).parentElement;
                                 if (parent) {
-                                  parent.classList.add('bg-muted/50');
-                                  parent.innerHTML = `<span class="text-[9px] font-bold text-muted-foreground">${item.domain.charAt(0).toUpperCase()}</span>`;
+                                  parent.classList.add('bg-slate-50');
+                                  parent.innerHTML = `<span class="text-[9px] font-bold text-slate-400 capitalize">${item.domain.charAt(0)}</span>`;
                                 }
                               }}
                             />
                           </div>
-                          <span className="font-semibold text-foreground truncate text-[13px]">{item.domain}</span>
+                          <span className="font-bold text-slate-800 truncate text-[13px]">{item.domain}</span>
                         </div>
 
-                        <div className="flex-1 flex items-center justify-end px-4">
-                          <div className="flex items-center hidden md:flex">
-                            <div className="w-16 text-center font-bold text-foreground text-[13px]">{item.used}%</div>
-                            <div className="w-28 text-center text-muted-foreground text-[13px] px-2">{item.avgCitations}</div>
-                            <div className="w-24 flex justify-center">
+                        <div className="flex-1 flex items-center justify-end px-4 h-full">
+                          <div className="flex items-center hidden md:flex h-full">
+                            <div className="w-16 text-center font-bold text-slate-900 text-[13px] border-r border-slate-50 h-full flex items-center justify-center">{item.used}%</div>
+                            <div className="w-28 text-center text-slate-500 font-medium text-[13px] px-2 border-r border-slate-50 h-full flex items-center justify-center">{item.avgCitations}</div>
+                            <div className="w-24 flex justify-center h-full flex items-center">
                               <span className={cn(
-                                "px-2 py-0.5 rounded text-[10px] font-bold border text-center min-w-[75px]",
-                                item.type === 'Competitor' ? "bg-red-50 text-red-700 border-red-100" :
-                                  item.type === 'You' ? "bg-green-50 text-green-700 border-green-100" :
-                                    item.type === 'UGC' ? "bg-cyan-50 text-cyan-700 border-cyan-100" :
-                                      item.type === 'Editorial' ? "bg-blue-50 text-blue-700 border-blue-100" :
-                                        "bg-gray-50 text-gray-700 border-gray-100"
+                                "px-2.5 py-1 rounded-md text-[10px] font-bold border text-center min-w-[75px] capitalize",
+                                item.type.toLowerCase() === 'competitor' ? "bg-rose-50 text-rose-600 border-rose-100" :
+                                  item.type.toLowerCase() === 'you' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                    item.type.toLowerCase() === 'ugc' ? "bg-cyan-50 text-cyan-600 border-cyan-100" :
+                                      item.type.toLowerCase() === 'editorial' ? "bg-blue-50 text-blue-600 border-blue-100" :
+                                        "bg-slate-50 text-slate-600 border-slate-100"
                               )}>
                                 {item.type}
                               </span>
@@ -405,8 +363,8 @@ export default function Overview() {
         </div>
 
         {/* Third Row: AI Model Responses */}
-      
-          <div className="flex flex-col space-y-4">
+
+        <div className="flex flex-col space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <MessageCircle className="h-5 w-5 text-muted-foreground" />
             <h3 className="text-lg font-semibold text-foreground">Recent Chats</h3>

@@ -188,12 +188,12 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
         />
 
         <Tooltip
-                  content={<CustomTooltip />}
-                  cursor={{
-                    stroke: "#9CA3AF",
-                    strokeDasharray: "3 3",
-                  }}
-                />
+          content={<CustomTooltip />}
+          cursor={{
+            stroke: "#9CA3AF",
+            strokeDasharray: "3 3",
+          }}
+        />
 
         {top5Brands.map((brand, index) => (
           <Line

@@ -3,6 +3,8 @@ export interface IBrand {
   brand_name: string;
   mentions: number;
   lastRank: number;
+  sentiment_sum?: number;
+  total_evaluations?: number;
 
   // Legacy fields (keep for backward compatibility)
   averageSentiment?: string;

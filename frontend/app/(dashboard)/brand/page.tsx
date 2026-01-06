@@ -14,34 +14,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 
+import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
+
 export default function BrandPage() {
+  const { targetBrands, isLoading, refreshBrands } = useDashboardData();
   const [brand_url, setBrand_url] = useState("");
   const [brand_name, setBrand_name] = useState("");
   const [actualBrandName, setActualBrandName] = useState("");
   const [brand_description, setBrand_description] = useState("");
   const [brandType, setBrandType] = useState("");
-  const [brands, setBrands] = useState<any[]>([]);
-  const [targetBrands, setTargetBrands] = useState<any[]>([]);
   const [mainBrand, setMainBrand] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
 
   const { activeWorkspace } = useWorkspace();
 
-  useEffect(() => {
-    loadBrands();
-  }, [activeWorkspace?._id]);
-
-  const loadBrands = async () => {
-    try {
-      const res = await brandAPI.getTargetBrand();
-      setTargetBrands(res.data);
-    } catch (error) {
-      toast.error("Failed to load brands.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
   const handleAddBrand = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!brand_name.trim() || !brand_url.trim()) {
@@ -49,7 +34,7 @@ export default function BrandPage() {
     }
 
     try {
-      const res = await brandAPI.createTargetBrand({
+      await brandAPI.createTargetBrand({
         brand_name,
         official_url: brand_url,
         actual_brand_name: actualBrandName.trim() || undefined,
@@ -58,7 +43,7 @@ export default function BrandPage() {
         mainBrand: mainBrand || false
       });
       toast.success("Target brand added!");
-      setTargetBrands((prev) => [res.data, ...prev]);
+      refreshBrands();
       setBrand_name("");
       setBrand_url("");
       setActualBrandName("");
@@ -130,7 +115,7 @@ export default function BrandPage() {
           <TargetBrandTable
             data={targetBrands}
             loading={isLoading}
-            onRefresh={loadBrands}
+            onRefresh={refreshBrands}
           />
         </div>
       </div>

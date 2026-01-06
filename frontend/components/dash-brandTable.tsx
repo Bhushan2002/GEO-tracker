@@ -52,32 +52,32 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
   return (
     <Table className="border-collapse">
       <TableHeader className="bg-white">
-        <TableRow className="border-b border-border">
-          <TableHead className="w-12 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 border-r border-border/50">#</TableHead>
-          <TableHead className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 pl-4 border-r border-border/50">Brand</TableHead>
-          <TableHead className="text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 w-[15%] border-r border-border/50">Visibility</TableHead>
-          <TableHead className="text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 w-[15%] border-r border-border/50">Sentiment</TableHead>
-          <TableHead className="text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-1.5 w-[15%]">Position</TableHead>
+        <TableRow className="hover:bg-transparent border-b border-slate-200">
+          <TableHead className="w-12 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest border-r border-slate-100 py-2.5">#</TableHead>
+          <TableHead className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-5 border-r border-slate-100 py-2.5">Brand</TableHead>
+          <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] border-r border-slate-100 py-2.5">Visibility</TableHead>
+          <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] border-r border-slate-100 py-2.5">Sentiment</TableHead>
+          <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] py-2.5">Position</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-              No brands tracked yet.
+            <TableCell colSpan={5} className="text-center py-12 text-slate-400 font-medium italic">
+              No brand rankings currently available
             </TableCell>
           </TableRow>
         ) : (
           data.map((brand, index) => {
             const logoUrl = getLogoUrl(brand);
             return (
-              <TableRow key={brand._id || index} className="hover:bg-muted/80 transition-colors border-b border-border/50 group">
-                <TableCell className="text-center text-muted-foreground text-sm font-medium py-1 border-r border-border/50">
+              <TableRow key={brand._id || index} className="hover:bg-slate-50/50 transition-all border-b border-slate-100 last:border-0 h-12 group">
+                <TableCell className="text-center text-slate-400 text-xs font-bold border-r border-slate-100">
                   {index + 1}
                 </TableCell>
-                <TableCell className="font-medium text-foreground py-1 pl-4 border-r border-border/50">
-                  <div className="flex items-center gap-3">
-                    <div className="h-7 w-7 rounded-lg border border-border/80 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-105 transition-transform duration-200">
+                <TableCell className="border-r border-slate-100 pl-5">
+                  <div className="flex items-center gap-3.5">
+                    <div className="h-8 w-8 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-110 transition-transform duration-300">
                       {logoUrl ? (
                         <img
                           src={logoUrl}
@@ -89,18 +89,16 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                             const parent = img.parentElement;
                             if (!parent) return;
 
-                            // If clearbit fails, try Google Favicon as a 2nd attempt
                             if (img.src.includes('clearbit')) {
                               const name = (brand.brand_name || "").toLowerCase().trim().replace(/\s+/g, '');
                               img.src = `https://www.google.com/s2/favicons?domain=${name}.com&sz=128`;
                             } else {
-                              // If Google also fails, fallback to initials
                               img.style.display = 'none';
-                              parent.classList.add('bg-muted/50');
+                              parent.classList.add('bg-slate-50');
                               const initial = (brand.brand_name || "?").charAt(0).toUpperCase();
                               if (!parent.querySelector('span')) {
                                 const span = document.createElement('span');
-                                span.className = "text-[12px] font-bold text-muted-foreground";
+                                span.className = "text-[12px] font-bold text-slate-400";
                                 span.innerText = initial;
                                 parent.appendChild(span);
                               }
@@ -108,34 +106,34 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                           }}
                         />
                       ) : (
-                        <div className="h-full w-full bg-muted/30 flex items-center justify-center text-[11px] font-bold text-muted-foreground uppercase">
+                        <div className="h-full w-full bg-slate-50 flex items-center justify-center text-[12px] font-bold text-slate-400 uppercase">
                           {brand.brand_name.charAt(0)}
                         </div>
                       )}
                     </div>
-                    <span className="text-sm font-semibold text-foreground truncate">{brand.brand_name}</span>
+                    <span className="text-[13px] font-bold text-slate-800 truncate">{brand.brand_name}</span>
                   </div>
                 </TableCell>
 
-                <TableCell className="text-center py-1 border-r border-border/50">
-                  <span className="font-bold text-foreground text-sm">{brand.mentions || 0}%</span>
+                <TableCell className="text-center border-r border-slate-100">
+                  <span className="font-bold text-slate-900 text-[13px]">{brand.mentions || 0}%</span>
                 </TableCell>
 
-                <TableCell className="py-1 border-r border-border/50">
+                <TableCell className="border-r border-slate-100">
                   <div className="flex justify-center">
                     <span className={cn(
-                      "inline-flex items-center justify-center px-2 py-0.5 rounded-md text-sm font-bold",
-                      (brand.sentiment_score || 0) >= 60 ? "bg-green-50 text-green-700 border border-green-200" :
-                        (brand.sentiment_score || 0) >= 40 ? "bg-yellow-50 text-yellow-700 border border-yellow-200" :
-                          "bg-red-50 text-red-700 border border-red-200"
+                      "inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[11px] font-bold border min-w-[36px]",
+                      (brand.sentiment_score || 0) >= 60 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                        (brand.sentiment_score || 0) >= 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
+                          "bg-rose-50 text-rose-600 border-rose-100"
                     )}>
                       {brand.sentiment_score || 0}
                     </span>
                   </div>
                 </TableCell>
 
-                <TableCell className="text-center py-1">
-                  <span className="font-medium text-foreground text-sm">{brand.lastRank || "-"}</span>
+                <TableCell className="text-center">
+                  <span className="font-bold text-slate-900 text-[13px]">{brand.lastRank || brand.rank || "-"}</span>
                 </TableCell>
               </TableRow>
             );
