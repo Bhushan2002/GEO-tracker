@@ -37,6 +37,11 @@ const generalItems = [
     icon: MessageSquare,
   },
   {
+    title: "Sources",
+    href: "/sources",
+    icon: Globe,
+  },
+  {
     title: "Brands",
     href: "/brand",
     icon: Tag,
@@ -44,7 +49,7 @@ const generalItems = [
   {
     title: "Google Analytics",
     href: "/google-analytics",
-    icon: Globe,
+    icon: BarChart3,
   },
 ];
 
