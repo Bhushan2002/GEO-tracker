@@ -56,67 +56,62 @@ export function ModelResponsesTable() {
     );
   }
 
-  const filteredResponses = modelRes
-    .filter(r => r.responseText?.trim())
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Jan -> Dec (Descending)
+  const filteredResponses = modelRes.filter(r => r.responseText?.trim());
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[600px]">
-      <div className="overflow-auto grow">
-        <table className="w-full caption-bottom text-sm border-collapse">
-          <TableHeader className="bg-slate-50/50">
-            <TableRow className="hover:bg-transparent border-b border-slate-200">
-              <TableHead className="sticky top-0 z-10 bg-slate-50 w-[200px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">AI Model</TableHead>
-              <TableHead className="sticky top-0 z-10 bg-slate-50 font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">Prompt Context</TableHead>
-              <TableHead className="sticky top-0 z-10 bg-slate-50 w-[180px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 text-center px-6">Date & Time</TableHead>
-              <TableHead className="sticky top-0 z-10 bg-slate-50 w-[80px] py-3 text-center"></TableHead>
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <Table className="border-collapse">
+        <TableHeader className="bg-slate-50/50">
+          <TableRow className="hover:bg-transparent border-b border-slate-200">
+            <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">AI Model</TableHead>
+            <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">Prompt Context</TableHead>
+            <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 text-center px-6">Date & Time</TableHead>
+            <TableHead className="w-[80px] py-3 text-center"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredResponses.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-40 text-center text-slate-400 font-medium italic">
+                No generated responses found
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredResponses.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="h-40 text-center text-slate-400 font-medium italic">
-                  No generated responses found
+          ) : (
+            filteredResponses.map((response) => (
+              <TableRow
+                key={response._id}
+                onClick={() => {
+                  setSelectedResponse(response);
+                  setIsDialogOpen(true);
+                }}
+                className="hover:bg-slate-50/50 transition-all border-b border-slate-100 last:border-0 h-12 group cursor-pointer"
+              >
+                <TableCell className="px-6 border-r border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                    <span className="font-bold text-[13px] text-slate-800 whitespace-nowrap">{response.modelName}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="px-6 border-r border-slate-100">
+                  <p className="text-[12px] text-slate-600 font-bold line-clamp-1">
+                    {response.promptRunId && typeof response.promptRunId === 'object'
+                      ? (response.promptRunId as any).promptId?.promptText
+                      : "Direct Query"}
+                  </p>
+                </TableCell>
+                <TableCell className="text-[12px] text-slate-400 font-bold text-center border-r border-slate-100 px-6">
+                  {formatDate(response.createdAt)}
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all" />
+                  </div>
                 </TableCell>
               </TableRow>
-            ) : (
-              filteredResponses.map((response) => (
-                <TableRow
-                  key={response._id}
-                  onClick={() => {
-                    setSelectedResponse(response);
-                    setIsDialogOpen(true);
-                  }}
-                  className="hover:bg-slate-50/50 transition-all border-b border-slate-100 last:border-0 h-12 group cursor-pointer"
-                >
-                  <TableCell className="px-6 border-r border-slate-100">
-                    <div className="flex items-center gap-3">
-                      <div className="h-2 w-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                      <span className="font-bold text-[13px] text-slate-800 whitespace-nowrap">{response.modelName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-6 border-r border-slate-100">
-                    <p className="text-[12px] text-slate-600 font-bold line-clamp-1">
-                      {response.promptRunId && typeof response.promptRunId === 'object'
-                        ? (response.promptRunId as any).promptId?.promptText
-                        : "Direct Query"}
-                    </p>
-                  </TableCell>
-                  <TableCell className="text-[12px] text-slate-400 font-bold text-center border-r border-slate-100 px-6">
-                    {formatDate(response.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex justify-center">
-                      <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-slate-900 group-hover:translate-x-0.5 transition-all" />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-
-        </table>
-      </div>
+            ))
+          )}
+        </TableBody>
+      </Table>
 
       <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <AlertDialogContent
@@ -398,6 +393,6 @@ export function ModelResponsesTable() {
           </div>
         </AlertDialogContent>
       </AlertDialog>
-    </div >
+    </div>
   );
 }

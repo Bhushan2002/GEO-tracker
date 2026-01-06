@@ -42,14 +42,9 @@ const generalItems = [
     icon: Tag,
   },
   {
-    title: "Sources",
-    href: "/sources",
-    icon: Globe,
-  },
-  {
     title: "Google Analytics",
     href: "/google-analytics",
-    icon: BarChart3,
+    icon: Globe,
   },
 ];
 
