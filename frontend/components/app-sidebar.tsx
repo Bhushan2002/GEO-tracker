@@ -52,12 +52,6 @@ const generalItems = [
     href: "/google-analytics",
     icon: BarChart3,
   },
-  {
-    title: "Sources",
-    href: "/sources",
-    icon: Globe,
-  },
-  
 ];
 
 const preferencesItems = [
