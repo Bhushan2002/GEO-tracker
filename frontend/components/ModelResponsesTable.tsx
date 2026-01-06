@@ -18,7 +18,6 @@ import {
   AlertDialogDescription,
 } from "./ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { DUMMY_MODEL_RESPONSES } from "@/lib/dummy-data";
 import { Bot, MessageSquare, Loader, ChevronRight, Globe, Smile, ExternalLink, FileText, CheckCircle2, User, Share2, Download } from "lucide-react";
 
 export function ModelResponsesTable() {
@@ -30,11 +29,10 @@ export function ModelResponsesTable() {
 
   useEffect(() => {
     setIsLoading(true);
-    // SKIP API: ModelResponseAPI.getModelResponses()...
-    setTimeout(() => {
-      setModelRes(DUMMY_MODEL_RESPONSES as any);
-      setIsLoading(false);
-    }, 500); // Small delay to show loader
+    ModelResponseAPI.getModelResponses()
+      .then((res) => setModelRes(res.data))
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
   const formatDate = (dateString: string) =>
@@ -63,9 +61,9 @@ export function ModelResponsesTable() {
       <Table className="border-collapse">
         <TableHeader className="bg-slate-50/50">
           <TableRow className="hover:bg-transparent border-b border-slate-200">
-            <TableHead className="w-[200px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">AI Model</TableHead>
-            <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">Prompt Context</TableHead>
-            <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 text-center px-6">Date & Time</TableHead>
+            <TableHead className="w-[180px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">AI Model</TableHead>
+            <TableHead className="font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 px-6">Preview Response</TableHead>
+            <TableHead className="w-[160px] font-bold text-[10px] uppercase tracking-widest text-slate-500 py-3 border-r border-slate-100 text-center">Date & Time</TableHead>
             <TableHead className="w-[80px] py-3 text-center"></TableHead>
           </TableRow>
         </TableHeader>
@@ -84,22 +82,20 @@ export function ModelResponsesTable() {
                   setSelectedResponse(response);
                   setIsDialogOpen(true);
                 }}
-                className="hover:bg-slate-50/50 transition-all border-b border-slate-100 last:border-0 h-12 group cursor-pointer"
+                className="cursor-pointer hover:bg-slate-50/50 transition-all border-b border-slate-100 last:border-0 h-12 group"
               >
                 <TableCell className="px-6 border-r border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="h-2 w-2 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                    <span className="font-bold text-[13px] text-slate-800 whitespace-nowrap">{response.modelName}</span>
+                    <span className="font-bold text-[13px] text-slate-800">{response.modelName}</span>
                   </div>
                 </TableCell>
-                <TableCell className="px-6 border-r border-slate-100">
-                  <p className="text-[12px] text-slate-600 font-bold line-clamp-1">
-                    {response.promptRunId && typeof response.promptRunId === 'object'
-                      ? (response.promptRunId as any).promptId?.promptText
-                      : "Direct Query"}
+                <TableCell className="max-w-[500px] border-r border-slate-100 px-6">
+                  <p className="text-[12px] text-slate-500 line-clamp-1 font-medium italic">
+                    {response.responseText}
                   </p>
                 </TableCell>
-                <TableCell className="text-[12px] text-slate-400 font-bold text-center border-r border-slate-100 px-6">
+                <TableCell className="text-[11px] text-slate-400 font-bold text-center border-r border-slate-100">
                   {formatDate(response.createdAt)}
                 </TableCell>
                 <TableCell className="text-center">

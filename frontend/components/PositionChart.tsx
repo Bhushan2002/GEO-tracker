@@ -29,65 +29,73 @@ const BRAND_COLORS = [
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload || payload.length === 0) return null;
 
-  // Sort payload by value (rank) so 1 is at top
-  const sortedPayload = [...payload].sort((a, b) => a.value - b.value);
-
   return (
     <div
       style={{
-        backgroundColor: "rgba(31, 41, 55, 0.95)", // Dark Slate
-        backdropFilter: "blur(8px)",
-        border: "1px solid rgba(75, 85, 99, 0.3)",
-        borderRadius: "12px",
-        padding: "12px 16px",
-        fontSize: "13px",
-        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.2)",
-        minWidth: "160px",
-        color: "#F3F4F6",
+        backgroundColor: "#E5E7EB",
+        border: "1px solid #D1D5DB",
+        borderRadius: "10px",
+        padding: "10px 12px",
+        fontSize: "12px",
+        boxShadow: "0 6px 16px rgba(0,0,0,0.08)",
+        minWidth: "180px",
       }}
     >
       {/* Date */}
       <div
         style={{
-          fontWeight: 700,
-          color: "#FFFFFF",
-          marginBottom: "10px",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          paddingBottom: "6px",
-          fontSize: "14px"
+          fontWeight: 600,
+          color: "#111827",
+          marginBottom: "6px",
         }}
       >
         {label}
       </div>
 
       {/* Brand rows */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        {sortedPayload.map((item: any) => (
+      {payload.map((item: any) => (
+        <div
+          key={item.name}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+            marginBottom: "4px",
+          }}
+        >
           <div
-            key={item.name}
             style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              gap: "12px",
+              gap: "6px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span
-                style={{
-                  width: "8px",
-                  height: "8px",
-                  borderRadius: "50%",
-                  backgroundColor: item.stroke,
-                  boxShadow: `0 0 8px ${item.stroke}`,
-                }}
-              />
-              <span style={{ fontWeight: 500 }}>{item.name}</span>
-            </div>
-            <span style={{ fontWeight: 700, opacity: 0.9 }}>{item.value}</span>
+            {/* Color indicator (matches line) */}
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: item.stroke,
+              }}
+            />
+
+            <span style={{ color: "#111827" }}>
+              {item.name}
+            </span>
           </div>
-        ))}
-      </div>
+
+          <span
+            style={{
+              fontWeight: 500,
+              color: "#111827",
+            }}
+          >
+            {item.value}
+          </span>
+        </div>
+      ))}
     </div>
   );
 };

@@ -69,19 +69,19 @@ export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTabl
         <Table className="border-collapse">
           <TableHeader className="bg-slate-50/50">
             <TableRow className="hover:bg-transparent border-b border-slate-200">
-              <TableHead className="pl-6 py-3 border-r border-slate-100 w-[52%]">
+              <TableHead className="pl-6 py-3 border-r border-slate-100 w-[50%]">
                 <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Prompt Description</div>
               </TableHead>
-              <TableHead className="w-[13%] border-r border-slate-100 text-center py-3">
+              <TableHead className="w-[12%] border-r border-slate-100 text-center py-3">
                 <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Topic</div>
               </TableHead>
-              <TableHead className="w-[15%] border-r border-slate-100 text-center py-3">
+              <TableHead className="w-[12%] border-r border-slate-100 text-center py-3">
                 <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Tags</div>
               </TableHead>
-              <TableHead className="w-[10%] border-r border-slate-100 text-center py-3">
+              <TableHead className="w-[12%] border-r border-slate-100 text-center py-3">
                 <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Status</div>
               </TableHead>
-              <TableHead className="w-[10%] pr-6 text-center py-3">
+              <TableHead className="w-[14%] pr-6 text-center py-3">
                 <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Control</div>
               </TableHead>
             </TableRow>
@@ -93,8 +93,8 @@ export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTabl
                 onClick={() => onRowClick?.(prompt)}
                 className="hover:bg-slate-50/30 border-b border-slate-100 last:border-0 transition-all group h-14 cursor-pointer"
               >
-                <TableCell className="pl-6 py-4 border-r border-slate-100 max-w-0">
-                  <span className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-2 block overflow-hidden">
+                <TableCell className="pl-6 py-4 border-r border-slate-100">
+                  <span className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-2">
                     {prompt.promptText}
                   </span>
                 </TableCell>

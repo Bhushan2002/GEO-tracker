@@ -1,7 +1,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { DUMMY_WORKSPACES } from "../dummy-data";
 
 interface Workspace {
     _id: string;
@@ -29,9 +28,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const fetchWorkspaces = async () => {
         setIsLoading(true);
         try {
-            // SKIP API: const response = await fetch("/api/workspaces");
-            // SKIP API: const data = await response.json();
-            const data = DUMMY_WORKSPACES;
+            const response = await fetch("/api/workspaces");
+            const data = await response.json();
             setWorkspaces(data);
 
             // Restore selected workspace from localStorage or pick first
