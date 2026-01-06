@@ -121,6 +121,13 @@ export function ModelResponsesTable() {
             overflow-hidden flex flex-col
           "
         >
+          <AlertDialogTitle className="sr-only">
+            Model Response Details
+          </AlertDialogTitle>
+          <AlertDialogDescription className="sr-only">
+            Detailed view of AI model response including prompt, response text, and identified brands
+          </AlertDialogDescription>
+          
           {/* Header */}
           <div className="px-10 py-5 border-b border-border flex items-center justify-between bg-white">
             <div className="flex flex-col gap-1">

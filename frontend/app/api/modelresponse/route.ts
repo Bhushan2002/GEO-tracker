@@ -47,14 +47,14 @@ export async function GET(req: NextRequest) {
     const responsesWithBrands = modelResponse.filter(r => r.identifiedBrands && r.identifiedBrands.length > 0);
     console.log(`${responsesWithBrands.length} responses have identified brands`);
 
-    if (responsesWithBrands.length > 0) {
-      console.log('Sample response:', {
-        id: responsesWithBrands[0]._id,
-        modelName: responsesWithBrands[0].modelName,
-        brandsCount: responsesWithBrands[0].identifiedBrands?.length || 0,
-        brands: responsesWithBrands[0].identifiedBrands
-      });
-    }
+    // if (responsesWithBrands.length > 0) {
+    //   console.log('Sample response:', {
+    //     id: responsesWithBrands[0]._id,
+    //     modelName: responsesWithBrands[0].modelName,
+    //     brandsCount: responsesWithBrands[0].identifiedBrands?.length || 0,
+    //     brands: responsesWithBrands[0].identifiedBrands
+    //   });
+    // }
 
     return NextResponse.json(modelResponse, { status: 200 });
   } catch (err) {

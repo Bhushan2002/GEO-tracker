@@ -1,10 +1,15 @@
 import axios from "axios";
 
 const Models = [
-  "openai/gpt-5.2",
+  // "openai/gpt-5.2",
   // "google/gemini-3-flash-preview",
-  "anthropic/claude-sonnet-4.5",
+  // "anthropic/claude-sonnet-4.5",
   // "x-ai/grok-4.1-fast",
+  "openai/gpt-oss-20b:free",
+  // "deepseek/deepseek-r1-0528:free",
+  "google/gemini-2.0-flash-exp:free",
+  // "moonshotai/kimi-k2:free",
+  // "nvidia/nemotron-3-nano-30b-a3b:free", 
 ];
 
 export const getOpenRenderResponse = async (promptText: string) => {
@@ -65,7 +70,6 @@ export const getOpenRenderResponse = async (promptText: string) => {
         latencyMs: Date.now() - start,
         tokenUsage: res.data.usage,
       });
-  
 
       // Add 2 second delay between API calls to avoid rate limits
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -87,12 +91,12 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 export const extractBrandFromText = async (
   transcript: string,
   mainBrand: string,
-  mainBrandUrl :string,
+  mainBrandUrl: string,
   targetBrands: string[] = [],
   mainBrandDescription: string,
   retries = 3
 ) => {
-  const extractionModel = "openai/gpt-5.2";
+  const extractionModel = "openai/gpt-oss-120b:free";
 
   const extractionPrompt = `
 You are an advanced AEO (Answer Engine Optimization) and GEO (Generative Engine Optimization) Intelligence Audit Agent with more than 10 years of experience having worked at top SEO/GEO/AEO tools company. Your purpose is to analyze AI-generated chat transcripts to extract competitive intelligence, brand visibility metrics, brand sentiment and technical citation audits with high precision.
@@ -106,11 +110,6 @@ Task:
 6. Discover other brands.
 7. Don’t invent or add or assume or make extra things, just use the provided chat transcript and input data for analysis and refer only to that content.
 
-Input Data:
-- Main focus brand and url: ${mainBrand} (${mainBrandUrl})
-- Main focus brand brief info: ${mainBrandDescription}
-- Predefined Target Brands & their website: ${targetBrands.join(", ")}
-- Chat Transcript: ${transcript}
 
 Part 1: Global Strategic Analysis (Maps to 'audit_summary') Analyze the overall market landscape presented in the chat and insights about our “Main focus brand”.
 
@@ -126,7 +125,6 @@ Hallucination Flags: For the Main focus brand, identify any statements where AI 
 9a. claimed_statement: Highlight the exact part of the text which reflects the false/uncertain claim about the Main focus brand. (Data Type: String)
 9b. factual_accuracy: Classification of the claim's factual correctness. (Data Type: String) // Values: "True", "False", or "Uncertain". Use "False" for definitively incorrect claims, "Uncertain" for unverifiable or questionable statements, and "True" if verified accurately (though focus should be on False/Uncertain).
 9c. risk_level: Assessment of potential brand safety impact if this hallucination proliferates in AI responses. (Data Type: String) // Values: "Low" (minor detail error), "Medium" (performance/feature misrepresentation), or "High" (pricing, safety, legal, or core competency misinformation)
-
 
 Part 2: Predefined Target Brand Analysis (Maps to 'predefined_brand_analysis') Extract these metrics for EACH brand listed in "Predefined Target Brands".
 
@@ -541,6 +539,17 @@ Required Output JSON Schema Format:
 
   for (let i = 0; i < retries; i++) {
     try {
+      // Dynamic user input (changes per request - not cached)
+      const userPrompt = `
+Input Data to Analyze:
+- Main focus brand and url: ${mainBrand} (${mainBrandUrl})
+- Main focus brand brief info: ${mainBrandDescription}
+- Predefined Target Brands & their website: ${targetBrands.join(", ")}
+
+Chat Transcript to Analyze:
+${transcript}
+`;
+
       const res = await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
         {
@@ -550,6 +559,10 @@ Required Output JSON Schema Format:
               role: "system",
               content: extractionPrompt,
               cache_control: { type: "ephemeral" },
+            },
+            {
+              role: "user",
+              content: userPrompt,
             },
           ],
           response_format: {
