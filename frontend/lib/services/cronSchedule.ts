@@ -4,7 +4,7 @@ import { PromptRun } from "../models/promptRun.model";
 import { ModelResponse } from "../models/modelResponse.model";
 import { Brand } from "../models/brand.model";
 import { TargetBrand } from "../models/targetBrand.model";
-import { extractBrandFromText, getOpenRenderResponse } from "./openRender";
+import { extractBrandFromText, getOpenRenderResponse } from "./openRouter";
 import mongoose from "mongoose";
 
 const scheduledTasks: Map<string, ScheduledTask> = new Map();

@@ -9,6 +9,7 @@ import {
   Settings,
   LogOut,
   Globe,
+  ChartBar,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -39,8 +40,14 @@ const generalItems = [
   {
     title: "Google Analytics",
     href: "/google-analytics",
+    icon: ChartBar,
+  },
+  {
+    title: "Sources",
+    href: "/sources",
     icon: Globe,
   },
+  
 ];
 
 const preferencesItems = [
@@ -49,6 +56,7 @@ const preferencesItems = [
     href: "/brand",
     icon: Tag,
   },
+
 ];
 
 export function AppSidebar() {
