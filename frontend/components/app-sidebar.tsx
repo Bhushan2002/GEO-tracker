@@ -44,11 +44,6 @@ const generalItems = [
     icon: Globe,
   },
   {
-    title: "Models",
-    href: "/models",
-    icon: Bot,
-  },
-  {
     title: "Brands",
     href: "/brand",
     icon: Tag,
@@ -56,8 +51,14 @@ const generalItems = [
   {
     title: "Google Analytics",
     href: "/google-analytics",
-    icon: BarChart3,
+    icon: ChartBar,
   },
+  {
+    title: "Sources",
+    href: "/sources",
+    icon: Globe,
+  },
+  
 ];
 
 const preferencesItems = [
@@ -68,8 +69,6 @@ const preferencesItems = [
   },
 
 ];
-
-
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
