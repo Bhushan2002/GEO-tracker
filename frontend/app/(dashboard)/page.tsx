@@ -39,13 +39,20 @@ export default function Overview() {
 
   useEffect(() => {
     if (allBrands.length > 0) {
-      const top10 = allBrands.slice(0, 10).sort((a: any, b: any) => {
-        if (a.lastRank !== b.lastRank) return a.lastRank - b.lastRank;
-        return b.mentions - a.mentions;
-      });
+      const top10 = [...allBrands].sort((a: any, b: any) => {
+        if (chartType === 'mentions') {
+          return (b.mentions || 0) - (a.mentions || 0);
+        } else if (chartType === 'sentiments') {
+          const sA = (a.sentiment_score <= 10 ? a.sentiment_score * 10 : a.sentiment_score) || 0;
+          const sB = (b.sentiment_score <= 10 ? b.sentiment_score * 10 : b.sentiment_score) || 0;
+          return sB - sA;
+        } else {
+          return (a.lastRank || 999) - (b.lastRank || 999);
+        }
+      }).slice(0, 7);
       setTopBrands(top10);
     }
-  }, [allBrands]);
+  }, [allBrands, chartType]);
 
   useEffect(() => {
     if (brandHistory.length > 0) {
@@ -154,7 +161,7 @@ export default function Overview() {
       </div>
 
       {/* Main Grid */}
-      <div className={cn("space-y-8", !isLoading && "animate-in fade-in slide-in-from-bottom-2 duration-700")}>
+      <div className={cn("space-y-8", !isLoading && "animate-in fade-in duration-500 ease-out")}>
         {/* Top Row: Visibility Chart and Brand Table */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* Main Chart Card */}
@@ -243,7 +250,7 @@ export default function Overview() {
                   <p className="text-sm font-medium">Ranking market leaders...</p>
                 </div>
               ) : (
-                <div className="animate-in fade-in duration-700">
+                <div className="animate-in fade-in duration-500">
                   <DashBrandTable data={topBrands} loading={false} />
                 </div>
               )}
@@ -272,7 +279,7 @@ export default function Overview() {
                     <p className="text-sm font-medium">Analyzing sources...</p>
                   </div>
                 ) : (
-                  <div className="w-full h-full animate-in fade-in zoom-in-95 duration-700">
+                  <div className="w-full h-full animate-in fade-in zoom-in-95 duration-500">
                     <CitationsPieChart
                       data={citationsPieData.data}
                       totalCitations={citationsPieData.total}
@@ -302,7 +309,7 @@ export default function Overview() {
                     <p className="text-sm font-medium">Fetching domain insights...</p>
                   </div>
                 ) : (
-                  <div className="animate-in fade-in duration-700">
+                  <div className="animate-in fade-in duration-500">
                     {domainTableData.slice(0, 10).map((item: any, index: number) => (
                       <div key={index} className="flex items-center h-12 px-5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors text-sm group">
                         <div className="flex items-center gap-3 min-w-[240px] border-r border-slate-50 h-full">

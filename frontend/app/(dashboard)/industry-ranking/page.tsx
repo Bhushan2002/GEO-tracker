@@ -24,7 +24,7 @@ function IndustryRankingPage() {
     }, [allBrands]);
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen animate-in fade-in duration-500 ease-out">
             <div className="bg-white border-b border-slate-100 sticky top-0 z-10 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
                 <div className="px-8 py-5 flex items-center justify-between max-w-[1600px] mx-auto">
                     <div className="flex items-center gap-4">

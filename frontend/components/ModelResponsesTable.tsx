@@ -1,16 +1,8 @@
 "use client";
 
-import { ModelResponseAPI } from "@/api/modelresponse.api";
 import { ModelResponse } from "@/types";
-import { useEffect, useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
+import { useState } from "react";
+import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -18,22 +10,13 @@ import {
   AlertDialogDescription,
 } from "./ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { Bot, MessageSquare, Loader, ChevronRight, Globe, Smile, ExternalLink, FileText, CheckCircle2, User, Share2, Download } from "lucide-react";
+import { Bot, Loader, ChevronRight, Smile, CheckCircle2, User } from "lucide-react";
 
 export function ModelResponsesTable() {
-  const [modelRes, setModelRes] = useState<ModelResponse[]>([]);
+  const { modelResponses, isLoading } = useDashboardData();
   const [selectedResponse, setSelectedResponse] =
     useState<ModelResponse | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    setIsLoading(true);
-    ModelResponseAPI.getModelResponses()
-      .then((res) => setModelRes(res.data))
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, []);
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleString("en-GB", {
@@ -54,7 +37,7 @@ export function ModelResponsesTable() {
     );
   }
 
-  const filteredResponses = modelRes.filter(r => r.responseText?.trim());
+  const filteredResponses = modelResponses.filter(r => r.responseText?.trim());
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
@@ -127,7 +110,7 @@ export function ModelResponsesTable() {
           <AlertDialogDescription className="sr-only">
             Detailed view of AI model response including prompt, response text, and identified brands
           </AlertDialogDescription>
-          
+
           {/* Header */}
           <div className="px-10 py-5 border-b border-border flex items-center justify-between bg-white">
             <div className="flex flex-col gap-1">
@@ -315,8 +298,8 @@ export function ModelResponsesTable() {
                             (brand.sentiment_score || 0) >= 60
                               ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                               : (brand.sentiment_score || 0) >= 40
-                                ? "bg-amber-50 text-amber-600 border-amber-100"
-                                : "bg-rose-50 text-rose-600 border-rose-100"
+                                ? "bg-amber-50 text-amber-700 border-amber-100"
+                                : "bg-rose-50 text-rose-700 border-rose-100"
                           )}>
                             {(brand.sentiment_score || 0) >= 60 ? "Positive" :
                               (brand.sentiment_score || 0) >= 40 ? "Neutral" : "Negative"}

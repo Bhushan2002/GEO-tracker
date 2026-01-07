@@ -10,6 +10,7 @@ import {
   LogOut,
   Globe,
   ChartBar,
+  Bot
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -41,6 +42,11 @@ const generalItems = [
     title: "Sources",
     href: "/sources",
     icon: Globe,
+  },
+  {
+    title: "Models",
+    href: "/models",
+    icon: Bot,
   },
   {
     title: "Brands",

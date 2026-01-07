@@ -133,7 +133,7 @@ export default function Page() {
 
 
   return (
-    <div className="min-h-screen p-6 space-y-6 max-w-[1600px] mx-auto bg-white">
+    <div className="min-h-screen p-6 space-y-6 max-w-[1600px] mx-auto bg-white animate-in fade-in duration-500 ease-out">
       {/* Header Area */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-100 pb-6">
         <div>

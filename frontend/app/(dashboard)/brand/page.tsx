@@ -55,7 +55,7 @@ export default function BrandPage() {
     }
   };
   return (
-    <div className=" min-h-screen space-y-6">
+    <div className=" min-h-screen space-y-6 animate-in fade-in duration-500 ease-out">
       <div className="bg-white border-b sticky top-0 z-10">
         <div className="px-6 py-4">
           <h1 className="text-2xl font-bold text-gray-900">Brand Management</h1>

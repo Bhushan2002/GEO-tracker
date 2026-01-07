@@ -17,12 +17,16 @@ interface SentimentChartProp {
 
 /* ---- Refined Soft Colors (Same as Visibility) ---- */
 const BRAND_COLORS = [
-  "#60A5FA", // Blue 400 – clear, confident
-  "#34D399", // Emerald 400 – fresh, positive
-  "#818CF8", // Indigo 400 – modern, premium
-  "#22D3EE", // Cyan 400 – clean, techy
-  "#FACC15", // Amber 400 – attention without noise
-  "#FB7185", // Rose 400 – subtle contrast
+  "#60A5FA", // Blue 400
+  "#34D399", // Emerald 400
+  "#818CF8", // Indigo 400
+  "#22D3EE", // Cyan 400
+  "#FACC15", // Amber 400
+  "#FB7185", // Rose 400
+  "#A78BFA", // Violet 400
+  "#F472B6", // Pink 400
+  "#FB923C", // Orange 400
+  "#94A3B8", // Slate 400
 ];
 
 
@@ -93,7 +97,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               color: "#111827",
             }}
           >
-            {item.value}
+            {item.value}%
           </span>
         </div>
       ))}
@@ -131,7 +135,7 @@ export function SentimentChart({ data }: SentimentChartProp) {
         avg: stats.sum / stats.count,
       }))
       .sort((a, b) => b.avg - a.avg)
-      .slice(0, 6)
+      .slice(0, 7)
       .map((b) => b.brand);
 
     const map: Record<string, any> = {};
@@ -140,8 +144,9 @@ export function SentimentChart({ data }: SentimentChartProp) {
       if (!map[row.timeStamp]) {
         map[row.timeStamp] = { timeStamp: row.timeStamp };
       }
-      map[row.timeStamp][row.name] =
-        parseFloat(row.sentiment_score) || 0;
+      const rawScore = parseFloat(row.sentiment_score) || 0;
+      const normalizedScore = rawScore <= 10 ? rawScore * 10 : rawScore;
+      map[row.timeStamp][row.name] = Math.min(100, normalizedScore);
     });
 
     const transformed = Object.values(map).sort((a: any, b: any) => {
@@ -168,9 +173,10 @@ export function SentimentChart({ data }: SentimentChartProp) {
         margin={{ left: -20, right: 10, top: 5, bottom: 0 }}
       >
         <CartesianGrid
+          vertical={false}
           strokeDasharray="2 6"
           stroke="hsl(var(--border))"
-          opacity={0.28}
+          opacity={0.25}
         />
 
         <XAxis
@@ -186,7 +192,10 @@ export function SentimentChart({ data }: SentimentChartProp) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          ticks={[0, 25, 50, 75, 100]}
+          tickFormatter={(val) => `${val}%`}
           tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+          domain={[0, 100]}
         />
 
         <Tooltip
@@ -197,30 +206,30 @@ export function SentimentChart({ data }: SentimentChartProp) {
           }}
         />
 
-        {top5Brands.map((brand, index) => (
-          <Line
-            key={brand}
-            type="monotone"
-            dataKey={brand}
-            stroke={BRAND_COLORS[index]}
-            strokeWidth={2}
-            dot={{
-              r: 2.4,
-              strokeWidth: 1.6,
-              fill: "white",
-              stroke: BRAND_COLORS[index],
-            }}
-            activeDot={{
-              r: 3.4,
-              strokeWidth: 1.6,
-              fill: "white",
-              stroke: BRAND_COLORS[index],
-            }}
-            isAnimationActive
-            animationDuration={650}
-            name={brand}
-          />
-        ))}
+        {top5Brands.map((brand, index) => {
+          const color = BRAND_COLORS[index % BRAND_COLORS.length];
+          const isPrimary = index < 3;
+
+          return (
+            <Line
+              key={brand}
+              type="monotone"
+              dataKey={brand}
+              stroke={color}
+              strokeWidth={isPrimary ? 3 : 1.8}
+              strokeOpacity={isPrimary ? 1 : 0.35}
+              dot={false}
+              activeDot={{
+                r: 4,
+                fill: "#fff",
+                stroke: color,
+                strokeWidth: 2,
+              }}
+              animationDuration={800}
+              name={brand}
+            />
+          );
+        })}
       </LineChart>
     </ResponsiveContainer>
   );

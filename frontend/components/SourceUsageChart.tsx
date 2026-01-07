@@ -86,7 +86,7 @@ export function SourceUsageChart({ data, sources }: SourceUsageChartProps) {
                     tickMargin={12}
                     tickFormatter={(val) => `${val}%`}
                     tick={{ fill: "#94A3B8", fontSize: 10, fontWeight: 600 }}
-                    domain={[0, 'auto']}
+                    domain={[0, 100]}
                 />
 
                 <Tooltip

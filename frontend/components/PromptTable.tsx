@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Play, Pause, Plus } from "lucide-react";
+import { Play, Pause, Plus, Loader } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -42,8 +42,8 @@ export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTabl
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-slate-400">
-        <div className="h-8 w-8 border-2 border-slate-200 border-t-slate-800 animate-spin rounded-full" />
+      <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40">
+        <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
         <p className="text-sm font-medium">Loading prompts...</p>
       </div>
     );
