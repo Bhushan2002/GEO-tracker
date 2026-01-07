@@ -1,54 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decrypt } from "./lib/auth";
 
-export async function middleware(request: NextRequest) {
-    const session = request.cookies.get("session")?.value;
-    const { pathname } = request.nextUrl;
+/**
+ * Edge-safe middleware
+ * - Protects UI routes
+ * - Allows ALL API routes
+ * - No crypto / node usage
+ */
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-    // 1. Allow access to login page
-    if (pathname === "/login") {
-        if (session) {
-            try {
-                await decrypt(session);
-                return NextResponse.redirect(new URL("/", request.url));
-            } catch (e) {
-                // Token invalid, continue to login
-            }
-        }
-        return NextResponse.next();
-    }
+  // 1️⃣ Always allow API routes
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
 
-    // 2. Allow access to API auth routes
-    if (pathname.startsWith("/api")) {
-        return NextResponse.next();
-    }
+  // 2️⃣ Always allow Next internals & public files
+  if (
+    pathname.startsWith("/_next") ||
+    pathname === "/favicon.ico"
+  ) {
+    return NextResponse.next();
+  }
 
-    // 3. Protect all other routes
-    if (!session) {
-        return NextResponse.redirect(new URL("/login", request.url));
-    }
+  // 3️⃣ Allow login page
+  if (pathname === "/login") {
+    return NextResponse.next();
+  }
 
-    try {
-        await decrypt(session);
-        return NextResponse.next();
-    } catch (e) {
-        // If token is expired or invalid, redirect to login
-        const response = NextResponse.redirect(new URL("/login", request.url));
-        response.cookies.delete("session");
-        return response;
-    }
+  // 4️⃣ Simple UI protection (cookie presence ONLY)
+  const session = request.cookies.get("session")?.value;
+
+  if (!session) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 5️⃣ Allow request to continue
+  return NextResponse.next();
 }
 
-// Routes to apply middleware to
+/**
+ * Apply middleware ONLY to UI routes
+ * (Exclude APIs explicitly)
+ */
 export const config = {
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes)
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         */
-        "/((?!api|_next/static|_next/image|favicon.ico).*)",
-    ],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+  ],
 };
