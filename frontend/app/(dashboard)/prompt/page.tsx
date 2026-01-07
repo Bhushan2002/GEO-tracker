@@ -1,7 +1,6 @@
 "use client";
 
 import { PromptAPI } from "@/api/prompt.api";
-import { ModelResponseAPI } from "@/api/modelresponse.api";
 import { PromptTable } from "@/components/PromptTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

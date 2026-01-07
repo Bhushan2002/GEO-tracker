@@ -95,7 +95,7 @@ export default function Overview() {
         type: data.type
       }))
       .sort((a, b) => b.used - a.used)
-      .slice(0, 6);
+      .slice(0, 10);
   }, [allBrands]);
 
   const citationsPieData = React.useMemo(() => {
@@ -284,16 +284,15 @@ export default function Overview() {
 
             {/* Domain Table */}
             <div className="xl:col-span-8 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-              <div className="px-5 py-3 border-b border-slate-100 flex items-center bg-slate-50/50">
-                <div className="min-w-[240px] flex items-center gap-2">
-                  <h4 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Domain</h4>
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex flex-col gap-0.5">
+                  <h4 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Top Domains</h4>
+                  <p className="text-[10px] text-slate-500 font-medium">Displaying top 10 sources</p>
                 </div>
-                <div className="flex-1 flex items-center justify-end px-4">
-                  <div className="flex items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden md:flex">
-                    <span className="w-16 text-center">Used</span>
-                    <span className="w-28 text-center px-2">Avg. Citations</span>
-                    <span className="w-24 text-center">Type</span>
-                  </div>
+                <div className="flex items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden md:flex">
+                  <span className="w-16 text-center">Used</span>
+                  <span className="w-28 text-center px-2">Avg. Citations</span>
+                  <span className="w-24 text-center">Type</span>
                 </div>
               </div>
               <div className="flex-1 overflow-auto min-h-[300px]">
@@ -304,20 +303,26 @@ export default function Overview() {
                   </div>
                 ) : (
                   <div className="animate-in fade-in duration-700">
-                    {domainTableData.slice(0, 8).map((item: any, index: number) => (
+                    {domainTableData.slice(0, 10).map((item: any, index: number) => (
                       <div key={index} className="flex items-center h-12 px-5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors text-sm group">
                         <div className="flex items-center gap-3 min-w-[240px] border-r border-slate-50 h-full">
                           <div className="h-8 w-8 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
                             <img
-                              src={`https://logo.clearbit.com/${item.domain}`}
+                              src={`https://logo.clearbit.com/${item.domain.replace(/^https?:\/\//, '').split('/')[0]}`}
                               alt={item.domain}
                               className="h-4 w-4 object-contain"
                               onError={(e) => {
-                                (e.target as any).style.display = 'none';
-                                const parent = (e.target as any).parentElement;
-                                if (parent) {
-                                  parent.classList.add('bg-slate-50');
-                                  parent.innerHTML = `<span class="text-[9px] font-bold text-slate-400 capitalize">${item.domain.charAt(0)}</span>`;
+                                const target = e.target as HTMLImageElement;
+                                const domain = item.domain.replace(/^https?:\/\//, '').split('/')[0];
+                                if (!target.src.includes('google.com')) {
+                                  target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                                } else {
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.classList.add('bg-slate-50');
+                                    parent.innerHTML = `<span class="text-[9px] font-bold text-slate-400 capitalize">${item.domain.charAt(0)}</span>`;
+                                  }
                                 }
                               }}
                             />
@@ -353,9 +358,9 @@ export default function Overview() {
                   </div>
                 )}
               </div>
-              <div className="p-3 border-t border-border bg-white flex justify-end shrink-0">
-                <Link href="/sources" className="text-[10px] font-bold uppercase text-muted-foreground hover:text-foreground transition-all flex items-center gap-1 px-2 py-1 hover:bg-muted rounded-md pointer-events-auto">
-                  Show All <ChevronRight className="h-3 w-3" strokeWidth={3} />
+              <div className="p-3 border-t border-slate-100 bg-slate-50/30 flex justify-end shrink-0">
+                <Link href="/sources" className="text-[10px] font-bold uppercase text-slate-500 hover:text-slate-900 transition-all flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 rounded-md border border-slate-200 shadow-sm">
+                  Detailed Source Analytics <ChevronRight className="h-3 w-3" strokeWidth={3} />
                 </Link>
               </div>
             </div>

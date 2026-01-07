@@ -6,6 +6,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { cn } from "@/lib/utils";
 
 const CITATION_COLORS: Record<string, string> = {
   Competitor: "#EF4444", // red
@@ -27,12 +28,13 @@ type CitationData = {
 interface Props {
   data: CitationData[];
   totalCitations: number;
+  label?: string;
 }
 
-export default function CitationsPieChart({ data, totalCitations }: Props) {
+export default function CitationsPieChart({ data, totalCitations, label = "Total Sources" }: Props) {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
-      <div className="relative w-full h-[300px]">
+      <div className="relative w-full h-[240px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -41,26 +43,34 @@ export default function CitationsPieChart({ data, totalCitations }: Props) {
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={75}
-              outerRadius={95}
-              paddingAngle={4}
+              innerRadius={70}
+              outerRadius={90}
+              paddingAngle={2}
               stroke="none"
+              animationDuration={1500}
             >
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} className="outline-none" />
+                <Cell
+                  key={`cell-${index}`}
+                  fill={entry.color}
+                  className="outline-none hover:opacity-80 transition-opacity cursor-pointer"
+                />
               ))}
             </Pie>
             <Tooltip
-              formatter={(value: number) => [
-                `${value.toLocaleString()}`,
-                "Sources",
-              ]}
-              contentStyle={{
-                backgroundColor: "hsl(var(--popover))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "0.5rem",
-                fontSize: "12px",
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+              content={({ active, payload }: any) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <div className="bg-white border border-slate-200 rounded-lg shadow-xl p-2.5 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.color }} />
+                        <span className="text-[11px] font-bold text-slate-900 uppercase tracking-tight">{payload[0].name}</span>
+                      </div>
+                      <div className="text-lg font-bold text-slate-900">{payload[0].value.toLocaleString()}</div>
+                    </div>
+                  );
+                }
+                return null;
               }}
             />
           </PieChart>
@@ -68,24 +78,24 @@ export default function CitationsPieChart({ data, totalCitations }: Props) {
 
         {/* Center Text */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-          <div className="text-3xl font-bold text-foreground">
+          <div className="text-4xl font-extrabold text-slate-900 tracking-tight">
             {totalCitations.toLocaleString()}
           </div>
-          <div className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
-            Total Sources
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+            {label}
           </div>
         </div>
       </div>
 
       {/* Custom Legend */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 mt-6 w-full max-w-[320px]">
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mt-8 w-full">
         {data.map((entry, index) => (
-          <div key={index} className="flex items-center gap-2.5 group cursor-default">
+          <div key={index} className="flex items-center gap-1.5 group cursor-default">
             <div
-              className="w-2.5 h-2.5 rounded-full shrink-0"
+              className="w-1.5 h-1.5 rounded-full shrink-0"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="text-xs font-medium text-gray-600 group-hover:text-foreground transition-colors truncate">
+            <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-900 transition-colors uppercase tracking-tight">
               {entry.name}
             </span>
           </div>

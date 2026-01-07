@@ -684,9 +684,9 @@ export default function GoogleAnalyticsPage() {
 
               {/* Topic Clusters & Growth */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 {/* <div className="col-span-2">
+                 <div className="col-span-2">
                     <TopicClustersTreemap data={topicClusterData} />
-                 </div> */}
+                 </div>
                  <AIGrowthRateChart data={aiGrowthData} loading={loading} />
                  
                  {/* AI Models Distribution Pie */}

@@ -198,24 +198,19 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
         {top5Brands.map((brand, index) => (
           <Line
             key={brand}
-            type="monotone"
+            type="natural"
             dataKey={brand}
-            stroke={BRAND_COLORS[index]}
-            strokeWidth={2}
-            dot={{
-              r: 2.4,
-              strokeWidth: 1.6,
-              fill: "white",
-              stroke: BRAND_COLORS[index],
-            }}
+            stroke={BRAND_COLORS[index % BRAND_COLORS.length]}
+            strokeWidth={3}
+            dot={false}
             activeDot={{
-              r: 3.4,
-              strokeWidth: 1.6,
+              r: 4,
+              strokeWidth: 2,
               fill: "white",
-              stroke: BRAND_COLORS[index],
+              stroke: BRAND_COLORS[index % BRAND_COLORS.length],
             }}
             isAnimationActive
-            animationDuration={650}
+            animationDuration={1000}
             name={brand}
           />
         ))}
