@@ -7,37 +7,37 @@ import { NextRequest, NextResponse } from "next/server";
  * - No crypto / node usage
  */
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+    const { pathname } = request.nextUrl;
 
-  // 1️⃣ Always allow API routes
-  if (pathname.startsWith("/api")) {
+    // 1️⃣ Always allow API routes (Early exit)
+    if (pathname.startsWith("/api") || pathname.includes("/api/")) {
+        return NextResponse.next();
+    }
+
+    // 2️⃣ Always allow Next internals & public files
+    if (
+        pathname.startsWith("/_next") ||
+        pathname === "/favicon.ico"
+    ) {
+        return NextResponse.next();
+    }
+
+    // 3️⃣ Allow login page
+    if (pathname === "/login") {
+        return NextResponse.next();
+    }
+
+    // 4️⃣ Simple UI protection (cookie presence ONLY)
+    const session = request.cookies.get("session")?.value;
+
+    if (!session) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+    }
+
+    // 5️⃣ Allow request to continue
     return NextResponse.next();
-  }
-
-  // 2️⃣ Always allow Next internals & public files
-  if (
-    pathname.startsWith("/_next") ||
-    pathname === "/favicon.ico"
-  ) {
-    return NextResponse.next();
-  }
-
-  // 3️⃣ Allow login page
-  if (pathname === "/login") {
-    return NextResponse.next();
-  }
-
-  // 4️⃣ Simple UI protection (cookie presence ONLY)
-  const session = request.cookies.get("session")?.value;
-
-  if (!session) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // 5️⃣ Allow request to continue
-  return NextResponse.next();
 }
 
 /**
@@ -45,7 +45,7 @@ export function middleware(request: NextRequest) {
  * (Exclude APIs explicitly)
  */
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
-  ],
+    matcher: [
+        "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    ],
 };
