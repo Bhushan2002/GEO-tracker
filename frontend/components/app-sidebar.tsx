@@ -38,6 +38,12 @@ const generalItems = [
     icon: MessageSquare,
   },
   {
+    title: "Sources",
+    href: "/sources",
+    icon: Globe,
+  },
+  
+  {
     title: "Brands",
     href: "/brand",
     icon: Tag,
@@ -47,15 +53,9 @@ const generalItems = [
     href: "/google-analytics",
     icon: ChartBar,
   },
-  {
-    title: "Sources",
-    href: "/sources",
-    icon: Globe,
-  },
   
 ];
 
-<<<<<<< HEAD
 const preferencesItems = [
   {
     title: "Brands",
@@ -64,8 +64,6 @@ const preferencesItems = [
   },
 
 ];
-=======
->>>>>>> b45daada278e2185ba5ba89977d7bb7b6ccf1429
 
 export function AppSidebar() {
   const pathname = usePathname();
