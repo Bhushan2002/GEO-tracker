@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
         };
 
         // 5. Aggregate by Family
-        const targetFamilies = ["ChatGPT", "Gemini", "Claude", "Perplexity", "Grok", "Copilot"];
+        const targetFamilies = ["ChatGPT", "Gemini", "Claude"];
 
         const getModelFamily = (rawName: string): string => {
             const lower = rawName.toLowerCase();

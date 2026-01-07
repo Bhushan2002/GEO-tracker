@@ -44,6 +44,11 @@ const generalItems = [
     icon: Globe,
   },
   {
+    title: "Models",
+    href: "/models",
+    icon: Bot,
+  },
+  {
     title: "Brands",
     href: "/brand",
     icon: Tag,
@@ -53,12 +58,6 @@ const generalItems = [
     href: "/google-analytics",
     icon: ChartBar,
   },
-  {
-    title: "Sources",
-    href: "/sources",
-    icon: Globe,
-  },
-  
 ];
 
 const preferencesItems = [

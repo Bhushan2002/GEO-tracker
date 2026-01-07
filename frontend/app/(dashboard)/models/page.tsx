@@ -104,7 +104,7 @@ export default function ModelsPage() {
     const sourceChartData = activeData ? activeData.topSources : [];
     const totalCitations = activeData ? activeData.allSources?.reduce((acc, curr) => acc + curr.count, 0) || 1 : 1;
 
-    const MODELS = ["ChatGPT", "Gemini", "Claude", "Perplexity", "Grok", "Copilot"];
+    const MODELS = ["ChatGPT", "Gemini", "Claude"];
 
     // Premium Gradients
     const GRADIENTS = [
