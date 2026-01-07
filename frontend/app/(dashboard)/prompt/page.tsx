@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 // Removed Sheet imports
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import { api } from "@/api/api";
@@ -16,14 +16,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Prompt } from "@/types";
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
-import PromptDetailsPage from "./[id]/page"; // We can reuse the existing component logic
+import PromptDetailsPage from "./[id]/page";
 
-export default function Page() {
+function PromptContent() {
   const { activeWorkspace } = useWorkspace();
   const { prompts, modelResponses, isLoading, refreshPrompts } = useDashboardData();
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedPromptId = searchParams.get("id");
+
+
+
 
   const [promptText, setPromptText] = useState("");
   const [topic, setTopic] = useState("");
@@ -277,5 +280,13 @@ export default function Page() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-8 flex items-center justify-center min-h-screen">Loading...</div>}>
+      <PromptContent />
+    </Suspense>
   );
 }
