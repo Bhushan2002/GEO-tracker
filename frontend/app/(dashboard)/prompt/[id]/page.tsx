@@ -70,7 +70,7 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const response = await api.get(`/api/prompt/${id}`);
+                const response = await api.get(`/api/prompt-details?id=${id}`);
                 setData(response.data);
             } catch (error: any) {
                 const errMsg = error.response?.data?.message || error.message || "Failed to load analytics";

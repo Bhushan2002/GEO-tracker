@@ -4,28 +4,22 @@ import { Prompt } from "@/lib/models/prompt.model";
 import { PromptRun } from "@/lib/models/promptRun.model";
 import { ModelResponse } from "@/lib/models/modelResponse.model";
 import { Brand } from "@/lib/models/brand.model";
+import { initScheduler, executePromptTask } from "@/lib/services/cronSchedule";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
 
-export async function GET(req: NextRequest, props: any) {
+export async function GET(request: NextRequest) {
     try {
-        console.log("Analytics Route Hit. Props:", props);
+        const { searchParams } = new URL(request.url);
+        const promptId = searchParams.get("id");
 
-        // Safe params extraction for Next.js 15/16 (Promise) or 14 (Object)
-        const params = await props.params; // Awaiting a non-promise object is safe in JS
-        console.log("Resolved Params:", params);
-
-        if (!params?.id) {
-            console.error("Missing ID in params");
-            return NextResponse.json({ message: "No Prompt ID provided" }, { status: 400 });
+        if (!promptId) {
+            return NextResponse.json({ message: "Prompt ID is required" }, { status: 400 });
         }
 
-        const promptId = params.id;
-
-        const workspaceId = await getWorkspaceId(req);
+        const workspaceId = await getWorkspaceId(request);
         if (!workspaceId) return workspaceError();
 
         await connectDatabase();
@@ -43,11 +37,11 @@ export async function GET(req: NextRequest, props: any) {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - 30);
 
-        const promptRuns30d = allPromptRuns.filter(pr => pr.createdAt >= startDate);
-        const promptRunIds30d = promptRuns30d.map(pr => pr._id);
+        const promptRuns30d = allPromptRuns.filter(pr => (pr as any).createdAt >= startDate);
+        const promptRunIds30d = promptRuns30d.map(pr => (pr as any)._id);
 
         const modelResponses = await ModelResponse.find({
-            promptRunId: { $in: allPromptRuns.map(pr => pr._id) },
+            promptRunId: { $in: allPromptRuns.map(pr => (pr as any)._id) },
             workspaceId
         }).populate({
             path: 'identifiedBrands',
@@ -57,17 +51,17 @@ export async function GET(req: NextRequest, props: any) {
         // Group responses by runId for history details
         const responsesByRun: Record<string, any[]> = {};
         modelResponses.forEach(res => {
-            const runId = res.promptRunId.toString();
+            const runId = (res as any).promptRunId.toString();
             if (!responsesByRun[runId]) responsesByRun[runId] = [];
             responsesByRun[runId].push(res);
         });
 
         // --- Aggregation logic for analytics (last 30 days) ---
         const brandStats: Record<string, any> = {};
-        const modelResponses30d = modelResponses.filter(res => promptRunIds30d.some(id => id.toString() === res.promptRunId.toString()));
+        const modelResponses30d = modelResponses.filter(res => promptRunIds30d.some(id => id.toString() === (res as any).promptRunId.toString()));
 
         modelResponses30d.forEach(res => {
-            (res.identifiedBrands || []).forEach((brand: any) => {
+            ((res as any).identifiedBrands || []).forEach((brand: any) => {
                 const bName = brand.brand_name;
                 if (!brandStats[bName]) {
                     brandStats[bName] = {
@@ -115,7 +109,7 @@ export async function GET(req: NextRequest, props: any) {
         }
 
         promptRuns30d.forEach(run => {
-            const dateStr = run.createdAt.toISOString().split('T')[0];
+            const dateStr = (run as any).createdAt.toISOString().split('T')[0];
             if (visibilityMap.has(dateStr)) {
                 visibilityMap.get(dateStr).totalRuns += 1;
             }
@@ -125,7 +119,7 @@ export async function GET(req: NextRequest, props: any) {
         modelResponses30d.forEach(res => {
             const dateStr = (res as any).createdAt?.toISOString().split('T')[0];
             if (dateStr && visibilityMap.has(dateStr)) {
-                (res.identifiedBrands || []).forEach((b: any) => {
+                ((res as any).identifiedBrands || []).forEach((b: any) => {
                     if (topBrandNames.includes(b.brand_name)) {
                         visibilityMap.get(dateStr)[b.brand_name] += 1;
                     }
@@ -146,7 +140,7 @@ export async function GET(req: NextRequest, props: any) {
         const sourceMap: Record<string, any> = {};
         const typeMap: Record<string, number> = {};
         modelResponses30d.forEach(res => {
-            (res.identifiedBrands || []).forEach((b: any) => {
+            ((res as any).identifiedBrands || []).forEach((b: any) => {
                 (b.associated_domain || []).forEach((domain: any) => {
                     const dName = domain.domain_citation || "unknown";
                     if (!sourceMap[dName]) {
@@ -173,12 +167,15 @@ export async function GET(req: NextRequest, props: any) {
         return NextResponse.json({
             promptText: prompt.promptText,
             tags: prompt.tags || [],
+            topic: prompt.topic,
+            isActive: prompt.isActive,
+            isScheduled: prompt.isScheduled,
             visibilityTrend,
             brands: brandData,
             sources: sourcesList,
             sourceTypes,
             executionHistory: allPromptRuns.map(run => {
-                const responses = responsesByRun[run._id.toString()] || [];
+                const responses = responsesByRun[(run as any)._id.toString()] || [];
                 const distinctBrands = new Set<string>();
                 let totalSnt = 0;
                 let sntCount = 0;
@@ -196,18 +193,18 @@ export async function GET(req: NextRequest, props: any) {
                 });
 
                 return {
-                    id: run._id,
-                    date: run.createdAt,
-                    status: run.status,
+                    id: (run as any)._id,
+                    date: (run as any).createdAt,
+                    status: (run as any).status,
                     brandsDetectedCount: distinctBrands.size,
-                    brandsDetected: Array.from(distinctBrands), // Return all brand names
+                    brandsDetected: Array.from(distinctBrands),
                     avgSentiment: sntCount > 0 ? Math.round(totalSnt / sntCount) : 0,
                     avgLatency: responses.length > 0 ? Math.round(totalLatency / responses.length) : 0,
                     modelsCount: responses.length
                 };
             }),
             metadata: {
-                createdAt: prompt.createdAt,
+                createdAt: (prompt as any).createdAt,
                 totalMentions: brandData.reduce((acc: number, b: any) => acc + b.visibility, 0),
                 totalSources: sourcesList.length,
                 avgSentiment: brandData.length > 0 ? Math.round(brandData.reduce((acc: number, b: any) => acc + b.sentiment, 0) / brandData.length) : 0
@@ -215,7 +212,7 @@ export async function GET(req: NextRequest, props: any) {
         }, { status: 200 });
 
     } catch (error) {
-        console.error("Error fetching prompt analytics:", error);
+        console.error("Error fetching prompt details:", error);
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }
