@@ -553,7 +553,7 @@ export default function GoogleAnalyticsPage() {
                             contentStyle={{
                               backgroundColor: "rgba(255, 255, 255, 0.95)",
                               border: "none",
-                              borderRadius: "8px",
+                              borderRadius: "6px",
                               boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                               padding: "12px"
                             }}
@@ -566,8 +566,8 @@ export default function GoogleAnalyticsPage() {
                             stroke="#2563eb"
                             strokeWidth={3}
                             name="New Users"
-                            dot={{ fill: "#2563eb", r: 4, strokeWidth: 2, stroke: "#fff" }}
-                            activeDot={{ r: 7, strokeWidth: 0 }}
+                            dot={{ fill: "#2563eb", r: 0, strokeWidth: 0, stroke: "#fff" }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                             fill="url(#colorUsers)"
                           />
                           <Line
@@ -576,8 +576,8 @@ export default function GoogleAnalyticsPage() {
                             stroke="#f59e0b"
                             strokeWidth={3}
                             name="Conversions"
-                            dot={{ fill: "#f59e0b", r: 4, strokeWidth: 2, stroke: "#fff" }}
-                            activeDot={{ r: 7, strokeWidth: 0 }}
+                            dot={{ fill: "#f59e0b", r: 0, strokeWidth: 0, stroke: "#fff" }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
@@ -645,8 +645,8 @@ export default function GoogleAnalyticsPage() {
                             stroke="#9333ea"
                             strokeWidth={3}
                             name="Impressions"
-                            dot={{ fill: "#9333ea", r: 4, strokeWidth: 2, stroke: "#fff" }}
-                            activeDot={{ r: 7, strokeWidth: 0 }}
+                            dot={{ fill: "#9333ea", r: 0, strokeWidth: 0, stroke: "#fff" }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                             fill="url(#colorImpressions)"
                           />
                           <Line
@@ -655,8 +655,8 @@ export default function GoogleAnalyticsPage() {
                             stroke="#ec4899"
                             strokeWidth={3}
                             name="Brand Searches"
-                            dot={{ fill: "#ec4899", r: 4, strokeWidth: 2, stroke: "#fff" }}
-                            activeDot={{ r: 7, strokeWidth: 0 }}
+                            dot={{ fill: "#ec4899", r: 0, strokeWidth: 0, stroke: "#fff" }}
+                            activeDot={{ r: 4, strokeWidth: 0 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
