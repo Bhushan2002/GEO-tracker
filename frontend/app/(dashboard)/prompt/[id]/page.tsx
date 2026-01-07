@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
@@ -57,9 +57,12 @@ import { toast } from "sonner";
 
 const COLORS = ["#60A5FA", "#34D399", "#818CF8", "#FACC15", "#FB7185", "#22D3EE"];
 
-export default function PromptDetailsPage() {
-    const { id } = useParams();
+export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
+    const params = useParams();
+    const searchParams = useSearchParams();
     const router = useRouter();
+
+    const id = manualId || params?.id || searchParams.get("id");
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [selectedRunBrands, setSelectedRunBrands] = useState<{ id: string, name: string[] } | null>(null);
@@ -119,7 +122,7 @@ export default function PromptDetailsPage() {
                     className="flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-[0.2em] group cursor-pointer"
                 >
                     <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
-                    Back to dashboard
+                    Back to prompts
                 </button>
 
                 <div className="flex flex-col gap-4 border-b border-slate-100 pb-8">

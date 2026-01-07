@@ -12,16 +12,18 @@ import { toast } from "sonner";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import { api } from "@/api/api";
 import { Search, Download, Plus, MessageSquare, ListFilter, Play, Globe, User, ShieldCheck, Heart, Info, Clock, ExternalLink } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Prompt } from "@/types";
-
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
+import PromptDetailsPage from "./[id]/page"; // We can reuse the existing component logic
 
 export default function Page() {
   const { activeWorkspace } = useWorkspace();
   const { prompts, modelResponses, isLoading, refreshPrompts } = useDashboardData();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedPromptId = searchParams.get("id");
 
   const [promptText, setPromptText] = useState("");
   const [topic, setTopic] = useState("");
@@ -118,7 +120,7 @@ export default function Page() {
 
 
   const handleRowClick = (prompt: Prompt) => {
-    router.push(`/prompt/${prompt._id}`);
+    router.push(`/prompt?id=${prompt._id}`);
   };
 
   const filteredPrompts = prompts.filter(p => {
@@ -131,6 +133,10 @@ export default function Page() {
     return true;
   });
 
+
+  if (selectedPromptId) {
+    return <PromptDetailsPage manualId={selectedPromptId} />;
+  }
 
   return (
     <div className="min-h-screen p-6 space-y-6 max-w-[1600px] mx-auto bg-white animate-in fade-in duration-500 ease-out">
