@@ -76,6 +76,7 @@ export default function GoogleAnalyticsPage() {
   const [gaAccounts, setGaAccounts] = useState<any[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [chartData, setChartData] = useState<any[]>([]);
   const [aiModelsData, setAiModelsData] = useState<any[]>([]);
   const [firstTouchData, setFirstTouchData] = useState<any[]>([]);
@@ -113,6 +114,8 @@ export default function GoogleAnalyticsPage() {
       }
     } catch (error) {
       console.error("Failed to load GA accounts:", error);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -379,8 +382,16 @@ export default function GoogleAnalyticsPage() {
           </Card>
         )}
 
+        {/* Initial Loading State */}
+        {initialLoading && (
+          <div className="flex flex-col items-center justify-center h-[70vh] w-full gap-3 text-foreground/40">
+            <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+            <p className="text-sm font-medium">Loading accounts...</p>
+          </div>
+        )}
+
         {/* Empty State if no account selected */}
-        {!selectedAccountId && !loading && gaAccounts.length === 0 && (
+        {!initialLoading && !selectedAccountId && !loading && gaAccounts.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in duration-500">
             <div className="bg-white p-8 rounded-full shadow-lg mb-6">
                <Zap className="h-16 w-16 text-gray-300" />
@@ -398,7 +409,7 @@ export default function GoogleAnalyticsPage() {
           loading ? (
             <div className="flex flex-col items-center justify-center h-[70vh] w-full gap-3 text-foreground/40">
                 <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
-                <p className="text-sm font-medium">Crunching analytics...</p>
+                <p className="text-sm font-medium">loading data...</p>
              </div>
           ) : (
           <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-4">
