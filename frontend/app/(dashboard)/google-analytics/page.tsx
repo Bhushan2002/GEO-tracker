@@ -106,51 +106,45 @@ export default function GoogleAnalyticsPage() {
 
         setLoading(true);
         try {
-            // Fetch main analytics (traffic & metrics)
+            // 1. Fetch main analytics (traffic & metrics)
             const analyticsRes = await api.get(`/api/analytics-by-account?accountId=${accountId}`);
-            const mainData = analyticsRes.data.chartData || [];
-            const metrics = analyticsRes.data.metrics || { activeUsers: 0, engagedSessions: 0, keyEvents: 0 };
+            setChartData(analyticsRes.data.chartData || []);
+            setKeyMetrics(analyticsRes.data.metrics || { activeUsers: 0, engagedSessions: 0, keyEvents: 0 });
 
-            // Fetch AI models traffic
-            const aiModelsRes = await api.get(`/api/ai-models-by-account?accountId=${accountId}`);
+            // 2. Fetch AI models traffic
+            try {
+                const aiModelsRes = await api.get(`/api/ai-models-by-account?accountId=${accountId}`);
+                const allowedModels = ["ChatGPT", "Copilot", "Perplexity", "Gemini", "Claude"];
+                const formattedAIModels = allowedModels.map(modelName => {
+                    const existingData = aiModelsRes.data.find((item: any) => item.model === modelName);
+                    return existingData || { model: modelName, users: 0, sessions: 0, conversionRate: "0%" };
+                });
+                setAiModelsData(formattedAIModels);
+            } catch (err) {
+                console.warn("AI Models data failed:", err);
+                setAiModelsData([]);
+            }
 
-            // Ensure specific models are included, even if they have 0 data
-            const allowedModels = ["ChatGPT", "Copilot", "Perplexity", "Gemini", "Claude"];
-            const formattedAIModels = allowedModels.map(modelName => {
-                const existingData = aiModelsRes.data.find((item: any) => item.model === modelName);
-                if (existingData) return existingData;
-                return {
-                    model: modelName,
-                    users: 0,
-                    sessions: 0,
-                    conversionRate: "0%"
-                };
-            });
+            // 3. Fetch First Touch data
+            try {
+                const firstTouchRes = await api.get(`/api/analytics/first-touch?accountId=${accountId}`);
+                setFirstTouchData(firstTouchRes.data || []);
+            } catch (err: any) {
+                console.warn("First Touch data failed:", err);
+                const msg = err.response?.data?.error || "First touch data unavailable";
+                toast.error(msg, { id: 'ft-error' });
+                setFirstTouchData([]);
+            }
 
-            // Fetch First Touch & Zero Touch data
-            const [firstTouchRes, zeroTouchRes] = await Promise.all([
-                api.get(`/api/analytics/first-touch?accountId=${accountId}`),
-                api.get(`/api/analytics/zero-touch?accountId=${accountId}`),
-            ]);
-
-            const fTouch = firstTouchRes.data || [];
-            const zTouch = zeroTouchRes.data || [];
-
-            setChartData(mainData);
-            setKeyMetrics(metrics);
-            setAiModelsData(formattedAIModels);
-            setFirstTouchData(fTouch);
-            setZeroTouchData(zTouch);
-
-            // Save to cache
-            sessionStorage.setItem(cacheKey, JSON.stringify({
-                chartData: mainData,
-                keyMetrics: metrics,
-                aiModelsData: formattedAIModels,
-                firstTouchData: fTouch,
-                zeroTouchData: zTouch,
-                timestamp: Date.now()
-            }));
+            // 4. Fetch Zero Touch data
+            try {
+                const zeroTouchRes = await api.get(`/api/analytics/zero-touch?accountId=${accountId}`);
+                setZeroTouchData(zeroTouchRes.data || []);
+            } catch (err: any) {
+                console.warn("Zero Touch data failed:", err);
+                // Zero touch often fails if no organic traffic exists, so we just log it
+                setZeroTouchData([]);
+            }
 
             setIsQuotaExceeded(false);
         } catch (error: any) {
@@ -158,12 +152,11 @@ export default function GoogleAnalyticsPage() {
 
             if (isQuotaError) {
                 setIsQuotaExceeded(true);
-                // Use warn instead of error to avoid the development overlay
                 console.warn("GA Quota limit reached:", error.message);
-                toast.error("Google Analytics quota exceeded. This view will refresh once the quota is available.");
+                toast.error("Google Analytics quota exceeded.");
             } else {
-                console.error("Failed to load GA account data:", error);
-                toast.error("Failed to fetch analytics data");
+                console.error("Critical GA Error:", error);
+                toast.error("Failed to fetch main analytics data");
             }
         } finally {
             setLoading(false);
