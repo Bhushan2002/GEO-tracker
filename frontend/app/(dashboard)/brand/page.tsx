@@ -217,7 +217,7 @@ export default function BrandPage() {
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-slate-400" />
-                <h2 className="text-lg font-bold text-slate-900">Tracked Entities</h2>
+                <h2 className="text-lg font-bold text-slate-900">Tracked Entities <span className="text-xs font-medium text-slate-400 ml-2 font-normal">• Click card for full details</span></h2>
               </div>
               <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200">
                 {targetBrands.length} Total Targets
