@@ -291,9 +291,9 @@ export default function Overview() {
             </div>
 
             {/* Domain Table */}
-<<<<<<< HEAD
+
             <DomainTable domainTableData={domainTableData} isLoading={isLoading} />
-=======
+
             <div className="xl:col-span-8 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
               <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex flex-col gap-0.5">
@@ -375,7 +375,7 @@ export default function Overview() {
                 </Link>
               </div>
             </div>
->>>>>>> aed6c638163ffcd69f984b31893cf893c1e01008
+
           </div>
         </div>
 
