@@ -350,28 +350,37 @@ export default function GoogleAnalyticsPage() {
   return (
     <div className="min-h-screen p-6 space-y-8 max-w-[1700px] mx-auto">
       {/* Header & Filter Bar */}
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-foreground">Analytics</h1>
+      {/* Header Section */}
+      <div className="bg-white border-b border-slate-100 sticky top-0 z-20 shadow-[0_1px_3px_rgba(0,0,0,0.02)] -mx-6 -mt-6 mb-8">
+        <div className="max-w-[1700px] mx-auto px-8 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg shadow-slate-200">
+              <ChartArea className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex flex-col">
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Analytics</h1>
+              <p className="text-[13px] text-slate-500 mt-1.5 font-medium">
+                Analyze AI mentions, sentiment patterns, and ranking trends.
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="flex items-center gap-3">
             {gaAccounts.length > 0 && (
               <Select
                 value={selectedAccountId}
                 onValueChange={setSelectedAccountId}
               >
-                <SelectTrigger className="w-full md:w-[280px] bg-background">
+                <SelectTrigger className="w-full md:w-[280px] bg-slate-50 border-slate-200 h-10 font-bold text-[13px] rounded-xl transition-all hover:bg-white text-slate-900">
                   <SelectValue placeholder="Select Account" />
                 </SelectTrigger>
                 <SelectContent>
                   {gaAccounts.map((account) => (
                     <SelectItem key={account._id} value={account._id}>
-                      <span className="font-medium">
+                      <span className="font-bold text-slate-900">
                         {account.propertyName}
                       </span>
-                      <span className="text-xs text-muted-foreground ml-2">
+                      <span className="text-[10px] text-slate-400 font-bold ml-2">
                         ({account.propertyId})
                       </span>
                     </SelectItem>
@@ -381,8 +390,8 @@ export default function GoogleAnalyticsPage() {
             )}
 
             <Sheet>
-              <SheetTrigger asChild className="p-4">
-                <Button variant="outline" size="icon" title="Manage Accounts">
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-900 shadow-none" title="Manage Accounts">
                   <Settings className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
@@ -397,31 +406,31 @@ export default function GoogleAnalyticsPage() {
                 <div className="mt-6 space-y-6 px-4">
                   <Button
                     onClick={handleConnectAccount}
-                    className="w-full bg-green-600  hover:bg-green-700 shadow-lg shadow-green-200"
+                    className="w-full bg-slate-900 hover:bg-black text-white h-11 rounded-xl font-bold text-[13px] shadow-lg shadow-slate-200"
                   >
                     <Plus className="mr-2 h-4 w-4" /> Connect New Account
                   </Button>
 
                   <div className="space-y-4">
-                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
                       Connected Accounts
                     </h3>
                     {gaAccounts.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground border rounded-lg bg-muted/50">
-                        <p>No accounts connected</p>
+                      <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
+                        <p className="font-medium text-[13px]">No accounts connected</p>
                       </div>
                     ) : (
-                      <div className="border rounded-md divide-y">
+                      <div className="border border-slate-100 rounded-2xl divide-y divide-slate-50 overflow-hidden shadow-sm">
                         {gaAccounts.map((account) => (
                           <div
                             key={account._id}
-                            className="p-4 flex items-center justify-between bg-background"
+                            className="p-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors"
                           >
                             <div className="space-y-1">
-                              <p className="font-medium text-sm">
+                              <p className="font-bold text-slate-900 text-sm">
                                 {account.accountName}
                               </p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
                                 {account.propertyName} ({account.propertyId})
                               </p>
                             </div>
