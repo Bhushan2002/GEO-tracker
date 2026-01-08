@@ -9,7 +9,7 @@ import { BrandTable } from "@/components/Brands/BrandTable";
 import { brandAPI } from "@/lib/api/brand.api";
 import { TargetBrandTable } from "@/components/Brands/TargetBrandGrid";
 import { Brand } from "../../../lib/models/brand.model";
-import { BadgeCheck, Building2, ChevronRight, FileText, Globe, Info, Loader, Plus, ShieldCheck, Target } from "lucide-react";
+import { BadgeCheck, Building2, ChevronRight, FileText, Globe, Info, Loader, Plus, ShieldCheck, Tag } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
@@ -70,7 +70,7 @@ export default function BrandPage() {
         <div className="max-w-[1600px] mx-auto px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg shadow-slate-200">
-              <Target className="w-5 h-5 text-white" />
+              <Tag className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Brand Management</h1>

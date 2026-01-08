@@ -60,7 +60,7 @@ import {
   Users,
   MousePointerClick,
   Loader,
-  ChartArea,
+  ChartBar,
   Globe,
   Layout,
   Smartphone,
@@ -355,7 +355,7 @@ export default function GoogleAnalyticsPage() {
         <div className="max-w-[1700px] mx-auto px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg shadow-slate-200">
-              <ChartArea className="w-5 h-5 text-white" />
+              <ChartBar className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Analytics</h1>
@@ -527,7 +527,7 @@ export default function GoogleAnalyticsPage() {
               {/* 1. Engagement and Quality Insights */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <ChartArea className="h-5 w-5 text-muted-foreground" />
+                  <ChartBar className="h-5 w-5 text-muted-foreground" />
                   <h3 className="text-lg font-semibold text-foreground">
                     Engagement & Quality
                   </h3>
