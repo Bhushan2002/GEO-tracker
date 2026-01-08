@@ -72,6 +72,7 @@ import { AIDeviceBreakdownChart } from "@/components/Charts/AIDeviceBreakdownCha
 import { cn } from "@/lib/utils";
 import { AiDemographicsChart } from "@/components/Charts/AiDemographicsChart";
 import FirstZeroTouchChart from "@/components/Charts/FirstZeroTouchChart";
+import CitationsPieChart from "@/components/Charts/CitationsPieChart";
 
 export default function GoogleAnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
@@ -157,7 +158,9 @@ export default function GoogleAnalyticsPage() {
           setTopicClusterData(parsed.topicClusterData || []);
           setDemographicsData(parsed.demographicsData || []);
           setLoading(false);
-          console.log("✅ Loaded data from cache");
+      
+
+
           return;
         }
       } catch (e) {
@@ -202,9 +205,6 @@ export default function GoogleAnalyticsPage() {
           conversionRate: "0%",
         };
       });
-
-      console.log("📊 Raw AI Models API Response:", aiModelsRes.data);
-      console.log("📊 Formatted AI Models:", formattedAIModels);
 
       // Fetch First Touch, Zero Touch & AI Landing Pages data in parallel
       const [
@@ -251,8 +251,7 @@ export default function GoogleAnalyticsPage() {
       setTopicClusterData(topicRes.data);
       setDemographicsData(demoRes.data);
 
-      console.log("✅ State updated - aiLandingPageData set to:", landingPages);
-      console.log("📊 Demographics data:", demoRes.data);
+   
 
       // Save to cache
       sessionStorage.setItem(
@@ -273,7 +272,6 @@ export default function GoogleAnalyticsPage() {
         })
       );
 
-      console.log("💾 Data cached successfully");
 
       setIsQuotaExceeded(false);
     } catch (error: any) {
@@ -293,10 +291,7 @@ export default function GoogleAnalyticsPage() {
       }
     } finally {
       setLoading(false);
-      console.log(
-        "🏁 Loading finished - aiLandingPageData length:",
-        aiLandingPageData.length
-      );
+      
     }
   };
 
@@ -618,19 +613,19 @@ export default function GoogleAnalyticsPage() {
                             type="monotone"
                             dataKey="users"
                             stroke="#1e40af"
-                            strokeWidth={2}
+                            strokeWidth={3}
                             name="Total Users"
-                            dot={{ fill: "#1e40af", r: 2 }}
-                            activeDot={{ r: 2 }}
+                            dot={{ fill: "#1e40af", r: 1 }}
+                            activeDot={{ r: 3 }}
                           />
                           <Line
                             type="monotone"
                             dataKey="aiUsers"
                             stroke="#059669"
-                            strokeWidth={2}
+                            strokeWidth={3}
                             name="AI Traffic"
-                            dot={{ fill: "#059669", r: 2 }}
-                            activeDot={{ r: 2 }}
+                            dot={{ fill: "#059669", r: 1 }}
+                            activeDot={{ r: 3 }}
                           />
                         </LineChart>
                       </ResponsiveContainer>
@@ -820,41 +815,29 @@ export default function GoogleAnalyticsPage() {
                           <Loader className="h-8 w-8 animate-spin text-gray-400" />
                         </div>
                       ) : (
-                        <ResponsiveContainer width="100%" height={300}>
-                          <PieChart>
-                            <Pie
-                              data={aiModelsData.filter(
-                                (item) => item.users > 0
-                              )}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              label={({ model, users }) => `${model}: ${users}`}
-                              outerRadius={100}
-                              fill="#8884d8"
-                              dataKey="users"
-                            >
-                              {aiModelsData
-                                .filter((item) => item.users > 0)
-                                .map((entry, index) => {
-                                  const colors = [
-                                    "#1e40af",
-                                    "#059669",
-                                    "#dc2626",
-                                    "#8b5cf6",
-                                    "#f59e0b",
-                                  ];
-                                  return (
-                                    <Cell
-                                      key={`cell-${index}`}
-                                      fill={colors[index % colors.length]}
-                                    />
-                                  );
-                                })}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <CitationsPieChart
+                          data={aiModelsData
+                            .filter((item) => item.users > 0)
+                            .map((item, index) => {
+                              const colors = [
+                                "#10B981", // ChatGPT - green
+                                "#3B82F6", // Copilot - blue
+                                "#8B5CF6", // Perplexity - purple
+                                "#F97316", // Gemini - orange
+                                "#06B6D4", // Claude - cyan
+                              ];
+                              return {
+                                name: item.model,
+                                value: item.users,
+                                color: colors[index % colors.length],
+                              };
+                            })}
+                          totalCitations={aiModelsData.reduce(
+                            (sum, item) => sum + item.users,
+                            0
+                          )}
+                          label="Total Users"
+                        />
                       )}
                     </CardContent>
                   </Card>
@@ -896,15 +879,14 @@ export default function GoogleAnalyticsPage() {
                   </Card>
 
                   <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    
                     <CardHeader className="border-b border-slate-100  px-5 ">
-                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                      AI Models Performance
-                    </CardTitle>
-                    <CardDescription className="text-[10px] text-slate-500 font-medium">
-                      Detailed metrics for each AI model
-                    </CardDescription>
-                  </CardHeader>
+                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        AI Models Performance
+                      </CardTitle>
+                      <CardDescription className="text-[10px] text-slate-500 font-medium">
+                        Detailed metrics for each AI model
+                      </CardDescription>
+                    </CardHeader>
 
                     <CardContent className="pt-6">
                       {loading ? (
