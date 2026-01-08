@@ -310,38 +310,51 @@ function SourcesPage() {
         <div className="min-h-screen bg-white text-slate-900 animate-in fade-in duration-500 ease-out">
             <div className="max-w-[1700px] mx-auto px-6 py-6 space-y-6">
 
-                {/* 1️⃣ HEADER & TAB SWITCHER */}
-                <div className="flex items-center gap-6">
-                    <h1 className="text-xl font-bold text-slate-900">Sources</h1>
-                    <div className="bg-slate-100 p-1 rounded-lg flex items-center h-[40px]">
-                        <button
-                            onClick={() => {
-                                setActiveTab("domains");
-                                setSelectedType("All Types");
-                            }}
-                            className={cn(
-                                "px-4 py-1.5 text-[13px] font-bold rounded-md transition-all duration-200 h-[32px] flex items-center",
-                                activeTab === "domains"
-                                    ? "bg-white shadow text-slate-900"
-                                    : "text-slate-500 hover:text-slate-800"
-                            )}
-                        >
-                            Domains
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab("urls");
-                                setSelectedType("All Types");
-                            }}
-                            className={cn(
-                                "px-4 py-1.5 text-[13px] font-bold rounded-md transition-all duration-200 h-[32px] flex items-center",
-                                activeTab === "urls"
-                                    ? "bg-white shadow text-slate-900"
-                                    : "text-slate-500 hover:text-slate-800"
-                            )}
-                        >
-                            URLs
-                        </button>
+                {/* 1. Header Section */}
+                <div className="bg-white border-b border-slate-100 sticky top-0 z-20 shadow-[0_1px_3px_rgba(0,0,0,0.02)] -mx-6 -mt-6 mb-8">
+                    <div className="max-w-[1700px] mx-auto px-8 py-5 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg shadow-slate-200">
+                                <Globe className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex flex-col">
+                                <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Source Intelligence</h1>
+                                <p className="text-[13px] text-slate-500 mt-1.5 font-medium">
+                                    Analyze the domains and specific URLs that AI models cite most frequently in your industry.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="bg-slate-50 p-1 rounded-xl flex items-center border border-slate-100">
+                            <button
+                                onClick={() => {
+                                    setActiveTab("domains");
+                                    setSelectedType("All Types");
+                                }}
+                                className={cn(
+                                    "px-6 py-2 text-[13px] font-bold rounded-lg transition-all duration-200",
+                                    activeTab === "domains"
+                                        ? "bg-white shadow-sm text-slate-900 border border-slate-200"
+                                        : "text-slate-400 hover:text-slate-600"
+                                )}
+                            >
+                                Domains
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setActiveTab("urls");
+                                    setSelectedType("All Types");
+                                }}
+                                className={cn(
+                                    "px-6 py-2 text-[13px] font-bold rounded-lg transition-all duration-200",
+                                    activeTab === "urls"
+                                        ? "bg-white shadow-sm text-slate-900 border border-slate-200"
+                                        : "text-slate-400 hover:text-slate-600"
+                                )}
+                            >
+                                URLs
+                            </button>
+                        </div>
                     </div>
                 </div>
 

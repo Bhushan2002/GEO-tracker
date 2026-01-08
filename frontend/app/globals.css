@@ -160,6 +160,19 @@
     @apply bg-background text-foreground;
   }
 
+  /* Global Interactivity - Enforce hand cursor on all clickable elements */
+  button, 
+  a, 
+  select, 
+  label,
+  [role="button"],
+  .cursor-pointer,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    cursor: pointer !important;
+  }
+
   /* Prevent whitish background on autofill (Chrome/Edge/Safari) */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,

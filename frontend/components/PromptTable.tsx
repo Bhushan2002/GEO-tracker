@@ -26,9 +26,10 @@ interface PromptTableProps {
   loading: boolean;
   onRefresh: () => void;
   onRowClick: (prompt: Prompt) => void;
+  onAddClick?: () => void;
 }
 
-export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTableProps) {
+export function PromptTable({ data, loading, onRefresh, onRowClick, onAddClick }: PromptTableProps) {
   const handleToggle = async (e: React.MouseEvent, id: string, currentStatus: boolean) => {
     e.stopPropagation(); // Avoid triggering row click
     try {
@@ -52,9 +53,12 @@ export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTabl
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 gap-4 text-center">
-        <div className="h-16 w-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm">
-          <Plus className="h-8 w-8 text-slate-300" />
-        </div>
+        <button
+          onClick={onAddClick}
+          className="h-16 w-16 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center shadow-sm hover:bg-slate-100 hover:border-slate-200 transition-all cursor-pointer group"
+        >
+          <Plus className="h-8 w-8 text-slate-300 group-hover:text-slate-900 transition-colors" />
+        </button>
         <div>
           <h3 className="text-sm font-bold text-slate-900">No prompts found</h3>
           <p className="text-xs text-slate-500 mt-1 max-w-[200px]">Create your first prompt to start monitoring AI brands.</p>
@@ -94,9 +98,17 @@ export function PromptTable({ data, loading, onRefresh, onRowClick }: PromptTabl
                 className="hover:bg-slate-50/30 border-b border-slate-100 last:border-0 transition-all group h-14 cursor-pointer"
               >
                 <TableCell className="pl-6 py-4 border-r border-slate-100">
-                  <span className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-2">
-                    {prompt.promptText}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[13px] font-bold text-slate-800 leading-snug line-clamp-2">
+                      {prompt.promptText}
+                    </span>
+                    <span className="text-[10px] text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                      Click to view analytics
+                      <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </div>
                 </TableCell>
 
                 <TableCell className="border-r border-slate-100 text-center">
