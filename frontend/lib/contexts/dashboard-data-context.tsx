@@ -1,12 +1,13 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Prompt, ModelResponse } from "@/types";
-import { PromptAPI } from "@/api/prompt.api";
-import { brandAPI } from "@/api/brand.api";
-import { ModelResponseAPI } from "@/api/modelresponse.api";
-import { api } from "@/api/api";
+import { PromptAPI } from "@/lib/api/prompt.api";
+import { brandAPI } from "@/lib/api/brand.api";
+import { ModelResponseAPI } from "@/lib/api/modelresponse.api";
 import { useWorkspace } from "./workspace-context";
+import { api } from "../api/api";
 
 interface DashboardDataContextType {
     prompts: Prompt[];

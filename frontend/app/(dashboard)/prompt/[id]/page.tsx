@@ -52,7 +52,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { api } from "@/api/api";
+import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 
 const COLORS = ["#60A5FA", "#34D399", "#818CF8", "#FACC15", "#FB7185", "#22D3EE"];
@@ -70,7 +70,7 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const response = await api.get(`/api/prompt-details?id=${id}`);
+                const response = await api.get(`/api/prompt/${id}`);
                 setData(response.data);
             } catch (error: any) {
                 const errMsg = error.response?.data?.message || error.message || "Failed to load analytics";

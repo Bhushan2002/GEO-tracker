@@ -2,15 +2,27 @@
 
 import React from "react";
 import { ResponsiveContainer, Treemap, Tooltip } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface TopicClustersTreemapProps {
   data: { name: string; size: number }[];
 }
 
 const COLORS = [
-  "#8884d8", "#83a6ed", "#8dd1e1", "#82ca9d", 
-  "#a4de6c", "#d0ed57", "#ffc658", "#ff8042"
+  "#8884d8",
+  "#83a6ed",
+  "#8dd1e1",
+  "#82ca9d",
+  "#a4de6c",
+  "#d0ed57",
+  "#ffc658",
+  "#ff8042",
 ];
 
 // Custom Content to render the text inside the boxes
@@ -73,12 +85,14 @@ const CustomTooltip = ({ active, payload }: any) => {
 export function TopicClustersTreemap({ data }: TopicClustersTreemapProps) {
   return (
     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-         <div className="flex flex-col gap-0.5">
-            <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Topic Clusters</h3>
-            <p className="text-[10px] text-slate-500 font-medium">Which content sections attract the most AI traffic?</p>
-         </div>
-      </div>
+      <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 ">
+        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+          Topic Clusters
+        </CardTitle>
+        <CardDescription className="text-[10px] text-slate-500 font-medium">
+          Which content sections attract the most AI traffic?
+        </CardDescription>
+      </CardHeader>
       <CardContent className="pt-6">
         {data.length === 0 ? (
           <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">

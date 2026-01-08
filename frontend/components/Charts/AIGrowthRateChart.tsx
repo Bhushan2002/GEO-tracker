@@ -29,7 +29,7 @@ interface AIGrowthRateChartProps {
 export function AIGrowthRateChart({ data, loading }: AIGrowthRateChartProps) {
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return [];
-    
+
     // Calculate Trendline (Simple Linear Regression)
     // We only use indices (0, 1, 2...) for x-axis in regression calculation
     const n = data.length;
@@ -58,12 +58,15 @@ export function AIGrowthRateChart({ data, loading }: AIGrowthRateChartProps) {
 
   return (
     <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-         <div className="flex flex-col gap-0.5">
-            <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">AI Traffic Growth Rate (MoM)</h3>
-            <p className="text-[10px] text-slate-500 font-medium">Month-over-month percentage growth of AI sessions</p>
-         </div>
-      </div>
+      <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 ">
+        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+          AI Traffic Growth Rate
+        </CardTitle>
+        <CardDescription className="text-[10px] text-slate-500 font-medium">
+          Month-by-month percentage growth of AI sessions
+        </CardDescription>
+      </CardHeader>
+
       <CardContent className="pt-6">
         {loading ? (
           <div className="flex items-center justify-center h-[300px]">
@@ -73,22 +76,27 @@ export function AIGrowthRateChart({ data, loading }: AIGrowthRateChartProps) {
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis 
-                dataKey="date" 
-                stroke="#6b7280" 
-                tick={{ fontSize: 12 }} 
+              <XAxis
+                dataKey="date"
+                stroke="#6b7280"
+                tick={{ fontSize: 12 }}
                 padding={{ left: 10, right: 10 }}
               />
-              <YAxis 
-                stroke="#6b7280" 
-                tick={{ fontSize: 12 }} 
+              <YAxis
+                stroke="#6b7280"
+                tick={{ fontSize: 12 }}
                 unit="%"
-                label={{ value: 'Growth %', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#6b7280' } }}
+                label={{
+                  value: "Growth %",
+                  angle: -90,
+                  position: "insideLeft",
+                  style: { textAnchor: "middle", fill: "#6b7280" },
+                }}
               />
               <Tooltip
                 formatter={(value: any, name: string) => [
                   `${value}%`,
-                  name === "growth" ? "Growth Rate" : "Trend"
+                  name === "growth" ? "Growth Rate" : "Trend",
                 ]}
                 contentStyle={{
                   backgroundColor: "white",
@@ -96,12 +104,12 @@ export function AIGrowthRateChart({ data, loading }: AIGrowthRateChartProps) {
                   borderRadius: "6px",
                 }}
               />
-              <Legend verticalAlign="top" height={36}/>
+              <Legend verticalAlign="top" height={36} />
               <ReferenceLine y={0} stroke="#9ca3af" strokeDasharray="3 3" />
               <Line
                 type="monotone"
                 dataKey="growth"
-                stroke="#8b5cf6" 
+                stroke="#8b5cf6"
                 strokeWidth={2}
                 name="Growth Rate"
                 dot={{ fill: "#8b5cf6", r: 4 }}
@@ -110,7 +118,7 @@ export function AIGrowthRateChart({ data, loading }: AIGrowthRateChartProps) {
               <Line
                 type="monotone"
                 dataKey="trend"
-                stroke="#10b981" 
+                stroke="#10b981"
                 strokeWidth={2}
                 name="Trendline"
                 dot={false}

@@ -1,5 +1,8 @@
 "use client";
 
+
+import { ModelResponseAPI } from "@/lib/api/modelresponse.api";
+
 import { ModelResponse } from "@/types";
 import { useState } from "react";
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";

@@ -10,8 +10,8 @@ import {
   Table,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { analyticsAPI } from "@/api/analytics.api";
-import { accountsAPI } from "@/api/accounts.api";
+import { analyticsAPI } from "@/lib/api/analytics.api";
+import { accountsAPI } from "@/lib/api/accounts.api";
 import { AITrafficBarChart } from '../../../components/AITrafficBarChart';
 import {
   Card,

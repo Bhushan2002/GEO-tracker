@@ -1,4 +1,4 @@
-import { PromptAPI } from "@/api/prompt.api";
+import { PromptAPI } from "@/lib/api/prompt.api";
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from "./ui/skeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const brandList = [
   {

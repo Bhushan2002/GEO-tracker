@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { analyticsAPI } from "@/api/analytics.api";
-import { api } from "@/api/api";
+import { analyticsAPI } from "@/lib/api/analytics.api";
+import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import { Loader } from "lucide-react";

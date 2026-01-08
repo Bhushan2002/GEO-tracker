@@ -42,12 +42,15 @@ export function AIDeviceBreakdownChart({ data, loading }: AIDeviceBreakdownChart
 
   return (
     <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-         <div className="flex flex-col gap-0.5">
-            <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Device Breakdown: AI Traffic</h3>
-            <p className="text-[10px] text-slate-500 font-medium">Mobile vs Desktop split for AI-driven sessions</p>
-         </div>
-      </div>
+      <CardHeader className="border-b border-slate-100  px-5 ">
+                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                      Breakdown of Devices Used by AI Visitors
+                    </CardTitle>
+                    <CardDescription className="text-[10px] text-slate-500 font-medium">
+                      Mobile vs Desktop split for AI-driven sessions
+                    </CardDescription>
+                  </CardHeader>
+
       <CardContent className="pt-6">
         {loading ? (
           <div className="flex items-center justify-center h-[300px]">

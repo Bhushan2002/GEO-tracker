@@ -1,19 +1,19 @@
 "use client";
-import { brandAPI } from "@/api/brand.api";
-import { DashBrandTable } from "@/components/dash-brandTable";
+
+import { DashBrandTable } from "@/components/Brands/DashboardBrandTable";
 import { ModelResponsesTable } from "@/components/ModelResponsesTable";
-import PieChartComponent from "@/components/pieChart";
-import CitationsPieChart from "@/components/CitationsPieChart";
+import PieChartComponent from "@/components/Charts/pieChart";
+import CitationsPieChart from "@/components/Charts/CitationsPieChart";
 
-import { VisibilityChart } from "@/components/VisibilityChart";
+import { VisibilityChart } from "@/components/Charts/VisibilityChart";
 
-import { PositionChart } from "@/components/PositionChart";
+import { PositionChart } from "@/components/Charts/PositionChart";
 import Link from "next/link";
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { SentimentChart } from "@/components/SentimentChart";
+import { SentimentChart } from "@/components/Charts/SentimentChart";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import {
   Globe,
@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
+import DomainTable from "@/components/Charts/DomainTable";
 
 export default function Overview() {
   const { activeWorkspace } = useWorkspace();
@@ -299,6 +300,9 @@ export default function Overview() {
             </div>
 
             {/* Domain Table */}
+
+            <DomainTable domainTableData={domainTableData} isLoading={isLoading} />
+
             <div className="xl:col-span-8 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
               <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex flex-col gap-0.5">
@@ -380,11 +384,11 @@ export default function Overview() {
                 </Link>
               </div>
             </div>
+
           </div>
         </div>
 
         {/* Third Row: AI Model Responses */}
-
         <div className="flex flex-col space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <MessageCircle className="h-5 w-5 text-muted-foreground" />
