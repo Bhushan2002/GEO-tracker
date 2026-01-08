@@ -1,6 +1,6 @@
 "use client";
 
-import { brandAPI } from "@/api/brand.api";
+import { brandAPI } from "@/lib/api/brand.api";
 import {
   Building2,
   Calendar,

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { api } from "@/api/api";
+import { api } from "@/lib/api/api";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import {
   Table,
@@ -66,10 +66,10 @@ import {
   Smartphone,
   BarChart3
 } from "lucide-react";
-import { AIConversionRateChart } from "@/components/AIConversionRateChart";
-import { TopicClustersTreemap } from "@/components/TopicClusterTree";
-import { AIGrowthRateChart } from "@/components/AIGrowthRateChart";
-import { AIDeviceBreakdownChart } from "@/components/AIDeviceBreakdownChart";
+import { AIConversionRateChart } from "@/components/Charts/AIConversionRateChart";
+import { TopicClustersTreemap } from "@/components/Charts/TopicClusterTree";
+import { AIGrowthRateChart } from "@/components/Charts/AIGrowthRateChart";
+import { AIDeviceBreakdownChart } from "@/components/Charts/AIDeviceBreakdownChart";
 import { cn } from "@/lib/utils";
 
 export default function GoogleAnalyticsPage() {
