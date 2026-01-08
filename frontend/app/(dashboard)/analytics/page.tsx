@@ -108,14 +108,34 @@ export default function GoogleAnalyticsPage() {
 
   useEffect(() => {
     if (selectedAccountId) {
+      sessionStorage.setItem("ga-last-account-id", selectedAccountId);
       loadAccountData(selectedAccountId);
     }
   }, [selectedAccountId]);
 
   const loadGAAccounts = async () => {
     try {
+      const cached = sessionStorage.getItem("ga-accounts-cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        setGaAccounts(parsed);
+        if (parsed.length > 0 && !selectedAccountId) {
+          // Try to restore last selected account
+          const lastId = sessionStorage.getItem("ga-last-account-id");
+          if (lastId && parsed.find((a: any) => a._id === lastId)) {
+            setSelectedAccountId(lastId);
+          } else {
+            setSelectedAccountId(parsed[0]._id);
+          }
+        }
+        setInitialLoading(false);
+        return;
+      }
+
       const response = await api.get("/api/ga-accounts");
       setGaAccounts(response.data);
+      sessionStorage.setItem("ga-accounts-cache", JSON.stringify(response.data));
+
       if (response.data.length > 0 && !selectedAccountId) {
         setSelectedAccountId(response.data[0]._id);
       }
@@ -139,7 +159,7 @@ export default function GoogleAnalyticsPage() {
       try {
         const parsed = JSON.parse(cachedData);
         const cacheAge = Date.now() - parsed.timestamp;
-        const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+        const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours (effectively session-only)
 
         if (cacheAge < CACHE_DURATION) {
           // Use cached data
