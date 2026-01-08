@@ -18,6 +18,10 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Layout wrapper for the dashboard section.
+ * Provides the sidebar, workspace context, and dashboard data context.
+ */
 export default function DashboardLayout({
   children,
 }: Readonly<{

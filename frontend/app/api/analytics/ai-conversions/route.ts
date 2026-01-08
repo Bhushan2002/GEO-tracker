@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId } from "@/lib/workspace-utils";
 
+/**
+ * AI Conversions API.
+ * Fetches conversion rates specifically for users coming from AI sources.
+ * Helper function `refreshTokenIfNeeded` ensures valid credentials.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {
@@ -28,6 +34,7 @@ async function refreshTokenIfNeeded(account: any) {
 
   return credentials.access_token;
 }
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -63,6 +70,8 @@ export async function GET(request: NextRequest) {
       version: "v1beta",
       auth: oauth2Client,
     });
+
+    // Fetch conversion metrics filtered by common AI sources
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {

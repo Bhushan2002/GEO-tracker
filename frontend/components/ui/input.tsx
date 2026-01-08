@@ -2,6 +2,9 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Displays a form input field or a component that looks like an input field.
+ */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return (
     <input

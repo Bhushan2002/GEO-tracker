@@ -18,6 +18,9 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 
+/**
+ * Bar chart displaying the conversion rate for different AI models.
+ */
 export function AIConversionRateChart({ data }: { data: any[] }) {
   const COLORS = ["#1e40af", "#059669", "#dc2626", "#8b5cf6", "#f59e0b"];
 

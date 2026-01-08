@@ -72,6 +72,10 @@ import { AIGrowthRateChart } from "@/components/Charts/AIGrowthRateChart";
 import { AIDeviceBreakdownChart } from "@/components/Charts/AIDeviceBreakdownChart";
 import { cn } from "@/lib/utils";
 
+/**
+ * Dedicated Google Analytics page.
+ * Similar to the analytics section, providing detailed GA4 insights.
+ */
 export default function GoogleAnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
   const [gaAccounts, setGaAccounts] = useState<any[]>([]);

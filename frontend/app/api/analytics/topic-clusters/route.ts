@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * Topic Clusters API.
+ * Groups visited pages into "Clusters" or "Topics" based on URL path segments.
+ * Useful for understanding content affinity for AI traffic.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) return account.accessToken;
@@ -74,7 +80,7 @@ export async function GET(request: NextRequest) {
       // Extract the first segment as the "Topic" (e.g., /blog/post-1 -> blog)
       const parts = path.split('/').filter((p: string) => p !== "");
       let topic = parts.length > 0 ? parts[0] : "Home";
-      
+
       // Capitalize
       topic = topic.charAt(0).toUpperCase() + topic.slice(1);
 
@@ -82,10 +88,10 @@ export async function GET(request: NextRequest) {
       clusters[topic] += users;
     });
 
-    // Format for Recharts Treemap (requires 'children' array)
+    // Format for Recharts Treemap (requires 'children' array or name/size structure)
     const treeMapData = Object.entries(clusters)
-        .map(([name, size]) => ({ name, size }))
-        .sort((a, b) => b.size - a.size); // Sort largest to smallest
+      .map(([name, size]) => ({ name, size }))
+      .sort((a, b) => b.size - a.size); // Sort largest to smallest
 
     return NextResponse.json(treeMapData);
   } catch (error: any) {

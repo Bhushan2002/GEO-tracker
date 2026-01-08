@@ -4,6 +4,10 @@ import { useEffect, useState } from "react"
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
+/**
+ * Bar chart displaying total traffic/users from specific AI models (ChatGPT, Copilot, Perplexity) over the last 30 days.
+ * Fetches data from the backend API.
+ */
 export function AITrafficBarChart() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -14,9 +18,9 @@ export function AITrafficBarChart() {
         // Fetch AI models traffic data from Google Analytics
         const response = await fetch("/api/audiences/ai-models-report")
         const result = await response.json()
-        
+
         console.log("AI Models API Response:", result)
-        
+
         // Transform GA data for Recharts
         // API returns: [{ model: "ChatGPT", users: 150, sessions: 200, ... }]
         const allowedModels = ["ChatGPT", "Copilot", "Perplexity"];
@@ -72,10 +76,10 @@ export function AITrafficBarChart() {
             />
             <YAxis />
             <Tooltip />
-            <Bar 
-              dataKey="traffic" 
+            <Bar
+              dataKey="traffic"
               fill="#1e40af"
-              radius={[4, 4, 0, 0]} 
+              radius={[4, 4, 0, 0]}
               barSize={40}
             />
           </BarChart>

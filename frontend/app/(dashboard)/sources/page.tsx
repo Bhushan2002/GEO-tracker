@@ -29,6 +29,10 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+/**
+ * Sources intelligence page.
+ * Analyzes domains and URLs cited by AI models, showing coverage and type distribution.
+ */
 function SourcesPage() {
     const { allBrands, modelResponses, targetBrands, isLoading } = useDashboardData();
     const [activeTab, setActiveTab] = useState<"domains" | "urls">("domains");

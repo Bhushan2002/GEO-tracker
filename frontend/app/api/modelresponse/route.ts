@@ -9,11 +9,16 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Model Responses API - GET.
+ * Fetches raw model responses with populated prompt details and identified brands.
+ * Used for detailed analysis views and debugging.
+ */
 export async function GET(req: NextRequest) {
   try {
     await connectDatabase();
 
-    // Force model registration
+    // Force model registration to avoid boilerplate errors with Mongoose
     Brand;
     PromptRun;
     Prompt;
@@ -37,24 +42,10 @@ export async function GET(req: NextRequest) {
       .lean();
 
     if (!modelResponse || modelResponse.length === 0) {
-      console.log('No model responses found');
       return NextResponse.json([], { status: 200 });
     }
 
-    console.log(`Found ${modelResponse.length} model responses`);
-
-    // Log detailed information about brands
-    const responsesWithBrands = modelResponse.filter(r => r.identifiedBrands && r.identifiedBrands.length > 0);
-    console.log(`${responsesWithBrands.length} responses have identified brands`);
-
-    // if (responsesWithBrands.length > 0) {
-    //   console.log('Sample response:', {
-    //     id: responsesWithBrands[0]._id,
-    //     modelName: responsesWithBrands[0].modelName,
-    //     brandsCount: responsesWithBrands[0].identifiedBrands?.length || 0,
-    //     brands: responsesWithBrands[0].identifiedBrands
-    //   });
-    // }
+    // console.log(`Found ${modelResponse.length} model responses`);
 
     return NextResponse.json(modelResponse, { status: 200 });
   } catch (err) {

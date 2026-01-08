@@ -6,6 +6,11 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Brands API - GET.
+ * Fetches all brands associated with the current workspace.
+ * Sorts by rank and name for consistent display.
+ */
 export async function GET(req: NextRequest) {
   try {
     await connectDatabase();
@@ -20,6 +25,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Brands API - POST.
+ * Creates a new brand in the workspace if it doesn't already exist.
+ * Initializes metrics like mentions, sentiment, and prominence.
+ */
 export async function POST(req: NextRequest) {
   try {
     await connectDatabase();

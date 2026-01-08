@@ -151,6 +151,10 @@ function SidebarProvider({
   )
 }
 
+/**
+ * Main Sidebar container component.
+ * Handles different side placements and variants.
+ */
 function Sidebar({
   side = "left",
   variant = "sidebar",

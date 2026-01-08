@@ -68,6 +68,10 @@ const preferencesItems = [
   },
 
 ];
+/**
+ * Main application sidebar component.
+ * Provides navigation links and workspace switching.
+ */
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();

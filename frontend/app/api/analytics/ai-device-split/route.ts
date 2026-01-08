@@ -4,6 +4,11 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * AI Device Split API.
+ * Returns the distribution of device categories (desktop, mobile, etc.) for users coming from AI sources.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) return account.accessToken;
@@ -52,7 +57,7 @@ export async function GET(request: NextRequest) {
         metrics: [{ name: "sessions" }],
         dimensionFilter: {
           orGroup: {
-             // Using widely known AI identifiers
+            // Using widely known AI identifiers
             expressions: ["chatgpt", "perplexity", "copilot", "claude", "gemini", "ai_search", "generative"].map(model => ({
               filter: {
                 fieldName: "sessionSource",

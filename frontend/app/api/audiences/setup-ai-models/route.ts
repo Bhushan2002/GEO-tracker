@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * Setup AI Models Audience API - POST.
+ * Automatically creates the "AI Traffic" audience in the user's GA4 property if it doesn't exist.
+ * Specifies regex filters to capture traffic from known AI sources (ChatGPT, Claude, Gemini, etc.).
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {
@@ -72,8 +78,8 @@ export async function POST(request: NextRequest) {
         account.aiAudienceName = aiAudience.displayName;
         await account.save();
       }
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         audience: aiAudience,
         message: "AI Traffic audience already exists"
       });
@@ -126,14 +132,13 @@ export async function POST(request: NextRequest) {
 
     console.log('AI Traffic audience created and saved:', audience.data.name);
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       audience: audience.data,
       message: "AI Traffic audience created successfully"
     });
   } catch (error: any) {
     console.error("Setup AI Models Error:", error.message);
-    console.error("Error details:", error.response?.data);
 
     if (error.message?.includes("already exists") || error.code === 6) {
       return NextResponse.json(
@@ -145,7 +150,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: false,
       error: error.message || "Failed to create AI Traffic audience"
     }, { status: 500 });

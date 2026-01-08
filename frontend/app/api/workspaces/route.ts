@@ -5,6 +5,11 @@ import { Workspace } from "@/lib/models/workspace.model";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Workspace management API.
+ * Handles fetching, creating, and initializing workspaces.
+ * Includes logic for seeding a default workspace and migrating legacy data.
+ */
 export async function GET() {
     try {
         await connectDatabase();
@@ -22,17 +27,18 @@ export async function GET() {
         }
 
         // Migration: If no workspace is marked as default, mark the primary one as default
+        // This ensures the dashboard always has a fallback workspace context.
         const hasDefault = workspaces.some(w => w.isDefault);
         if (!hasDefault && workspaces.length > 0) {
-            // Find "Creatosaurus's Workspace"
+            // Find "Creatosaurus's Workspace" or fall back to "My Workspace"
             const primary = workspaces.find(w => w.name === "Creatosaurus's Workspace" || w.name === "My Workspace");
             if (primary) {
                 await Workspace.findByIdAndUpdate(primary._id, { isDefault: true });
             } else {
-                // Fallback to first one
+                // Fallback to first available workspace if no known default name is found
                 await Workspace.findByIdAndUpdate(workspaces[0]._id, { isDefault: true });
             }
-            // Refresh list
+            // Refresh list to include the update
             workspaces = await Workspace.find({ isActive: true });
         }
 
@@ -42,6 +48,10 @@ export async function GET() {
     }
 }
 
+/**
+ * Creates a new workspace.
+ * @param req - Request body containing 'name' and optional 'type'.
+ */
 export async function POST(req: NextRequest) {
     try {
         await connectDatabase();

@@ -82,6 +82,13 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
+interface TopicClustersTreemapProps {
+  data: { name: string; size: number }[];
+}
+
+/**
+ * Treemap visualization of topic clusters showing user interest distribution.
+ */
 export function TopicClustersTreemap({ data }: TopicClustersTreemapProps) {
   return (
     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">

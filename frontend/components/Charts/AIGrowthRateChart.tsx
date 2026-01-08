@@ -26,6 +26,10 @@ interface AIGrowthRateChartProps {
   loading?: boolean;
 }
 
+/**
+ * Line chart visualizing the month-over-month growth rate of AI traffic.
+ * Includes a linear regression trendline.
+ */
 export function AIGrowthRateChart({ data, loading }: AIGrowthRateChartProps) {
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return [];

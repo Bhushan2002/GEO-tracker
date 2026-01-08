@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * Audiences API - GET.
+ * Lists all GA4 audiences for the connected property using the Admin API.
+ * Used to verify which audiences exist (include "AI Traffic").
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {
@@ -54,7 +60,7 @@ export async function GET(request: NextRequest) {
     // Use v1alpha version which has audiences resource
     const admin = google.analyticsadmin({ version: 'v1alpha', auth: oauth2Client });
 
-    console.log('Fetching audiences for property:', account.propertyId);
+    // console.log('Fetching audiences for property:', account.propertyId);
 
     // List all audiences
     const audiencesResponse = await admin.properties.audiences.list({
@@ -63,7 +69,7 @@ export async function GET(request: NextRequest) {
 
     const audiences = audiencesResponse.data.audiences || [];
 
-    console.log('Audiences found:', audiences.length);
+    // console.log('Audiences found:', audiences.length);
 
     // Format the response
     const formattedAudiences = audiences.map((audience: any) => ({
@@ -77,9 +83,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(formattedAudiences);
   } catch (error: any) {
     console.error("List Audiences Error:", error);
-    console.error("Error message:", error.message);
-    console.error("Error response:", error.response?.data);
-    console.error("Error stack:", error.stack);
     return NextResponse.json({
       error: error.message || "Failed to list audiences",
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined

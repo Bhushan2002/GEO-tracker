@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * Zero Touch Attribution API.
+ * Tracks organic users who did NOT come from direct AI sources,
+ * serving as a baseline or control group for comparison.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {
@@ -54,43 +60,6 @@ export async function GET(request: NextRequest) {
 
     // Refresh token if needed
     const accessToken = await refreshTokenIfNeeded(account);
-
-    // Check if AI audience exists, if not try to fetch it
-    if (!account.aiAudienceId) {
-      try {
-        const oauth2Client = new google.auth.OAuth2();
-        oauth2Client.setCredentials({ access_token: accessToken });
-
-        const admin = google.analyticsadmin({ version: 'v1alpha', auth: oauth2Client });
-        const audiencesResponse = await admin.properties.audiences.list({
-          parent: `properties/${account.propertyId}`,
-        });
-
-        const existingAudiences = audiencesResponse.data.audiences || [];
-        const aiAudience = existingAudiences.find((aud: any) => {
-          const dName = aud.displayName?.toLowerCase() || "";
-          return dName.includes("ai traffic") || (dName.includes("ai") && dName.includes("traffic"));
-        });
-
-        if (aiAudience?.name) {
-          account.aiAudienceId = aiAudience.name;
-          account.aiAudienceName = aiAudience.displayName || "AI Traffic";
-          await account.save();
-          console.log("Audience ID fetched and saved:", aiAudience.name);
-        } else {
-          return NextResponse.json(
-            { error: "AI Traffic audience not found. Please reconnect your Google Analytics account to create it." },
-            { status: 400 }
-          );
-        }
-      } catch (audienceError: any) {
-        console.error("Failed to fetch audience:", audienceError.message);
-        return NextResponse.json(
-          { error: "Could not verify AI Traffic audience. Please reconnect your Google Analytics account." },
-          { status: 400 }
-        );
-      }
-    }
 
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({ access_token: accessToken });

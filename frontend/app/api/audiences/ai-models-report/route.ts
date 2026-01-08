@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * AI Models Report API (Grouped).
+ * Aggregates GA4 traffic data to show performance by AI Model (ChatGPT, Claude, Gemini, etc.).
+ * Includes conversion rates and user metrics.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {
@@ -53,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     const analyticsData = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
 
-    console.log('Fetching AI models traffic report for property:', account.propertyId);
+    // console.log('Fetching AI models traffic report for property:', account.propertyId);
 
     // Execute the report request to get traffic by source domain
     const response = await analyticsData.properties.runReport({
@@ -75,14 +81,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log('Report response received with', response.data.rows?.length || 0, 'rows');
-
-    // Log all sources to see what we're getting
-    response.data.rows?.forEach((row: any) => {
-      const source = row.dimensionValues?.[0]?.value || "Unknown";
-      const users = row.metricValues?.[0]?.value || "0";
-      console.log(`Source: ${source}, Users: ${users}`);
-    });
+    // console.log('Report response received with', response.data.rows?.length || 0, 'rows');
 
     // Map sources to AI models with multiple domain variations
     const modelMapping: { [key: string]: string } = {
@@ -141,8 +140,6 @@ export async function GET(request: NextRequest) {
       );
     });
 
-    console.log('Model data before filtering:', modelData);
-
     // Convert to array and sort by users (include "Other" for debugging)
     const formattedData = Object.values(modelData)
       .sort((a: any, b: any) => b.users - a.users)
@@ -151,14 +148,9 @@ export async function GET(request: NextRequest) {
         conversionRate: `${item.conversionRate.toFixed(2)}%`,
       }));
 
-    console.log('Formatted AI models data:', formattedData);
-
     return NextResponse.json(formattedData);
   } catch (error: any) {
     console.error("AI Models Report Error:", error);
-    console.error("Error message:", error.message);
-    console.error("Error response:", error.response?.data);
-    console.error("Error stack:", error.stack);
     return NextResponse.json(
       {
         error: error.message || "Failed to fetch AI models report",

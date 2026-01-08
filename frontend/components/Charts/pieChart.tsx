@@ -19,6 +19,13 @@ interface Props {
   data: PieData[];
 }
 
+interface Props {
+  data: PieData[];
+}
+
+/**
+ * Reusable pie chart component for general purpose data visualization.
+ */
 export default function CustomPieChart({ data }: Props) {
   return (
     <div className="w-full h-[400px] flex flex-col items-center justify-center">

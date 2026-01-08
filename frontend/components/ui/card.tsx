@@ -2,6 +2,10 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Card container component for grouping related content.
+ * Supports headers, titles, content areas, and footers.
+ */
 function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

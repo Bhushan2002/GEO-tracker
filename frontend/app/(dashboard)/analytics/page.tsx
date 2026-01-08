@@ -73,6 +73,10 @@ import { cn } from "@/lib/utils";
 import { AiDemographicsChart } from "@/components/Charts/AiDemographicsChart";
 import FirstZeroTouchChart from "@/components/Charts/FirstZeroTouchChart";
 
+/**
+ * Analytics page integrating Google Analytics data.
+ * Visualizes user engagement, AI model traffic, and conversion metrics.
+ */
 export default function GoogleAnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
   const [gaAccounts, setGaAccounts] = useState<any[]>([]);
@@ -896,15 +900,15 @@ export default function GoogleAnalyticsPage() {
                   </Card>
 
                   <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    
+
                     <CardHeader className="border-b border-slate-100  px-5 ">
-                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                      AI Models Performance
-                    </CardTitle>
-                    <CardDescription className="text-[10px] text-slate-500 font-medium">
-                      Detailed metrics for each AI model
-                    </CardDescription>
-                  </CardHeader>
+                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        AI Models Performance
+                      </CardTitle>
+                      <CardDescription className="text-[10px] text-slate-500 font-medium">
+                        Detailed metrics for each AI model
+                      </CardDescription>
+                    </CardHeader>
 
                     <CardContent className="pt-6">
                       {loading ? (

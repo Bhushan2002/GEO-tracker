@@ -105,6 +105,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+/**
+ * Line chart visualizing the visibility percentage trends for top brands.
+ */
 export function VisibilityChart({ data }: VisibilityChartProp) {
   const { chartData, top5Brands, hasData } = React.useMemo(() => {
     if (!data || data.length === 0)

@@ -4,6 +4,11 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * AI Growth Month-Over-Month API.
+ * Calculates the monthly growth percentage of sessions originating from AI/LLM sources over the last year.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) return account.accessToken;
@@ -52,7 +57,7 @@ export async function GET(request: NextRequest) {
         metrics: [{ name: "sessions" }],
         dimensionFilter: {
           orGroup: {
-             // Using widely known AI identifiers
+            // Using widely known AI identifiers
             expressions: ["chatgpt", "perplexity", "copilot", "claude", "gemini", "ai_search", "generative"].map(model => ({
               filter: {
                 fieldName: "sessionSource",
@@ -69,7 +74,7 @@ export async function GET(request: NextRequest) {
     const monthlyData = rows.map((row: any) => {
       const yearMonth = row.dimensionValues?.[0]?.value || "";
       const sessions = parseInt(row.metricValues?.[0]?.value || "0");
-      
+
       // Format yearMonth (YYYYMM) to "MMM YYYY"
       const year = yearMonth.substring(0, 4);
       const month = yearMonth.substring(4, 6);
@@ -89,20 +94,15 @@ export async function GET(request: NextRequest) {
         return { ...current, growth: 0 };
       }
       const previous = monthlyData[index - 1];
-      const growth = previous.sessions > 0 
-        ? ((current.sessions - previous.sessions) / previous.sessions) * 100 
+      const growth = previous.sessions > 0
+        ? ((current.sessions - previous.sessions) / previous.sessions) * 100
         : 100; // If previous was 0 and now we have sessions, it's 100% growth (or treated as new)
-      
+
       return {
         ...current,
         growth: parseFloat(growth.toFixed(1))
       };
     });
-    
-    // Remove the first month as it serves only as a baseline and has 0 growth
-    // But we might want to keep it if we just start at 0. Let's keep it but users should know.
-    // Actually, usually growth charts omit the first baseline point or show it as 0. 
-    // Let's return all, the chart can decide how to render.
 
     return NextResponse.json(growthData);
 

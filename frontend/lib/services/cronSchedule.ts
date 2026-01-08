@@ -10,6 +10,20 @@ import mongoose from "mongoose";
 const scheduledTasks: Map<string, ScheduledTask> = new Map();
 const runningPrompts = new Set<string>(); // prevents overlap
 
+/**
+ * Executes a single prompt run task.
+ * 
+ * Workflow:
+ * 1. Fetches model responses for the prompt from OpenRender.
+ * 2. Saves raw responses to DB.
+ * 3. Filters valid responses for analysis.
+ * 4. Batch analyzes responses to extract brand metrics.
+ * 5. Updates ModelResponse with analysis summaries.
+ * 6. Updates Brand and TargetBrand statistics.
+ * 7. Recalculates Brand rankings.
+ * 
+ * @param promptId - The ID of the prompt configuration to execute.
+ */
 export const executePromptTask = async (promptId: string) => {
   if (runningPrompts.has(promptId)) {
     console.warn(`Prompt ${promptId} is already running. Skipping.`);
@@ -39,6 +53,7 @@ export const executePromptTask = async (promptId: string) => {
   const workspaceId = prompt.workspaceId;
 
   try {
+    // --- PREPARATION ---
     // Use scheduled brands for extraction if any are scheduled, otherwise use active brands
     const scheduledBrands = await TargetBrand.find({ isScheduled: true, isActive: true, workspaceId });
     const trackedBrands = scheduledBrands.length > 0
@@ -54,7 +69,7 @@ export const executePromptTask = async (promptId: string) => {
 
     const targetBrandNames = trackedBrands.map(b => b.brand_name);
 
-    // STEP 1: Create all ModelResponse documents first
+    // --- STEP 1: Persist Raw Responses ---
     console.log(` Creating ${results.length} ModelResponse documents...`);
     const modelResponses = await Promise.all(
       results.map(async (res) => {
@@ -73,33 +88,28 @@ export const executePromptTask = async (promptId: string) => {
       })
     );
 
-    // STEP 2: Filter responses that have text and prepare for batch extraction
+    // --- STEP 2: Filter & Prepare for Extraction ---
     const validResponses = modelResponses.filter(({ responseText }) => responseText);
     console.log(` Processing ${validResponses.length} valid responses for extraction`);
 
     if (validResponses.length === 0) {
       console.log(` No valid responses to extract, skipping extraction phase`);
     } else {
-      // Get main brand once for all extractions
-      // const mainBrandDoc = await Brand.findOne().sort({ mentions: -1, prominence_score: -1 });
-      // const mainBrands = mainBrandDoc ? [mainBrandDoc.brand_name] : [];
-
+      // Get main brand context for intelligent extraction
       const mainBrandDoc = await TargetBrand.findOne({ mainBrand: true, isActive: true, workspaceId });
       const mainBrandName = mainBrandDoc ? mainBrandDoc.brand_name : "";
       const mainBrandUrl = mainBrandDoc ? mainBrandDoc.official_url : "";
-
       const mainBrandDescription = mainBrandDoc ? mainBrandDoc.brand_description : "";
+
       console.log(` Main brand for extraction: ${mainBrandDoc ? mainBrandDoc.brand_name : 'None'}`);
+
       const competitorBrandDoc = await TargetBrand.findOne({ workspaceId }).sort({ mentions: -1 });
       const competitorBrand = competitorBrandDoc ? [competitorBrandDoc.actual_brand_name] : [];
-
       const targetBrandUrl = competitorBrandDoc?.official_url || "";
       console.log(` target brand url : ${targetBrandUrl}`);
 
-      // // STEP 3: Batch extract all responses - first call warms the cache, rest benefit
-      // console.log(` Starting batch extraction for ${validResponses.length} responses...`);
-      // console.log(` First extraction will warm the cache, subsequent ones will be faster and cheaper`);
-
+      // --- STEP 3: Batch Extraction Analysis ---
+      // Runs analysis concurrently for all responses using OpenRender/LLM
       const extractions = await Promise.all(
         validResponses.map(async ({ modelRes, responseText, modelName }, index) => {
           console.log(` [${index + 1}/${validResponses.length}] Extracting brands from ${modelName}...`);
@@ -125,7 +135,7 @@ export const executePromptTask = async (promptId: string) => {
 
       console.log(` Batch extraction completed for ${extractions.length} responses`);
 
-      // STEP 4: Update ModelResponse documents with audit summaries
+      // --- STEP 4: Update Responses with Summaries ---
       const updateOps = extractions
         .filter(({ extracted }) => extracted?.audit_summary)
         .map(({ modelRes, extracted }) => ({
@@ -140,7 +150,7 @@ export const executePromptTask = async (promptId: string) => {
         console.log(` Updated ${updateOps.length} ModelResponses with audit summaries`);
       }
 
-      // STEP 5: Process brands for each model response and link them
+      // --- STEP 5: Process Brands & Update Statistics ---
       console.log(` Processing brands for each model response...`);
 
       for (const { modelRes, extracted, modelName } of extractions) {
@@ -155,7 +165,7 @@ export const executePromptTask = async (promptId: string) => {
 
         const brandIds: mongoose.Types.ObjectId[] = [];
 
-        // Process each brand and collect IDs
+        // Update stats for each identified brand
         for (const data of brands) {
           const targetMatch = trackedBrands.find(
             (b) => b.brand_name.toLowerCase() === data.brand_name.toLowerCase()
@@ -178,7 +188,7 @@ export const executePromptTask = async (promptId: string) => {
               : "Misalignment: Official links omitted.";
           }
 
-          // Create or update brand and get the document back with running average sentiment
+          // Create or update brand document with running averages
           const brand = await Brand.findOneAndUpdate(
             { brand_name: data.brand_name, workspaceId },
             [
@@ -188,7 +198,7 @@ export const executePromptTask = async (promptId: string) => {
                   workspaceId: workspaceId,
                   // Increment mentions visibility
                   mentions: { $add: [{ $ifNull: ["$mentions", 0] }, data.mention_count || 1] },
-                  // Accumulate sentiment sum and evaluation count
+                  // Accumulate sentiment sum and evaluation count for averaging
                   sentiment_sum: {
                     $add: [
                       { $ifNull: ["$sentiment_sum", 0] },
@@ -201,7 +211,7 @@ export const executePromptTask = async (promptId: string) => {
                       data.sentiment_score ? 1 : 0
                     ]
                   },
-                  // standard fields
+                  // standard snapshot fields
                   prominence_score: data.prominence_score,
                   context: data.mention_context || data.context,
                   found: data.found !== undefined ? data.found : true,
@@ -240,7 +250,7 @@ export const executePromptTask = async (promptId: string) => {
           }
         }
 
-        // Link brands to this ModelResponse
+        // Link identified brands back to the ModelResponse
         if (brandIds.length > 0) {
           await ModelResponse.findByIdAndUpdate(modelRes._id, {
             identifiedBrands: brandIds,
@@ -250,7 +260,7 @@ export const executePromptTask = async (promptId: string) => {
       }
     }
 
-    // Sort brands and update rankings directly (no unset needed)
+    // --- STEP 6: Update Global Rankings ---
     console.log(` Updating brand rankings...`);
     const brands = await Brand.find({ workspaceId }).sort({
       mentions: -1,
@@ -295,11 +305,8 @@ export const stopPromptSchedule = (promptId: string) => {
 export const initScheduler = async () => {
   // ===== CRON SCHEDULING DISABLED FOR TESTING =====
   // Uncomment below to enable automatic daily execution at 2:00 PM
-
   /*
   const prompts = await Prompt.find({ isActive: true, isScheduled: true });
-  const scheduleBrands = await TargetBrand.find({ isScheduled: true, isActive: true });
-
   scheduledTasks.forEach((task) => task.stop());
   scheduledTasks.clear();
 
@@ -307,10 +314,8 @@ export const initScheduler = async () => {
     const task = cron.schedule("0 0 14 * * *", () =>
       executePromptTask(prompt._id.toString())
     );
-
     scheduledTasks.set(prompt._id.toString(), task);
   }
   */
-
   console.log("Cron scheduler initialization skipped (testing mode)");
 };

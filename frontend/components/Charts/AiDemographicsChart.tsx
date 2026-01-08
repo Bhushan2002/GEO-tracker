@@ -23,6 +23,9 @@ interface AiDemographicsChartProps {
   data: any[];
 }
 
+/**
+ * Stacked bar chart showing the breakdown of AI model usage by country.
+ */
 export function AiDemographicsChart({ data }: AiDemographicsChartProps) {
   // Consistent colors for each AI model
   const MODEL_COLORS: Record<string, string> = {
@@ -45,7 +48,7 @@ export function AiDemographicsChart({ data }: AiDemographicsChartProps) {
     <Card className="col-span-1 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300">
       <CardHeader className="border-b border-slate-100 px-6 py-4">
         <div className="flex items-center gap-2">
-        
+
           <div>
             <CardTitle className="font-bold text-xs uppercase tracking-wider text-slate-800">
               AI Model Usage by Country

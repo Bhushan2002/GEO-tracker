@@ -10,6 +10,15 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Models Analytics API - GET.
+ * Aggregates performance metrics grouped by Model Family (ChatGPT, Gemini, Claude, etc.).
+ * Calculates:
+ * - Lifetime Stats: Total runs, latency, sentiment, brand presence.
+ * - Live Trends: Compares recent 5 runs vs baseline to show growth/decline.
+ * - Insights: Textual summary of trends.
+ * - Top Sources: Most cited domains by each model family.
+ */
 export async function GET(request: NextRequest) {
     try {
         const workspaceId = await getWorkspaceId(request);

@@ -21,6 +21,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+/**
+ * Brand management page for adding and tracking target brands.
+ * Allows users to define brands, URLs, and metadata for AI tracking.
+ */
 export default function BrandPage() {
   const { targetBrands, isLoading, refreshBrands } = useDashboardData();
   const [brand_url, setBrand_url] = useState("");

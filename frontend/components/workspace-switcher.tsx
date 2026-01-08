@@ -14,6 +14,9 @@ import { useWorkspace } from "@/lib/contexts/workspace-context";
 import { useSidebar } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+/**
+ * Dropdown component to switch between different workspaces.
+ */
 export function WorkspaceSwitcher() {
     const { workspaces, activeWorkspace, setActiveWorkspace, refreshWorkspaces } = useWorkspace();
     const { state } = useSidebar();

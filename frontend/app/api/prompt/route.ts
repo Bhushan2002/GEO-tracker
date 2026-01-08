@@ -6,6 +6,11 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Prompts API - POST.
+ * Creates a new AI prompt configuration.
+ * Stores prompt text, topic, tags, and scheduling usage.
+ */
 export async function POST(req: NextRequest) {
   try {
     await connectDatabase();
@@ -29,6 +34,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/**
+ * Prompts API - GET.
+ * Fetches all prompts available in the current workspace.
+ */
 export async function GET(req: NextRequest) {
   try {
     await connectDatabase();

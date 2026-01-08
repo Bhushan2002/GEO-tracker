@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * Analytics By Account API.
+ * Fetches overall traffic metrics (Users, Sessions, Key Events) and overlays AI-specific user counts.
+ * Provides data primarily for the main Analytics Overview chart.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {

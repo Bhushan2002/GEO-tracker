@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * Audiences Report API (Performance).
+ * Fetches metrics (Users, Sessions, Conversions) for defined audiences.
+ * This helps compare "AI Traffic" vs "All Users" or other segments.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {
@@ -53,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     const analyticsData = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
 
-    console.log('Fetching report for property:', account.propertyId);
+    // console.log('Fetching report for property:', account.propertyId);
 
     // Execute the report request
     const response = await analyticsData.properties.runReport({
@@ -70,9 +76,8 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log('Report response received with', response.data.rows?.length || 0, 'rows');
+    // console.log('Report response received with', response.data.rows?.length || 0, 'rows');
 
-    
     const formattedRows = response.data.rows?.map((row: any) => ({
       audience: row.dimensionValues?.[0]?.value || "Unknown",
       users: row.metricValues?.[0]?.value || "0",
@@ -84,9 +89,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(formattedRows || []);
   } catch (error: any) {
     console.error("Audience Report Error:", error);
-    console.error("Error message:", error.message);
-    console.error("Error response:", error.response?.data);
-    console.error("Error stack:", error.stack);
     return NextResponse.json({
       error: error.message || "Failed to fetch audience report",
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined

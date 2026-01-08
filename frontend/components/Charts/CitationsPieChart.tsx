@@ -31,6 +31,9 @@ interface Props {
   label?: string;
 }
 
+/**
+ * Donut chart visualizing the distribution of citation sources by category.
+ */
 export default function CitationsPieChart({ data, totalCitations, label = "Total Sources" }: Props) {
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">

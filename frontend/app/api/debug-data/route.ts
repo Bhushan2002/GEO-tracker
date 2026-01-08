@@ -6,6 +6,11 @@ import { ModelResponse } from "@/lib/models/modelResponse.model";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Debug Data API.
+ * Internal utility to check the state of the database regarding model responses.
+ * Fetches counts, diverse models, and workspaces presence.
+ */
 export async function GET() {
     try {
         await connectDatabase();

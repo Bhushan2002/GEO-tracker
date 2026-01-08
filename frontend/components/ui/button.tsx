@@ -36,6 +36,10 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * Interactive button component with multiple variants and sizes.
+ * Can act as a slot for child components using `asChild`.
+ */
 function Button({
   className,
   variant = "default",
