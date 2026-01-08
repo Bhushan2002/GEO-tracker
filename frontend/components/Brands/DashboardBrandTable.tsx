@@ -116,7 +116,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                 </TableCell>
 
                 <TableCell className="text-center border-r border-slate-100">
-                  <span className="font-bold text-slate-900 text-[13px]">{Math.min(200, brand.mentions || 0)}%</span>
+                  <span className="font-bold text-slate-900 text-[13px]">{Math.min(200, brand.mentions || 0).toFixed(1)}%</span>
                 </TableCell>
 
                 <TableCell className="border-r border-slate-100">
@@ -131,7 +131,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                             score > 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
                               "bg-rose-50 text-rose-600 border-rose-100"
                         )}>
-                          {score}
+                          {score.toFixed(1)}
                         </span>
                       );
                     })()}

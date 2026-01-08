@@ -97,7 +97,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               color: "#111827",
             }}
           >
-            {item.value}%
+            {typeof item.value === 'number' ? item.value.toFixed(1) : item.value}%
           </span>
         </div>
       ))}
