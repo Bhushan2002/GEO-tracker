@@ -17,12 +17,16 @@ interface VisibilityChartProp {
 
 /* ---- Refined Soft Colors (Professional Pastels) ---- */
 const BRAND_COLORS = [
-  "#60A5FA", // Blue 400 – clear, confident
-  "#34D399", // Emerald 400 – fresh, positive
-  "#818CF8", // Indigo 400 – modern, premium
-  "#22D3EE", // Cyan 400 – clean, techy
-  "#FACC15", // Amber 400 – attention without noise
-  "#FB7185", // Rose 400 – subtle contrast
+  "#60A5FA", // Blue 400
+  "#34D399", // Emerald 400
+  "#818CF8", // Indigo 400
+  "#22D3EE", // Cyan 400
+  "#FACC15", // Amber 400
+  "#FB7185", // Rose 400
+  "#A78BFA", // Violet 400
+  "#F472B6", // Pink 400
+  "#FB923C", // Orange 400
+  "#94A3B8", // Slate 400
 ];
 
 
@@ -93,7 +97,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
               color: "#111827",
             }}
           >
-            {item.value}
+            {item.value}%
           </span>
         </div>
       ))}
@@ -129,7 +133,7 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
         avg: stats.sum / stats.count,
       }))
       .sort((a, b) => b.avg - a.avg)
-      .slice(0, 6)
+      .slice(0, 7)
       .map((b) => b.brand);
 
     const map: Record<string, any> = {};
@@ -138,7 +142,7 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
       if (!map[row.timeStamp]) {
         map[row.timeStamp] = { timeStamp: row.timeStamp };
       }
-      map[row.timeStamp][row.name] = parseFloat(row.mentions) || 0;
+      map[row.timeStamp][row.name] = Math.min(200, parseFloat(row.mentions) || 0);
     });
 
     const transformed = Object.values(map).sort((a: any, b: any) => {
@@ -166,9 +170,10 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
       >
         {/* -------- Professional Grid -------- */}
         <CartesianGrid
+          vertical={false}
           strokeDasharray="2 6"
           stroke="hsl(var(--border))"
-          opacity={0.28}
+          opacity={0.25}
         />
 
         <XAxis
@@ -184,7 +189,10 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          ticks={[0, 50, 100, 150, 200]}
+          tickFormatter={(val) => `${val}%`}
           tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
+          domain={[0, 200]}
         />
 
         <Tooltip
@@ -195,25 +203,30 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
           }}
         />
 
-        {top5Brands.map((brand, index) => (
-          <Line
-            key={brand}
-            type="natural"
-            dataKey={brand}
-            stroke={BRAND_COLORS[index % BRAND_COLORS.length]}
-            strokeWidth={3}
-            dot={false}
-            activeDot={{
-              r: 4,
-              strokeWidth: 2,
-              fill: "white",
-              stroke: BRAND_COLORS[index % BRAND_COLORS.length],
-            }}
-            isAnimationActive
-            animationDuration={1000}
-            name={brand}
-          />
-        ))}
+        {top5Brands.map((brand, index) => {
+          const color = BRAND_COLORS[index % BRAND_COLORS.length];
+          const isPrimary = index < 3;
+
+          return (
+            <Line
+              key={brand}
+              type="monotone"
+              dataKey={brand}
+              stroke={color}
+              strokeWidth={isPrimary ? 3 : 1.8}
+              strokeOpacity={isPrimary ? 1 : 0.35}
+              dot={false}
+              activeDot={{
+                r: 4,
+                fill: "#fff",
+                stroke: color,
+                strokeWidth: 2,
+              }}
+              animationDuration={800}
+              name={brand}
+            />
+          );
+        })}
       </LineChart>
     </ResponsiveContainer>
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
@@ -47,7 +47,8 @@ import {
     ChevronRight,
     Search,
     RefreshCw,
-    MoreHorizontal
+    MoreHorizontal,
+    Loader
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -56,9 +57,12 @@ import { toast } from "sonner";
 
 const COLORS = ["#60A5FA", "#34D399", "#818CF8", "#FACC15", "#FB7185", "#22D3EE"];
 
-export default function PromptDetailsPage() {
-    const { id } = useParams();
+export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
+    const params = useParams();
+    const searchParams = useSearchParams();
     const router = useRouter();
+
+    const id = manualId || params?.id || searchParams.get("id");
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [selectedRunBrands, setSelectedRunBrands] = useState<{ id: string, name: string[] } | null>(null);
@@ -66,7 +70,7 @@ export default function PromptDetailsPage() {
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const response = await api.get(`/api/prompt/?${id}`);
+                const response = await api.get(`/api/prompt/${id}`);
                 setData(response.data);
             } catch (error: any) {
                 const errMsg = error.response?.data?.message || error.message || "Failed to load analytics";
@@ -81,9 +85,9 @@ export default function PromptDetailsPage() {
 
     if (loading) return (
         <div className="p-8 flex items-center justify-center min-h-screen bg-white">
-            <div className="flex flex-col items-center gap-4">
-                <div className="h-10 w-10 border-4 border-slate-100 border-t-slate-800 animate-spin rounded-full" />
-                <p className="text-sm font-bold text-slate-500 uppercase tracking-widest animate-pulse">Gathering intelligence...</p>
+            <div className="flex flex-col items-center gap-3 text-foreground/40">
+                <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+                <p className="text-sm font-medium">Gathering intelligence...</p>
             </div>
         </div>
     );
@@ -110,7 +114,7 @@ export default function PromptDetailsPage() {
     const executionHistory = data.executionHistory || [];
 
     return (
-        <div className="min-h-screen bg-slate-50/20 p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-700">
+        <div className="min-h-screen bg-slate-50/20 p-6 md:p-8 space-y-8 max-w-[1600px] mx-auto animate-in fade-in duration-500 ease-out">
             {/* Navigation & Header */}
             <div className="space-y-6">
                 <button
@@ -118,7 +122,7 @@ export default function PromptDetailsPage() {
                     className="flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-slate-900 transition-colors uppercase tracking-[0.2em] group cursor-pointer"
                 >
                     <ArrowLeft className="h-3 w-3 group-hover:-translate-x-0.5 transition-transform" />
-                    Back to dashboard
+                    Back to prompts
                 </button>
 
                 <div className="flex flex-col gap-4 border-b border-slate-100 pb-8">
@@ -271,27 +275,59 @@ export default function PromptDetailsPage() {
                     </CardHeader>
                     <CardContent className="p-6 flex flex-col items-center justify-center flex-1 bg-white">
                         <div className="h-[200px] w-full relative">
+                            {/* Center Label - Rendered first to stay behind the chart and tooltip */}
                             <div className="absolute inset-0 flex flex-col items-center justify-center z-0 pointer-events-none">
-                                <span className="text-xl font-bold text-slate-900">{sourceTypes.reduce((a: any, b: any) => a + b.value, 0)}</span>
-                                <span className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">Sources</span>
+                                <span className="text-2xl font-bold text-slate-900 leading-tight">
+                                    {sourceTypes.reduce((a: any, b: any) => a + b.value, 0)}
+                                </span>
+                                <span className="text-[8px] font-bold uppercase text-slate-400 tracking-widest mt-0.5">Total Sources</span>
                             </div>
+
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
                                         data={sourceTypes}
                                         cx="50%"
                                         cy="50%"
-                                        innerRadius={60}
+                                        innerRadius={65}
                                         outerRadius={85}
                                         paddingAngle={4}
                                         dataKey="value"
+                                        stroke="none"
+                                        cornerRadius={4}
                                     >
                                         {sourceTypes.map((entry: any, index: number) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={COLORS[index % COLORS.length]}
+                                                strokeWidth={0}
+                                                className="outline-none hover:opacity-90 transition-opacity cursor-pointer"
+                                            />
                                         ))}
                                     </Pie>
                                     <Tooltip
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: '10px' }}
+                                        content={({ active, payload }: any) => {
+                                            if (active && payload && payload.length) {
+                                                const total = sourceTypes.reduce((a: any, b: any) => a + b.value, 0);
+                                                const percent = Math.round((payload[0].value / total) * 100);
+                                                return (
+                                                    <div className="bg-neutral-900/95 backdrop-blur-md border border-neutral-800 p-3 rounded-xl shadow-xl z-50 min-w-[160px]">
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.fill }} />
+                                                                <span className="text-[11px] font-bold text-neutral-100 uppercase tracking-tight">{payload[0].name}</span>
+                                                            </div>
+                                                            <span className="text-white font-mono text-xs font-bold">{percent}%</span>
+                                                        </div>
+                                                        <div className="text-2xl font-bold text-white mb-1">{payload[0].value.toLocaleString()}</div>
+                                                        <div className="text-[10px] text-neutral-400 leading-tight">
+                                                            Sources identified within this specific prompt execution.
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        }}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>

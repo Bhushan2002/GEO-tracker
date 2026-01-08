@@ -5,6 +5,7 @@ import { analyticsAPI } from "@/lib/api/analytics.api";
 import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
+import { Loader } from "lucide-react";
 
 export default function AudiencesPage() {
   const { activeWorkspace } = useWorkspace();
@@ -55,8 +56,12 @@ export default function AudiencesPage() {
     }
   }, [selectedAccountId]);
 
+  if (loading) {
+    return <div className="p-10 text-slate-400 animate-pulse font-medium">Loading analytics...</div>;
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 animate-in fade-in duration-500 ease-out">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold">Audience Intelligence</h1>

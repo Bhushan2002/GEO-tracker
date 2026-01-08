@@ -239,7 +239,7 @@ function SourcesPage() {
             top5.forEach((source, idx) => {
                 const base = currentValues[idx] || 10;
                 const variation = Math.sin(i / 2 + idx) * (base * 0.2);
-                point[source] = Math.max(2, Math.round(base + variation));
+                point[source] = Math.min(100, Math.max(2, Math.round(base + variation)));
             });
             points.push(point);
         }
@@ -307,7 +307,7 @@ function SourcesPage() {
     const CHART_COLORS = ["#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444"];
 
     return (
-        <div className="min-h-screen bg-white text-slate-900 animate-in fade-in slide-in-from-bottom-2 duration-700">
+        <div className="min-h-screen bg-white text-slate-900 animate-in fade-in duration-500 ease-out">
             <div className="max-w-[1700px] mx-auto px-6 py-6 space-y-6">
 
                 {/* 1️⃣ HEADER & TAB SWITCHER */}
@@ -358,7 +358,10 @@ function SourcesPage() {
                         <div className="p-6 flex flex-col flex-1">
                             <div className="flex-1 w-full min-h-[240px]">
                                 {isLoading ? (
-                                    <div className="h-full flex items-center justify-center"><Loader className="animate-spin text-slate-300" /></div>
+                                    <div className="h-full flex flex-col items-center justify-center gap-3 text-foreground/40 min-h-[200px]">
+                                        <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
+                                        <p className="text-sm font-medium italic">Analyzing usage trends...</p>
+                                    </div>
                                 ) : (
                                     <SourceUsageChart data={usageChartData.points} sources={usageChartData.top5} />
                                 )}
@@ -392,7 +395,10 @@ function SourcesPage() {
                         <div className="p-6 flex flex-col flex-1">
                             <div className="flex-1 w-full flex items-center justify-center">
                                 {isLoading ? (
-                                    <Loader className="animate-spin text-slate-300" />
+                                    <div className="h-full flex flex-col items-center justify-center gap-3 text-foreground/40 min-h-[200px]">
+                                        <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
+                                        <p className="text-sm font-medium italic">Analyzing sources...</p>
+                                    </div>
                                 ) : (
                                     <CitationsPieChart
                                         data={citationsPieData.data}

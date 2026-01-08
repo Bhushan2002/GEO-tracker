@@ -24,6 +24,10 @@ const BRAND_COLORS = [
   "#22D3EE", // Cyan
   "#FACC15", // Amber
   "#FB7185", // Rose
+  "#A78BFA", // Violet
+  "#F472B6", // Pink
+  "#FB923C", // Orange
+  "#94A3B8", // Slate
 ];
 
 /* ---------- Tooltip ---------- */
@@ -93,14 +97,14 @@ export function PositionChart({ data }: PositionChartProp) {
       stats[row.name].count += 1;
     });
 
-    /* ---- Top 6 brands ---- */
+    /* ---- Top 7 brands by best average rank ---- */
     const topBrands = Object.entries(stats)
       .map(([brand, s]) => ({ brand, avg: s.sum / s.count }))
       .sort((a, b) => a.avg - b.avg)
-      .slice(0, 6)
+      .slice(0, 7)
       .map((b) => b.brand);
 
-    /* ---- Build timeseries ---- */
+    /* ---- Build timeseries with DISCRETE LANES ---- */
     const map: Record<string, any> = {};
 
     data.forEach((row) => {
@@ -116,34 +120,40 @@ export function PositionChart({ data }: PositionChartProp) {
       const rank =
         row.lastRank == null ? null : Number(row.lastRank);
 
+      // 👇 CRITICAL FIX: convert rank → lane
+      const lane = rank == null ? null : 11 - rank;
+
       map[row.timeStamp].__rawRanks[row.name] = rank;
-
-      // 👇 UI-ONLY micro offset to avoid visual overlap
-      const brandIndex = topBrands.indexOf(row.name);
-      const visualOffset = brandIndex * 0.06;
-
-      map[row.timeStamp][row.name] =
-        rank == null ? null : rank + visualOffset;
+      map[row.timeStamp][row.name] = lane;
     });
 
-    /* ---- Sort dates (dd/mm/yyyy safe) ---- */
+    /* ---- Sort dates safely ---- */
     const transformed = Object.values(map).sort((a: any, b: any) => {
       const da = new Date(a.timeStamp.split("/").reverse().join("-"));
       const db = new Date(b.timeStamp.split("/").reverse().join("-"));
       return da.getTime() - db.getTime();
     });
 
+    /* ---- Keep only brands with rank movement ---- */
+    const dynamicBrands = topBrands.filter((brand) => {
+      const values = transformed
+        .map((d: any) => d[brand])
+        .filter((v: any) => v != null);
+
+      return new Set(values).size > 1;
+    });
+
     return {
       chartData: transformed,
-      brands: topBrands,
-      hasData: transformed.length > 0,
+      brands: dynamicBrands,
+      hasData: transformed.length > 0 && dynamicBrands.length > 0,
     };
   }, [data]);
 
   if (!hasData) {
     return (
       <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
-        No position data available
+        No position movement detected
       </div>
     );
   }
@@ -152,7 +162,7 @@ export function PositionChart({ data }: PositionChartProp) {
     <ResponsiveContainer width="100%" height="100%">
       <LineChart
         data={chartData}
-        margin={{ left: -10, right: 30, top: 10, bottom: 10 }}
+        margin={{ left: 10, right: 30, top: 20, bottom: 20 }}
       >
         <CartesianGrid
           strokeDasharray="3 3"
@@ -169,23 +179,26 @@ export function PositionChart({ data }: PositionChartProp) {
           minTickGap={28}
           tick={{
             fill: "hsl(var(--muted-foreground))",
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: 500,
           }}
         />
 
         <YAxis
-          reversed
-          domain={[1, 6.4]}
-          ticks={[1, 2, 3, 4, 5, 6]}
+          type="number"
+          domain={[1, 10]}
+          ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+          interval={0}
+          allowDecimals={false}
           axisLine={false}
           tickLine={false}
           width={40}
           tick={{
             fill: "hsl(var(--muted-foreground))",
-            fontSize: 11,
-            fontWeight: 600,
+            fontSize: 10,
+            fontWeight: 700,
           }}
+          tickFormatter={(v) => `${11 - v}`} // 👈 show real rank
         />
 
         <Tooltip
@@ -196,22 +209,16 @@ export function PositionChart({ data }: PositionChartProp) {
         {brands.map((brand, index) => (
           <Line
             key={brand}
-            type="stepAfter"
+            type="monotone"
             dataKey={brand}
-            stroke={BRAND_COLORS[index]}
-            strokeWidth={2}
-            connectNulls={false}
-            dot={{
-              r: 3,
-              fill: "#fff",
-              stroke: BRAND_COLORS[index],
-              strokeWidth: 1.6,
-            }}
+            stroke={BRAND_COLORS[index % BRAND_COLORS.length]}
+            strokeWidth={2.5}
+            dot={false}
             activeDot={{
               r: 4,
               fill: "#fff",
-              stroke: BRAND_COLORS[index],
-              strokeWidth: 1.8,
+              stroke: BRAND_COLORS[index % BRAND_COLORS.length],
+              strokeWidth: 2,
             }}
             animationDuration={500}
             name={brand}

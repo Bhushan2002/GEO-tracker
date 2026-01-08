@@ -40,13 +40,20 @@ export default function Overview() {
 
   useEffect(() => {
     if (allBrands.length > 0) {
-      const top10 = allBrands.slice(0, 10).sort((a: any, b: any) => {
-        if (a.lastRank !== b.lastRank) return a.lastRank - b.lastRank;
-        return b.mentions - a.mentions;
-      });
+      const top10 = [...allBrands].sort((a: any, b: any) => {
+        if (chartType === 'mentions') {
+          return (b.mentions || 0) - (a.mentions || 0);
+        } else if (chartType === 'sentiments') {
+          const sA = (a.sentiment_score <= 10 ? a.sentiment_score * 10 : a.sentiment_score) || 0;
+          const sB = (b.sentiment_score <= 10 ? b.sentiment_score * 10 : b.sentiment_score) || 0;
+          return sB - sA;
+        } else {
+          return (a.lastRank || 999) - (b.lastRank || 999);
+        }
+      }).slice(0, 7);
       setTopBrands(top10);
     }
-  }, [allBrands]);
+  }, [allBrands, chartType]);
 
   useEffect(() => {
     if (brandHistory.length > 0) {
@@ -155,7 +162,7 @@ export default function Overview() {
       </div>
 
       {/* Main Grid */}
-      <div className={cn("space-y-8", !isLoading && "animate-in fade-in slide-in-from-bottom-2 duration-700")}>
+      <div className={cn("space-y-8", !isLoading && "animate-in fade-in duration-500 ease-out")}>
         {/* Top Row: Visibility Chart and Brand Table */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* Main Chart Card */}
@@ -244,7 +251,7 @@ export default function Overview() {
                   <p className="text-sm font-medium">Ranking market leaders...</p>
                 </div>
               ) : (
-                <div className="animate-in fade-in duration-700">
+                <div className="animate-in fade-in duration-500">
                   <DashBrandTable data={topBrands} loading={false} />
                 </div>
               )}
@@ -273,7 +280,7 @@ export default function Overview() {
                     <p className="text-sm font-medium">Analyzing sources...</p>
                   </div>
                 ) : (
-                  <div className="w-full h-full animate-in fade-in zoom-in-95 duration-700">
+                  <div className="w-full h-full animate-in fade-in zoom-in-95 duration-500">
                     <CitationsPieChart
                       data={citationsPieData.data}
                       totalCitations={citationsPieData.total}
@@ -284,7 +291,91 @@ export default function Overview() {
             </div>
 
             {/* Domain Table */}
+<<<<<<< HEAD
             <DomainTable domainTableData={domainTableData} isLoading={isLoading} />
+=======
+            <div className="xl:col-span-8 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+              <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex flex-col gap-0.5">
+                  <h4 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Top Domains</h4>
+                  <p className="text-[10px] text-slate-500 font-medium">Displaying top 10 sources</p>
+                </div>
+                <div className="flex items-center text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden md:flex">
+                  <span className="w-16 text-center">Used</span>
+                  <span className="w-28 text-center px-2">Avg. Citations</span>
+                  <span className="w-24 text-center">Type</span>
+                </div>
+              </div>
+              <div className="flex-1 overflow-auto min-h-[300px]">
+                {isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40">
+                    <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
+                    <p className="text-sm font-medium">Fetching domain insights...</p>
+                  </div>
+                ) : (
+                  <div className="animate-in fade-in duration-500">
+                    {domainTableData.slice(0, 10).map((item: any, index: number) => (
+                      <div key={index} className="flex items-center h-12 px-5 border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors text-sm group">
+                        <div className="flex items-center gap-3 min-w-[240px] border-r border-slate-50 h-full">
+                          <div className="h-8 w-8 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
+                            <img
+                              src={`https://logo.clearbit.com/${item.domain.replace(/^https?:\/\//, '').split('/')[0]}`}
+                              alt={item.domain}
+                              className="h-4 w-4 object-contain"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                const domain = item.domain.replace(/^https?:\/\//, '').split('/')[0];
+                                if (!target.src.includes('google.com')) {
+                                  target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                                } else {
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.classList.add('bg-slate-50');
+                                    parent.innerHTML = `<span class="text-[9px] font-bold text-slate-400 capitalize">${item.domain.charAt(0)}</span>`;
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                          <span className="font-bold text-slate-800 truncate text-[13px]">{item.domain}</span>
+                        </div>
+
+                        <div className="flex-1 flex items-center justify-end px-4 h-full">
+                          <div className="flex items-center hidden md:flex h-full">
+                            <div className="w-16 text-center font-bold text-slate-900 text-[13px] border-r border-slate-50 h-full flex items-center justify-center">{item.used}%</div>
+                            <div className="w-28 text-center text-slate-500 font-medium text-[13px] px-2 border-r border-slate-50 h-full flex items-center justify-center">{item.avgCitations}</div>
+                            <div className="w-24 flex justify-center h-full flex items-center">
+                              <span className={cn(
+                                "px-2.5 py-1 rounded-md text-[10px] font-bold border text-center min-w-[75px] capitalize",
+                                item.type.toLowerCase() === 'competitor' ? "bg-rose-50 text-rose-600 border-rose-100" :
+                                  item.type.toLowerCase() === 'you' ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                    item.type.toLowerCase() === 'ugc' ? "bg-cyan-50 text-cyan-600 border-cyan-100" :
+                                      item.type.toLowerCase() === 'editorial' ? "bg-blue-50 text-blue-600 border-blue-100" :
+                                        "bg-slate-50 text-slate-600 border-slate-100"
+                              )}>
+                                {item.type}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {domainTableData.length === 0 && (
+                      <div className="p-8 text-center text-muted-foreground">
+                        No domain data available
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t border-slate-100 bg-slate-50/30 flex justify-end shrink-0">
+                <Link href="/sources" className="text-[10px] font-bold uppercase text-slate-500 hover:text-slate-900 transition-all flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 rounded-md border border-slate-200 shadow-sm">
+                  Detailed Source Analytics <ChevronRight className="h-3 w-3" strokeWidth={3} />
+                </Link>
+              </div>
+            </div>
+>>>>>>> aed6c638163ffcd69f984b31893cf893c1e01008
           </div>
         </div>
 

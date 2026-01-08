@@ -35,6 +35,16 @@ export default function CitationsPieChart({ data, totalCitations, label = "Total
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
       <div className="relative w-full h-[240px]">
+        {/* Center Label - Rendered first to stay behind the chart and tooltip */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-0">
+          <div className="text-4xl font-extrabold text-slate-900 tracking-tight">
+            {totalCitations.toLocaleString()}
+          </div>
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+            {label.toUpperCase()}
+          </div>
+        </div>
+
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -45,28 +55,37 @@ export default function CitationsPieChart({ data, totalCitations, label = "Total
               cy="50%"
               innerRadius={70}
               outerRadius={90}
-              paddingAngle={2}
+              paddingAngle={4}
               stroke="none"
+              cornerRadius={4}
               animationDuration={1500}
             >
               {data.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={entry.color}
-                  className="outline-none hover:opacity-80 transition-opacity cursor-pointer"
+                  strokeWidth={0}
+                  className="outline-none hover:opacity-90 transition-opacity cursor-pointer"
                 />
               ))}
             </Pie>
             <Tooltip
               content={({ active, payload }: any) => {
                 if (active && payload && payload.length) {
+                  const percent = Math.round((payload[0].value / totalCitations) * 100);
                   return (
-                    <div className="bg-white border border-slate-200 rounded-lg shadow-xl p-2.5 animate-in fade-in zoom-in-95 duration-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.color }} />
-                        <span className="text-[11px] font-bold text-slate-900 uppercase tracking-tight">{payload[0].name}</span>
+                    <div className="bg-neutral-900/95 backdrop-blur-md border border-neutral-800 p-3 rounded-xl shadow-xl z-50 min-w-[160px]">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: payload[0].payload.color }} />
+                          <span className="text-[11px] font-bold text-neutral-100 uppercase tracking-tight">{payload[0].name}</span>
+                        </div>
+                        <span className="text-white font-mono text-xs font-bold">{percent}%</span>
                       </div>
-                      <div className="text-lg font-bold text-slate-900">{payload[0].value.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-white mb-1">{payload[0].value.toLocaleString()}</div>
+                      <div className="text-[10px] text-neutral-400 leading-tight">
+                        Contribution to total sources across all detections.
+                      </div>
                     </div>
                   );
                 }
@@ -75,16 +94,6 @@ export default function CitationsPieChart({ data, totalCitations, label = "Total
             />
           </PieChart>
         </ResponsiveContainer>
-
-        {/* Center Text */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-          <div className="text-4xl font-extrabold text-slate-900 tracking-tight">
-            {totalCitations.toLocaleString()}
-          </div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-            {label}
-          </div>
-        </div>
       </div>
 
       {/* Custom Legend */}

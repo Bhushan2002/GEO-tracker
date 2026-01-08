@@ -2,9 +2,16 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Prompt, ModelResponse } from "@/types";
+<<<<<<< HEAD
 import { PromptAPI } from "@/lib/api/prompt.api";
 import { brandAPI } from "@/lib/api/brand.api";
 import { ModelResponseAPI } from "@/lib/api/modelresponse.api";
+=======
+import { PromptAPI } from "@/api/prompt.api";
+import { brandAPI } from "@/api/brand.api";
+import { ModelResponseAPI } from "@/api/modelresponse.api";
+import { api } from "@/api/api";
+>>>>>>> aed6c638163ffcd69f984b31893cf893c1e01008
 import { useWorkspace } from "./workspace-context";
 
 interface DashboardDataContextType {
@@ -13,6 +20,7 @@ interface DashboardDataContextType {
     modelResponses: ModelResponse[];
     allBrands: any[];
     brandHistory: any[];
+    modelsAnalytics: any[];
     isLoading: boolean;
     refreshAll: () => Promise<void>;
     refreshPrompts: () => Promise<void>;
@@ -20,6 +28,7 @@ interface DashboardDataContextType {
     refreshResponses: () => Promise<void>;
     refreshAllBrands: () => Promise<void>;
     refreshBrandHistory: () => Promise<void>;
+    refreshModelsAnalytics: () => Promise<void>;
 }
 
 const DashboardDataContext = createContext<DashboardDataContextType | undefined>(undefined);
@@ -31,6 +40,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     const [modelResponses, setModelResponses] = useState<ModelResponse[]>([]);
     const [allBrands, setAllBrands] = useState<any[]>([]);
     const [brandHistory, setBrandHistory] = useState<any[]>([]);
+    const [modelsAnalytics, setModelsAnalytics] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [hasLoaded, setHasLoaded] = useState(false);
 
@@ -79,6 +89,15 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         }
     }, []);
 
+    const fetchModelsAnalytics = useCallback(async () => {
+        try {
+            const res = await api.get("/api/models-analytics");
+            setModelsAnalytics(res.data);
+        } catch (error) {
+            console.error("Failed to load models analytics", error);
+        }
+    }, []);
+
     const refreshAll = useCallback(async () => {
         setIsLoading(true);
         await Promise.all([
@@ -87,10 +106,11 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
             fetchResponses(),
             fetchAllBrands(),
             fetchBrandHistory(),
+            fetchModelsAnalytics(),
         ]);
         setIsLoading(false);
         setHasLoaded(true);
-    }, [fetchPrompts, fetchBrands, fetchResponses, fetchAllBrands, fetchBrandHistory]);
+    }, [fetchPrompts, fetchBrands, fetchResponses, fetchAllBrands, fetchBrandHistory, fetchModelsAnalytics]);
 
     useEffect(() => {
         if (activeWorkspace?._id) {
@@ -106,6 +126,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
                 modelResponses,
                 allBrands,
                 brandHistory,
+                modelsAnalytics,
                 isLoading: isLoading && !hasLoaded,
                 refreshAll,
                 refreshPrompts: fetchPrompts,
@@ -113,6 +134,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
                 refreshResponses: fetchResponses,
                 refreshAllBrands: fetchAllBrands,
                 refreshBrandHistory: fetchBrandHistory,
+                refreshModelsAnalytics: fetchModelsAnalytics,
             }}
         >
             {children}

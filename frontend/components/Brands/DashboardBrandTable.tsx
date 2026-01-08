@@ -116,19 +116,25 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                 </TableCell>
 
                 <TableCell className="text-center border-r border-slate-100">
-                  <span className="font-bold text-slate-900 text-[13px]">{brand.mentions || 0}%</span>
+                  <span className="font-bold text-slate-900 text-[13px]">{Math.min(200, brand.mentions || 0)}%</span>
                 </TableCell>
 
                 <TableCell className="border-r border-slate-100">
                   <div className="flex justify-center">
-                    <span className={cn(
-                      "inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[11px] font-bold border min-w-[36px]",
-                      (brand.sentiment_score || 0) >= 60 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                        (brand.sentiment_score || 0) >= 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
-                          "bg-rose-50 text-rose-600 border-rose-100"
-                    )}>
-                      {brand.sentiment_score || 0}
-                    </span>
+                    {(() => {
+                      const rawScore = brand.sentiment_score || 0;
+                      const score = rawScore <= 10 ? rawScore * 10 : rawScore;
+                      return (
+                        <span className={cn(
+                          "inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[11px] font-bold border min-w-[36px]",
+                          score >= 60 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                            score > 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
+                              "bg-rose-50 text-rose-600 border-rose-100"
+                        )}>
+                          {score}
+                        </span>
+                      );
+                    })()}
                   </div>
                 </TableCell>
 

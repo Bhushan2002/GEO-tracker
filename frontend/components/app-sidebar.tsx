@@ -10,6 +10,7 @@ import {
   LogOut,
   Globe,
   ChartBar,
+  Bot
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -38,6 +39,16 @@ const generalItems = [
     icon: MessageSquare,
   },
   {
+    title: "Sources",
+    href: "/sources",
+    icon: Globe,
+  },
+  {
+    title: "Models",
+    href: "/models",
+    icon: Bot,
+  },
+  {
     title: "Brands",
     href: "/brand",
     icon: Tag,
@@ -47,12 +58,6 @@ const generalItems = [
     href: "/google-analytics",
     icon: ChartBar,
   },
-  {
-    title: "Sources",
-    href: "/sources",
-    icon: Globe,
-  },
-  
 ];
 
 const preferencesItems = [
