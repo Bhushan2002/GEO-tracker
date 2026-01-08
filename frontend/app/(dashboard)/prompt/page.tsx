@@ -22,6 +22,11 @@ import {
   User,
   ShieldCheck,
   Heart,
+  Info,
+  Clock,
+  ExternalLink,
+  ChevronDown,
+  Tag as TagIcon
 } from "lucide-react";
 
 import { useRouter, useSearchParams } from "next/navigation";
