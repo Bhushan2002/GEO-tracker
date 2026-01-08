@@ -1,6 +1,6 @@
 "use client";
-import { brandAPI } from "@/api/brand.api";
-import { DashBrandTable } from "@/components/dash-brandTable";
+import { brandAPI } from "@/lib/api/brand.api";
+import { DashBrandTable } from "@/components/Brands/DashboardBrandTable";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/lib/contexts/workspace-context";

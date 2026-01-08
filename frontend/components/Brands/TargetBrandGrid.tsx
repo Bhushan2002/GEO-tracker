@@ -1,4 +1,4 @@
-import { brandAPI } from "@/api/brand.api"; // Use the structured API calls
+import { brandAPI } from "@/lib/api/brand.api"; // Use the structured API calls
 import {
   Table,
   TableBody,
@@ -7,10 +7,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Card, CardHeader } from "./ui/card";
+import { Card, CardHeader } from "../ui/card";
 
 interface BrandTableProps {
   data: any[];

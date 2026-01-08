@@ -15,8 +15,8 @@ import {
     ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import CitationsPieChart from "@/components/CitationsPieChart";
-import { SourceUsageChart } from "@/components/SourceUsageChart";
+import CitationsPieChart from "@/components/Charts/CitationsPieChart";
+import { SourceUsageChart } from "@/components/Charts/SourceUsageChart";
 import {
     Popover,
     PopoverContent,

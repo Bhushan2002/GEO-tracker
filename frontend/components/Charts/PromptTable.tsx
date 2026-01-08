@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { PromptAPI } from "@/api/prompt.api";
+import { PromptAPI } from "@/lib/api/prompt.api";
 import {
   Table,
   TableBody,

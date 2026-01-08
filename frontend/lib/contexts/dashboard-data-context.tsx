@@ -2,9 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Prompt, ModelResponse } from "@/types";
-import { PromptAPI } from "@/api/prompt.api";
-import { brandAPI } from "@/api/brand.api";
-import { ModelResponseAPI } from "@/api/modelresponse.api";
+import { PromptAPI } from "@/lib/api/prompt.api";
+import { brandAPI } from "@/lib/api/brand.api";
+import { ModelResponseAPI } from "@/lib/api/modelresponse.api";
 import { useWorkspace } from "./workspace-context";
 
 interface DashboardDataContextType {

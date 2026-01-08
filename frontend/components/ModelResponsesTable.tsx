@@ -1,6 +1,6 @@
 "use client";
 
-import { ModelResponseAPI } from "@/api/modelresponse.api";
+import { ModelResponseAPI } from "@/lib/api/modelresponse.api";
 import { ModelResponse } from "@/types";
 import { useEffect, useState } from "react";
 import {

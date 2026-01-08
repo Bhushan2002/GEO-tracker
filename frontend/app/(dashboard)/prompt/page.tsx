@@ -1,7 +1,7 @@
 "use client";
 
-import { PromptAPI } from "@/api/prompt.api";
-import { PromptTable } from "@/components/PromptTable";
+import { PromptAPI } from "@/lib/api/prompt.api";
+import { PromptTable } from "@/components/Charts/PromptTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, A
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
-import { api } from "@/api/api";
+import { api } from "@/lib/api/api";
 import { Search, Download, Plus, MessageSquare, ListFilter, Play, Globe, User, ShieldCheck, Heart, Info, Clock, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";

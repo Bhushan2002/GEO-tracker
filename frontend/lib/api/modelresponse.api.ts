@@ -1,4 +1,4 @@
-import { ModelResponse } from '../types';
+import { ModelResponse } from '@/types';
 import { api } from './api';
 export const ModelResponseAPI = {
     getModelResponses(){

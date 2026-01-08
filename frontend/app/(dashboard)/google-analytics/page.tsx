@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { api } from "@/api/api";
+import { api } from "@/lib/api/api";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import {
   Table,
@@ -51,25 +51,27 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { 
-  Loader2, 
-  Settings, 
-  Plus, 
-  Zap, 
-  Trash2, 
-  Users, 
-  MousePointerClick, 
-  Loader, 
-  ChartArea, 
-  Globe, 
-  Layout, 
-  Smartphone 
+import {
+  Loader2,
+  Settings,
+  Plus,
+  Zap,
+  Trash2,
+  Users,
+  MousePointerClick,
+  Loader,
+  ChartArea,
+  Globe,
+  Layout,
+  Smartphone,
 } from "lucide-react";
-import { AIConversionRateChart } from "@/components/AIConversionRateChart";
-import { TopicClustersTreemap } from "@/components/TopicClusterTree";
-import { AIGrowthRateChart } from "@/components/AIGrowthRateChart";
-import { AIDeviceBreakdownChart } from "@/components/AIDeviceBreakdownChart";
+import { AIConversionRateChart } from "@/components/Charts/AIConversionRateChart";
+import { TopicClustersTreemap } from "@/components/Charts/TopicClusterTree";
+import { AIGrowthRateChart } from "@/components/Charts/AIGrowthRateChart";
+import { AIDeviceBreakdownChart } from "@/components/Charts/AIDeviceBreakdownChart";
 import { cn } from "@/lib/utils";
+import { AiDemographicsChart } from "@/components/Charts/AiDemographicsChart";
+import FirstZeroTouchChart from "@/components/Charts/FirstZeroTouchChart";
 
 export default function GoogleAnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
@@ -92,6 +94,7 @@ export default function GoogleAnalyticsPage() {
   const [topicClusterData, setTopicClusterData] = useState<any[]>([]);
   const [aiGrowthData, setAiGrowthData] = useState<any[]>([]);
   const [aiDeviceData, setAiDeviceData] = useState<any[]>([]);
+  const [demographicsData, setDemographicsData] = useState<any[]>([]);
 
   useEffect(() => {
     if (activeWorkspace?._id) {
@@ -123,6 +126,45 @@ export default function GoogleAnalyticsPage() {
     if (!accountId || isQuotaExceeded) return;
 
     setLoading(true);
+
+    // Check cache first
+    const cacheKey = `ga-account-data-${accountId}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        const cacheAge = Date.now() - parsed.timestamp;
+        const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+        if (cacheAge < CACHE_DURATION) {
+          // Use cached data
+          setChartData(parsed.chartData || []);
+          setKeyMetrics(
+            parsed.keyMetrics || {
+              activeUsers: 0,
+              engagedSessions: 0,
+              keyEvents: 0,
+            }
+          );
+          setAiModelsData(parsed.aiModelsData || []);
+          setFirstTouchData(parsed.firstTouchData || []);
+          setZeroTouchData(parsed.zeroTouchData || []);
+          setAiLandingPageData(parsed.aiLandingPageData || []);
+          setConversionRateData(parsed.conversionRateData || []);
+          setAiGrowthData(parsed.aiGrowthData || []);
+          setAiDeviceData(parsed.aiDeviceData || []);
+          setTopicClusterData(parsed.topicClusterData || []);
+          setDemographicsData(parsed.demographicsData || []);
+          setLoading(false);
+          console.log("✅ Loaded data from cache");
+          return;
+        }
+      } catch (e) {
+        console.warn("Failed to parse cached data:", e);
+      }
+    }
+
     try {
       // Fetch main analytics (traffic & metrics)
       const analyticsRes = await api.get(
@@ -161,31 +203,41 @@ export default function GoogleAnalyticsPage() {
         };
       });
 
+      console.log("📊 Raw AI Models API Response:", aiModelsRes.data);
+      console.log("📊 Formatted AI Models:", formattedAIModels);
+
       // Fetch First Touch, Zero Touch & AI Landing Pages data in parallel
-      const [firstTouchRes, zeroTouchRes, landingPagesRes, convRes, growthRes, deviceRes] = await Promise.all([
+      const [
+        firstTouchRes,
+        zeroTouchRes,
+        landingPagesRes,
+        convRes,
+        growthRes,
+        deviceRes,
+        demoRes,
+      ] = await Promise.all([
         api.get(`/api/analytics/first-touch?accountId=${accountId}`),
         api.get(`/api/analytics/zero-touch?accountId=${accountId}`),
         api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}`),
         api.get(`/api/analytics/ai-conversions?accountId=${accountId}`),
         api.get(`/api/analytics/ai-growth-mom?accountId=${accountId}`),
         api.get(`/api/analytics/ai-device-split?accountId=${accountId}`),
+        api.get(`/api/analytics/demographics?accountId=${accountId}`),
       ]);
-      
+
       // Fetch topic clusters separately (optional, may not exist yet)
       let topicRes = { data: [] };
       try {
-        topicRes = await api.get(`/api/analytics/topic-clusters?accountId=${accountId}`);
+        topicRes = await api.get(
+          `/api/analytics/topic-clusters?accountId=${accountId}`
+        );
       } catch (error) {
         console.log("Topic clusters endpoint not available yet");
       }
-      
+
       const fTouch = firstTouchRes.data || [];
       const zTouch = zeroTouchRes.data || [];
       const landingPages = landingPagesRes.data?.landingPageData || [];
-
-      console.log("🔍 API Response - Landing Pages:", landingPagesRes.data);
-      console.log("📊 Extracted Landing Pages:", landingPages);
-      console.log("📈 Landing Pages Length:", landingPages.length);
 
       setChartData(mainData);
       setKeyMetrics(metrics);
@@ -197,12 +249,14 @@ export default function GoogleAnalyticsPage() {
       setAiGrowthData(growthRes.data);
       setAiDeviceData(deviceRes.data);
       setTopicClusterData(topicRes.data);
+      setDemographicsData(demoRes.data);
 
       console.log("✅ State updated - aiLandingPageData set to:", landingPages);
+      console.log("📊 Demographics data:", demoRes.data);
 
       // Save to cache
       sessionStorage.setItem(
-        `ga-account-data-${accountId}`,
+        cacheKey,
         JSON.stringify({
           chartData: mainData,
           keyMetrics: metrics,
@@ -213,9 +267,13 @@ export default function GoogleAnalyticsPage() {
           conversionRateData: convRes.data,
           aiGrowthData: growthRes.data,
           aiDeviceData: deviceRes.data,
+          topicClusterData: topicRes.data,
+          demographicsData: demoRes.data,
           timestamp: Date.now(),
         })
       );
+
+      console.log("💾 Data cached successfully");
 
       setIsQuotaExceeded(false);
     } catch (error: any) {
@@ -227,7 +285,7 @@ export default function GoogleAnalyticsPage() {
         // Use warn instead of error to avoid the development overlay
         console.warn("GA Quota limit reached:", error.message);
         toast.error(
-          "Google Analytics quota exceeded. This view will refresh once the quota is available."
+          "Analytics quota exceeded. This view will refresh once the quota is available."
         );
       } else {
         console.error("Failed to load GA account data:", error);
@@ -291,83 +349,104 @@ export default function GoogleAnalyticsPage() {
       <div className="flex flex-col gap-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-             <h1 className="text-xl font-bold text-foreground">Google Analytics</h1>
+            <h1 className="text-xl font-bold text-foreground">Analytics</h1>
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
-           {gaAccounts.length > 0 && (
-             <Select
-              value={selectedAccountId}
-              onValueChange={setSelectedAccountId}
-            >
-              <SelectTrigger className="w-full md:w-[280px] bg-background">
-                <SelectValue placeholder="Select Account" />
-              </SelectTrigger>
-              <SelectContent>
-                {gaAccounts.map((account) => (
-                  <SelectItem key={account._id} value={account._id}>
-                    <span className="font-medium">{account.propertyName}</span>
-                    <span className="text-xs text-muted-foreground ml-2">({account.propertyId})</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+            {gaAccounts.length > 0 && (
+              <Select
+                value={selectedAccountId}
+                onValueChange={setSelectedAccountId}
+              >
+                <SelectTrigger className="w-full md:w-[280px] bg-background">
+                  <SelectValue placeholder="Select Account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {gaAccounts.map((account) => (
+                    <SelectItem key={account._id} value={account._id}>
+                      <span className="font-medium">
+                        {account.propertyName}
+                      </span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        ({account.propertyId})
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
 
-          <Sheet>
-            <SheetTrigger asChild className="p-4">
-              <Button variant="outline" size="icon" title="Manage Accounts">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Manage GA4 Accounts</SheetTitle>
-                <SheetDescription>
-                  Connect and manage your Google Analytics properties.
-                </SheetDescription>
-              </SheetHeader>
-              
-              <div className="mt-6 space-y-6 px-4">
-                 <Button onClick={handleConnectAccount} className="w-full bg-green-600  hover:bg-green-700 shadow-lg shadow-green-200">
+            <Sheet>
+              <SheetTrigger asChild className="p-4">
+                <Button variant="outline" size="icon" title="Manage Accounts">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Manage GA4 Accounts</SheetTitle>
+                  <SheetDescription>
+                    Connect and manage your Google Analytics properties.
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-6 space-y-6 px-4">
+                  <Button
+                    onClick={handleConnectAccount}
+                    className="w-full bg-green-600  hover:bg-green-700 shadow-lg shadow-green-200"
+                  >
                     <Plus className="mr-2 h-4 w-4" /> Connect New Account
-                 </Button>
+                  </Button>
 
-                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Connected Accounts</h3>
-                  {gaAccounts.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground border rounded-lg bg-muted/50">
-                      <p>No accounts connected</p>
-                    </div>
-                  ) : (
-                    <div className="border rounded-md divide-y">
-                      {gaAccounts.map((account) => (
-                        <div key={account._id} className="p-4 flex items-center justify-between bg-background">
-                          <div className="space-y-1">
-                            <p className="font-medium text-sm">{account.accountName}</p>
-                            <p className="text-xs text-muted-foreground">{account.propertyName} ({account.propertyId})</p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteAccount(account._id)}
-                            className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                      Connected Accounts
+                    </h3>
+                    {gaAccounts.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground border rounded-lg bg-muted/50">
+                        <p>No accounts connected</p>
+                      </div>
+                    ) : (
+                      <div className="border rounded-md divide-y">
+                        {gaAccounts.map((account) => (
+                          <div
+                            key={account._id}
+                            className="p-4 flex items-center justify-between bg-background"
                           >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                 </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+                            <div className="space-y-1">
+                              <p className="font-medium text-sm">
+                                {account.accountName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {account.propertyName} ({account.propertyId})
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteAccount(account._id)}
+                              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
-      </div>
 
-      <div className={cn("space-y-8", !loading && "animate-in fade-in slide-in-from-bottom-2 duration-700")}>
+      <div
+        className={cn(
+          "space-y-8",
+          !loading && "animate-in fade-in slide-in-from-bottom-2 duration-700"
+        )}
+      >
         {/* Quota Error Message */}
         {isQuotaExceeded && (
           <Card className="border-amber-200 bg-amber-50 mb-6">
@@ -385,329 +464,129 @@ export default function GoogleAnalyticsPage() {
         {/* Initial Loading State */}
         {initialLoading && (
           <div className="flex flex-col items-center justify-center h-[70vh] w-full gap-3 text-foreground/40">
-            <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
+            <Loader
+              className="h-10 w-10 animate-spin text-foreground shrink-0"
+              strokeWidth={1.5}
+            />
             <p className="text-sm font-medium">Loading accounts...</p>
           </div>
         )}
 
         {/* Empty State if no account selected */}
-        {!initialLoading && !selectedAccountId && !loading && gaAccounts.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in duration-500">
-            <div className="bg-white p-8 rounded-full shadow-lg mb-6">
-               <Zap className="h-16 w-16 text-gray-300" />
+        {!initialLoading &&
+          !selectedAccountId &&
+          !loading &&
+          gaAccounts.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 animate-in fade-in zoom-in duration-500">
+              <div className="bg-white p-8 rounded-full shadow-lg mb-6">
+                <Zap className="h-16 w-16 text-gray-300" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+                No Analytics Data
+              </h2>
+              <p className="text-gray-500 max-w-md text-center mb-6">
+                Connect your Google Analytics account to start tracking AI
+                performance and insights.
+              </p>
+              <Button
+                onClick={handleConnectAccount}
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-200"
+              >
+                Connect Google Analytics
+              </Button>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-2">No Analytics Data</h2>
-            <p className="text-gray-500 max-w-md text-center mb-6">Connect your Google Analytics account to start tracking AI performance and insights.</p>
-            <Button onClick={handleConnectAccount} size="lg" className="bg-blue-600 hover:bg-blue-700 shadow-xl shadow-blue-200">
-              Connect Google Analytics
-            </Button>
-          </div>
-        )}
+          )}
 
         {/* Analytics Charts */}
-        {selectedAccountId && !isQuotaExceeded && (
-          loading ? (
+        {selectedAccountId &&
+          !isQuotaExceeded &&
+          (loading ? (
             <div className="flex flex-col items-center justify-center h-[70vh] w-full gap-3 text-foreground/40">
-                <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
-                <p className="text-sm font-medium">loading data...</p>
-             </div>
+              <Loader
+                className="h-10 w-10 animate-spin text-foreground shrink-0"
+                strokeWidth={1.5}
+              />
+              <p className="text-sm font-medium">loading data...</p>
+            </div>
           ) : (
-          <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-4">
-            
-            {/* 1. Engagement and Quality Insights */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                 <ChartArea className="h-5 w-5 text-muted-foreground" />
-                 <h3 className="text-lg font-semibold text-foreground">Engagement & Quality</h3>
-                 <span className="text-sm text-muted-foreground hidden sm:inline-block">• Key metrics overview</span>
-              </div>
-              
-              {/* Key Metrics Cards */}
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                    <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Active Users</h3>
-                    <Users className="h-4 w-4 text-slate-400" />
-                  </div>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold text-foreground">{keyMetrics.activeUsers}</div>
-                    <p className="text-xs text-muted-foreground">Total active users in period</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                    <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Engaged Sessions</h3>
-                    <MousePointerClick className="h-4 w-4 text-slate-400" />
-                  </div>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold text-foreground">{keyMetrics.engagedSessions}</div>
-                     <p className="text-xs text-muted-foreground">Sessions longer than 10s</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                    <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Key Events</h3>
-                    <Zap className="h-4 w-4 text-slate-400" />
-                  </div>
-                  <CardContent className="pt-6">
-                     <div className="text-2xl font-bold text-foreground">{keyMetrics.keyEvents}</div>
-                     <p className="text-xs text-muted-foreground">Conversions and important actions</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Website Traffic Chart */}
-              <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                   <div className="flex flex-col gap-0.5">
-                      <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Website Traffic Trends</h3>
-                      <p className="text-[10px] text-slate-500 font-medium">Daily active users comparing Total vs AI Traffic</p>
-                   </div>
+            <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-4">
+              {/* 1. Engagement and Quality Insights */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <ChartArea className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Engagement & Quality
+                  </h3>
+                  <span className="text-sm text-muted-foreground hidden sm:inline-block">
+                    • Key metrics overview
+                  </span>
                 </div>
-                <CardContent className="pt-6">
-                  {loading ? (
-                    <div className="flex items-center justify-center h-64">
-                      <Loader className="h-8 w-8 animate-spin text-gray-400" />
+
+                {/* Key Metrics Cards */}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                      <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        Active Users
+                      </h3>
+                      <Users className="h-4 w-4 text-slate-400" />
                     </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis
-                          dataKey="name"
-                          stroke="#6b7280"
-                          tick={{ fontSize: 12 }}
-                          tickFormatter={formatDate}
-                        />
-                        <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "white",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "6px",
-                          }}
-                        />
-                        <Legend />
-                        <Line
-                          type="monotone"
-                          dataKey="users"
-                          stroke="#1e40af"
-                          strokeWidth={2}
-                          name="Total Users"
-                          dot={{ fill: "#1e40af", r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="aiUsers"
-                          stroke="#059669"
-                          strokeWidth={2}
-                          name="AI Traffic"
-                          dot={{ fill: "#059669", r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* 2. User Journey and Conversion */}
-            <div className="space-y-4">
-               <div className="flex items-center gap-2 mb-2">
-                 <MousePointerClick className="h-5 w-5 text-muted-foreground" />
-                 <h3 className="text-lg font-semibold text-foreground">User Journey & Conversion</h3>
-                 <span className="text-sm text-muted-foreground hidden sm:inline-block">• Attribution analysis</span>
-              </div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                     <div className="flex flex-col gap-0.5">
-                        <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">First Touch Attribution</h3>
-                        <p className="text-[10px] text-slate-500 font-medium">How users first discover your brand</p>
-                     </div>
-                  </div>
-                  <CardContent className="pt-6">
-                    {loading ? (
-                      <div className="flex items-center justify-center h-[300px]">
-                        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                    <CardContent className="pt-6">
+                      <div className="text-2xl font-bold text-foreground">
+                        {keyMetrics.activeUsers}
                       </div>
-                    ) : firstTouchData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={320}>
-                        <LineChart data={firstTouchData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1}/>
-                              <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                          <XAxis
-                            dataKey="date"
-                            stroke="#94a3b8"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={formatDate}
-                            dy={10}
-                          />
-                          <YAxis 
-                            stroke="#94a3b8" 
-                            fontSize={12} 
-                            tickLine={false} 
-                            axisLine={false}
-                            dx={-10}
-                          />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: "rgba(255, 255, 255, 0.95)",
-                              border: "none",
-                              borderRadius: "6px",
-                              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                              padding: "12px"
-                            }}
-                            cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
-                          />
-                          <Legend wrapperStyle={{ paddingTop: "20px" }} />
-                          <Line
-                            type="monotone"
-                            dataKey="users"
-                            stroke="#2563eb"
-                            strokeWidth={3}
-                            name="New Users"
-                            dot={{ fill: "#2563eb", r: 0, strokeWidth: 0, stroke: "#fff" }}
-                            activeDot={{ r: 4, strokeWidth: 0 }}
-                            fill="url(#colorUsers)"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="conversions"
-                            stroke="#f59e0b"
-                            strokeWidth={3}
-                            name="Conversions"
-                            dot={{ fill: "#f59e0b", r: 0, strokeWidth: 0, stroke: "#fff" }}
-                            activeDot={{ r: 4, strokeWidth: 0 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200">
-                        <MousePointerClick className="h-10 w-10 mb-3 opacity-20" />
-                        <p className="font-medium">No first touch data available</p>
+                      <p className="text-xs text-muted-foreground">
+                        Total active users in period
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                      <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        Engaged Sessions
+                      </h3>
+                      <MousePointerClick className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <CardContent className="pt-6">
+                      <div className="text-2xl font-bold text-foreground">
+                        {keyMetrics.engagedSessions}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                     <div className="flex flex-col gap-0.5">
-                        <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Zero Touch Attribution</h3>
-                        <p className="text-[10px] text-slate-500 font-medium">Brand awareness & indirect influence</p>
-                     </div>
-                  </div>
-                  <CardContent className="pt-6">
-                    {loading ? (
-                      <div className="flex items-center justify-center h-[300px]">
-                        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                      <p className="text-xs text-muted-foreground">
+                        Sessions longer than 10s
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                      <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        Key Events
+                      </h3>
+                      <Zap className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <CardContent className="pt-6">
+                      <div className="text-2xl font-bold text-foreground">
+                        {keyMetrics.keyEvents}
                       </div>
-                    ) : zeroTouchData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={320}>
-                        <LineChart data={zeroTouchData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                           <defs>
-                            <linearGradient id="colorImpressions" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#9333ea" stopOpacity={0.1}/>
-                              <stop offset="95%" stopColor="#9333ea" stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                          <XAxis
-                            dataKey="date"
-                            stroke="#94a3b8"
-                            fontSize={12}
-                            tickLine={false}
-                            axisLine={false}
-                            tickFormatter={formatDate}
-                            dy={10}
-                          />
-                          <YAxis 
-                            stroke="#94a3b8" 
-                            fontSize={12} 
-                            tickLine={false} 
-                            axisLine={false}
-                            dx={-10}
-                          />
-                          <Tooltip  
-                            contentStyle={{
-                              backgroundColor: "rgba(255, 255, 255, 0.95)",
-                              border: "none",
-                              borderRadius: "8px",
-                              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                              padding: "12px"
-                            }}
-                            cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
-                          />
-                          <Legend wrapperStyle={{ paddingTop: "20px" }} />
-                          <Line
-                            type="monotone"
-                            dataKey="impressions"
-                            stroke="#9333ea"
-                            strokeWidth={3}
-                            name="Impressions"
-                            dot={{ fill: "#9333ea", r: 0, strokeWidth: 0, stroke: "#fff" }}
-                            activeDot={{ r: 4, strokeWidth: 0 }}
-                            fill="url(#colorImpressions)"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="brandSearches"
-                            stroke="#ec4899"
-                            strokeWidth={3}
-                            name="Brand Searches"
-                            dot={{ fill: "#ec4899", r: 0, strokeWidth: 0, stroke: "#fff" }}
-                            activeDot={{ r: 4, strokeWidth: 0 }}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200">
-                        <Users className="h-10 w-10 mb-3 opacity-20" />
-                        <p className="font-medium">No zero touch data available</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                <div className="col-span-1 lg:col-span-2">
-                   <AIConversionRateChart data={conversionRateData} />
+                      <p className="text-xs text-muted-foreground">
+                        Conversions and important actions
+                      </p>
+                    </CardContent>
+                  </Card>
                 </div>
-              </div>
-            </div>
 
-            {/* 3. Content Performance (AEO Specific) */}
-            <div className="space-y-4">
-               <div className="flex items-center gap-2 mb-2">
-                 <Globe className="h-5 w-5 text-muted-foreground" />
-                 <h3 className="text-lg font-semibold text-foreground">Content Performance</h3>
-                 <span className="text-sm text-muted-foreground hidden sm:inline-block">• AEO Specific Insights</span>
-              </div>
+                {/* Website Traffic Chart */}
 
-              {/* Topic Clusters & Growth */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <div className="col-span-2">
-                    <TopicClustersTreemap data={topicClusterData} />
-                 </div>
-                 <AIGrowthRateChart data={aiGrowthData} loading={loading} />
-                 
-                 {/* AI Models Distribution Pie */}
-                 <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                     <div className="flex flex-col gap-0.5">
-                        <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">AI Model Distribution</h3>
-                        <p className="text-[10px] text-slate-500 font-medium">Traffic share by model</p>
-                     </div>
-                  </div>
+                <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <CardHeader className="border-b border-slate-100  px-5 ">
+                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                      Website Traffic Trends
+                    </CardTitle>
+                    <CardDescription className="text-[10px] text-slate-500 font-medium">
+                      Daily active users comparing Total vs AI traffic
+                    </CardDescription>
+                  </CardHeader>
+
                   <CardContent className="pt-6">
                     {loading ? (
                       <div className="flex items-center justify-center h-64">
@@ -715,256 +594,517 @@ export default function GoogleAnalyticsPage() {
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                          <Pie
-                            data={aiModelsData.filter((item) => item.users > 0)}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ model, users }) => `${model}: ${users}`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="users"
-                          >
-                            {aiModelsData
-                              .filter((item) => item.users > 0)
-                              .map((entry, index) => {
-                                const colors = [
-                                  "#1e40af",
-                                  "#059669",
-                                  "#dc2626",
-                                  "#8b5cf6",
-                                  "#f59e0b",
-                                ];
-                                return (
-                                  <Cell
-                                    key={`cell-${index}`}
-                                    fill={colors[index % colors.length]}
-                                  />
-                                );
-                              })}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Traffic by AI Model Bar */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                 <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                     <div className="flex flex-col gap-0.5">
-                        <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">Traffic by AI Model</h3>
-                        <p className="text-[10px] text-slate-500 font-medium">Users from AI sources (Last 30 Days)</p>
-                     </div>
-                  </div>
-                  <CardContent className="pt-6">
-                    {loading ? (
-                      <div className="flex items-center justify-center h-64">
-                        <Loader className="h-8 w-8 animate-spin text-gray-400" />
-                      </div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart
-                          data={aiModelsData.filter((item) => item.users > 0)}
-                        >
+                        <LineChart data={chartData}>
                           <CartesianGrid
                             strokeDasharray="3 3"
                             stroke="#e5e7eb"
                           />
-                          <XAxis dataKey="model" tick={{ fontSize: 12 }} />
-                          <YAxis tick={{ fontSize: 12 }} />
-                          <Tooltip />
-                          <Bar dataKey="users" fill="#1e40af" />
-                        </BarChart>
+                          <XAxis
+                            dataKey="name"
+                            stroke="#6b7280"
+                            tick={{ fontSize: 12 }}
+                            tickFormatter={formatDate}
+                          />
+                          <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "white",
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "6px",
+                            }}
+                          />
+                          <Legend />
+                          <Line
+                            type="monotone"
+                            dataKey="users"
+                            stroke="#1e40af"
+                            strokeWidth={2}
+                            name="Total Users"
+                            dot={{ fill: "#1e40af", r: 2 }}
+                            activeDot={{ r: 2 }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="aiUsers"
+                            stroke="#059669"
+                            strokeWidth={2}
+                            name="AI Traffic"
+                            dot={{ fill: "#059669", r: 2 }}
+                            activeDot={{ r: 2 }}
+                          />
+                        </LineChart>
                       </ResponsiveContainer>
                     )}
                   </CardContent>
                 </Card>
+              </div>
 
-                <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                   <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                     <div className="flex flex-col gap-0.5">
-                        <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">AI Models Performance</h3>
-                        <p className="text-[10px] text-slate-500 font-medium">Detailed metrics for each AI model</p>
-                     </div>
+              {/* 2. User Journey and Conversion */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <MousePointerClick className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold text-foreground">
+                    User Journey & Conversion
+                  </h3>
+                  <span className="text-sm text-muted-foreground hidden sm:inline-block">
+                    • Attribution analysis
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* First touch chart */}
+                  <FirstZeroTouchChart
+                    data={firstTouchData}
+                    loading={loading}
+                    formatDate={formatDate}
+                  />
+                  {/* Zero touch chart */}
+                  <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <CardHeader className="border-b border-slate-100  px-5 ">
+                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        Zero Touch Attribution
+                      </CardTitle>
+                      <CardDescription className="text-[10px] text-slate-500 font-medium">
+                        Brand awareness & indirect influence
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      {loading ? (
+                        <div className="flex items-center justify-center h-[300px]">
+                          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                        </div>
+                      ) : zeroTouchData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={320}>
+                          <LineChart
+                            data={zeroTouchData}
+                            margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                          >
+                            <defs>
+                              <linearGradient
+                                id="colorImpressions"
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                              >
+                                <stop
+                                  offset="5%"
+                                  stopColor="#9333ea"
+                                  stopOpacity={0.1}
+                                />
+                                <stop
+                                  offset="95%"
+                                  stopColor="#9333ea"
+                                  stopOpacity={0}
+                                />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="#f0f0f0"
+                              vertical={false}
+                            />
+                            <XAxis
+                              dataKey="date"
+                              stroke="#94a3b8"
+                              fontSize={12}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={formatDate}
+                              dy={10}
+                            />
+                            <YAxis
+                              stroke="#94a3b8"
+                              fontSize={12}
+                              tickLine={false}
+                              axisLine={false}
+                              dx={-10}
+                            />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "rgba(255, 255, 255, 0.95)",
+                                border: "none",
+                                borderRadius: "8px",
+                                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                                padding: "12px",
+                              }}
+                              cursor={{
+                                stroke: "#cbd5e1",
+                                strokeWidth: 1,
+                                strokeDasharray: "4 4",
+                              }}
+                            />
+                            <Legend wrapperStyle={{ paddingTop: "20px" }} />
+                            <Line
+                              type="monotone"
+                              dataKey="impressions"
+                              stroke="#9333ea"
+                              strokeWidth={3}
+                              name="Impressions"
+                              dot={{
+                                fill: "#9333ea",
+                                r: 0,
+                                strokeWidth: 0,
+                                stroke: "#fff",
+                              }}
+                              activeDot={{ r: 4, strokeWidth: 0 }}
+                              fill="url(#colorImpressions)"
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="brandSearches"
+                              stroke="#ec4899"
+                              strokeWidth={3}
+                              name="Brand Searches"
+                              dot={{
+                                fill: "#ec4899",
+                                r: 0,
+                                strokeWidth: 0,
+                                stroke: "#fff",
+                              }}
+                              activeDot={{ r: 4, strokeWidth: 0 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200">
+                          <Users className="h-10 w-10 mb-3 opacity-20" />
+                          <p className="font-medium">
+                            No zero touch data available
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* AI Conversion Rate Charttt */}
+                  <div className="col-span-1 lg:col-span-2">
+                    <AIConversionRateChart data={conversionRateData} />
                   </div>
+                </div>
+              </div>
+
+              {/* 3. Content Performance (AEO Specific) */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Content Performance
+                  </h3>
+                  <span className="text-sm text-muted-foreground hidden sm:inline-block">
+                    • AEO Specific Insights
+                  </span>
+                </div>
+
+                {/* Topic Clusters & Growth */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="col-span-2">
+                    <TopicClustersTreemap data={topicClusterData} />
+                  </div>
+                  <AIGrowthRateChart data={aiGrowthData} loading={loading} />
+
+                  {/* AI Models Distribution Pie */}
+                  <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <CardHeader className="border-b border-slate-100  px-5 ">
+                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        AI Models Distribution
+                      </CardTitle>
+                      <CardDescription className="text-[10px] text-slate-500 font-medium">
+                        Traffic share by AI model
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="pt-6">
+                      {loading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={aiModelsData.filter(
+                                (item) => item.users > 0
+                              )}
+                              cx="50%"
+                              cy="50%"
+                              labelLine={false}
+                              label={({ model, users }) => `${model}: ${users}`}
+                              outerRadius={100}
+                              fill="#8884d8"
+                              dataKey="users"
+                            >
+                              {aiModelsData
+                                .filter((item) => item.users > 0)
+                                .map((entry, index) => {
+                                  const colors = [
+                                    "#1e40af",
+                                    "#059669",
+                                    "#dc2626",
+                                    "#8b5cf6",
+                                    "#f59e0b",
+                                  ];
+                                  return (
+                                    <Cell
+                                      key={`cell-${index}`}
+                                      fill={colors[index % colors.length]}
+                                    />
+                                  );
+                                })}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Traffic by AI Model Bar */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                  <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <CardHeader className="border-b border-slate-100  px-5 ">
+                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        Taffic by AI model
+                      </CardTitle>
+                      <CardDescription className="text-[10px] text-slate-500 font-medium">
+                        Users from AI sources (Last 30 Days)
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                      {loading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart
+                            data={aiModelsData.filter((item) => item.users > 0)}
+                          >
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              stroke="#e5e7eb"
+                            />
+                            <XAxis dataKey="model" tick={{ fontSize: 12 }} />
+                            <YAxis tick={{ fontSize: 12 }} />
+                            <Tooltip />
+                            <Bar dataKey="users" fill="#1e40af" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    
+                    <CardHeader className="border-b border-slate-100  px-5 ">
+                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                      AI Models Performance
+                    </CardTitle>
+                    <CardDescription className="text-[10px] text-slate-500 font-medium">
+                      Detailed metrics for each AI model
+                    </CardDescription>
+                  </CardHeader>
+
+                    <CardContent className="pt-6">
+                      {loading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>AI Model</TableHead>
+                              <TableHead>Active Users</TableHead>
+                              <TableHead>Sessions</TableHead>
+                              <TableHead>Cv Rate</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {aiModelsData.filter((row) => row.users > 0)
+                              .length > 0 ? (
+                              aiModelsData
+                                .filter((row) => row.users > 0)
+                                .map((row, i) => (
+                                  <TableRow key={i}>
+                                    <TableCell className="font-medium">
+                                      {row.model}
+                                    </TableCell>
+                                    <TableCell>{row.users || 0}</TableCell>
+                                    <TableCell>{row.sessions || 0}</TableCell>
+                                    <TableCell>
+                                      {row.conversionRate || "0%"}
+                                    </TableCell>
+                                  </TableRow>
+                                ))
+                            ) : (
+                              <TableRow>
+                                <TableCell
+                                  colSpan={4}
+                                  className="text-center text-muted-foreground py-8"
+                                >
+                                  No AI model data available
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Landing Pages */}
+                <Card className=" bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <CardHeader className="border-b border-slate-100  px-5 ">
+                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                      AI Traffic Landing pages
+                    </CardTitle>
+                    <CardDescription className="text-[10px] text-slate-500 font-medium">
+                      Top pages where AI-referred user land
+                    </CardDescription>
+                  </CardHeader>
                   <CardContent className="pt-6">
                     {loading ? (
                       <div className="flex items-center justify-center h-64">
-                        <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                        <Loader className="h-8 w-8 animate-spin text-purple-600" />
+                      </div>
+                    ) : aiLandingPageData.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between px-2">
+                          <div className="text-sm font-medium text-gray-700">
+                            Total Pages:{" "}
+                            <span className="text-purple-600">
+                              {aiLandingPageData.length}
+                            </span>
+                          </div>
+                          <div className="text-sm font-medium text-gray-700">
+                            Total Users:{" "}
+                            <span className="text-purple-600">
+                              {aiLandingPageData.reduce(
+                                (sum, item) => sum + item.users,
+                                0
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="border rounded-lg overflow-hidden">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-purple-50">
+                                <TableHead className="font-semibold">
+                                  #
+                                </TableHead>
+                                <TableHead className="font-semibold">
+                                  Landing Page
+                                </TableHead>
+                                <TableHead className="font-semib    old">
+                                  Source
+                                </TableHead>
+                                <TableHead className="font-semibold text-right">
+                                  Users
+                                </TableHead>
+                                <TableHead className="font-semibold text-right">
+                                  Share
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {aiLandingPageData.map((item, index) => {
+                                const totalUsers = aiLandingPageData.reduce(
+                                  (sum, i) => sum + i.users,
+                                  0
+                                );
+                                const percentage = (
+                                  (item.users / totalUsers) *
+                                  100
+                                ).toFixed(1);
+
+                                return (
+                                  <TableRow
+                                    key={index}
+                                    className="hover:bg-purple-50/50 transition-colors"
+                                  >
+                                    <TableCell className="font-medium text-gray-600">
+                                      {index + 1}
+                                    </TableCell>
+                                    <TableCell className="max-w-md">
+                                      <div className="flex items-center gap-2">
+                                        <span className="truncate font-medium text-sm">
+                                          {item.page === "(not set)"
+                                            ? "Homepage"
+                                            : item.page}
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        {item.source}
+                                      </span>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <span className="font-semibold text-gray-900">
+                                        {item.users}
+                                      </span>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <div className="flex items-center justify-end gap-2">
+                                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                                          <div
+                                            className="bg-purple-600 h-2 rounded-full transition-all"
+                                            style={{ width: `${percentage}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-sm font-medium text-gray-600 w-12 text-right">
+                                          {percentage}%
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>AI Model</TableHead>
-                            <TableHead>Active Users</TableHead>
-                            <TableHead>Sessions</TableHead>
-                            <TableHead>Cv Rate</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {aiModelsData.map((row, i) => (
-                            <TableRow key={i}>
-                              <TableCell className="font-medium">
-                                {row.model}
-                              </TableCell>
-                              <TableCell>{row.users || 0}</TableCell>
-                              <TableCell>{row.sessions || 0}</TableCell>
-                              <TableCell>{row.conversionRate || "0%"}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <div className="flex flex-col items-center justify-center h-[350px] text-gray-500">
+                        <p className="text-lg font-medium">
+                          No AI landing page data available
+                        </p>
+                        <p className="text-sm mt-2">
+                          Check back later for AI traffic insights
+                        </p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Landing Pages */}
-              <Card className="mt-6 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
-                   <div className="flex flex-col gap-0.5">
-                      <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">AI Traffic Landing Pages</h3>
-                      <p className="text-[10px] text-slate-500 font-medium">Top pages where AI-referred users land</p>
-                   </div>
+              {/* 4. Technical and Demographics */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Smartphone className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Technical & Demographics
+                  </h3>
+                  <span className="text-sm text-muted-foreground hidden sm:inline-block">
+                    • Device breakdown
+                  </span>
                 </div>
-                <CardContent className="pt-6">
-                  {loading ? (
-                    <div className="flex items-center justify-center h-64">
-                      <Loader className="h-8 w-8 animate-spin text-purple-600" />
-                    </div>
-                  ) : aiLandingPageData.length > 0 ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between px-2">
-                        <div className="text-sm font-medium text-gray-700">
-                          Total Pages:{" "}
-                          <span className="text-purple-600">
-                            {aiLandingPageData.length}
-                          </span>
-                        </div>
-                        <div className="text-sm font-medium text-gray-700">
-                          Total Users:{" "}
-                          <span className="text-purple-600">
-                            {aiLandingPageData.reduce(
-                              (sum, item) => sum + item.users,
-                              0
-                            )}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-purple-50">
-                              <TableHead className="font-semibold">#</TableHead>
-                              <TableHead className="font-semibold">
-                                Landing Page
-                              </TableHead>
-                              <TableHead className="font-semib    old">
-                                Source
-                              </TableHead>
-                              <TableHead className="font-semibold text-right">
-                                Users
-                              </TableHead>
-                              <TableHead className="font-semibold text-right">
-                                Share
-                              </TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {aiLandingPageData.map((item, index) => {
-                              const totalUsers = aiLandingPageData.reduce(
-                                (sum, i) => sum + i.users,
-                                0
-                              );
-                              const percentage = (
-                                (item.users / totalUsers) *
-                                100
-                              ).toFixed(1);
-
-                              return (
-                                <TableRow
-                                  key={index}
-                                  className="hover:bg-purple-50/50 transition-colors"
-                                >
-                                  <TableCell className="font-medium text-gray-600">
-                                    {index + 1}
-                                  </TableCell>
-                                  <TableCell className="max-w-md">
-                                    <div className="flex items-center gap-2">
-                                      <span className="truncate font-medium text-sm">
-                                        {item.page === "(not set)"
-                                          ? "Homepage"
-                                          : item.page}
-                                      </span>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                      {item.source}
-                                    </span>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <span className="font-semibold text-gray-900">
-                                      {item.users}
-                                    </span>
-                                  </TableCell>
-                                  <TableCell className="text-right">
-                                    <div className="flex items-center justify-end gap-2">
-                                      <div className="w-24 bg-gray-200 rounded-full h-2">
-                                        <div
-                                          className="bg-purple-600 h-2 rounded-full transition-all"
-                                          style={{ width: `${percentage}%` }}
-                                        />
-                                      </div>
-                                      <span className="text-sm font-medium text-gray-600 w-12 text-right">
-                                        {percentage}%
-                                      </span>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-[350px] text-gray-500">
-                      <p className="text-lg font-medium">
-                        No AI landing page data available
-                      </p>
-                      <p className="text-sm mt-2">
-                        Check back later for AI traffic insights
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* 4. Technical and Demographics */}
-             <div className="space-y-4">
-               <div className="flex items-center gap-2 mb-2">
-                 <Smartphone className="h-5 w-5 text-muted-foreground" />
-                 <h3 className="text-lg font-semibold text-foreground">Technical & Demographics</h3>
-                 <span className="text-sm text-muted-foreground hidden sm:inline-block">• Device breakdown</span>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <AIDeviceBreakdownChart data={aiDeviceData} loading={loading} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <AIDeviceBreakdownChart
+                    data={aiDeviceData}
+                    loading={loading}
+                  />
+                  <AiDemographicsChart data={demographicsData} />
+                </div>
               </div>
             </div>
-
-          </div>
-          )
-        )}
+          ))}
       </div>
     </div>
   );
