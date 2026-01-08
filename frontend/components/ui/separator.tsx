@@ -5,6 +5,9 @@ import * as SeparatorPrimitive from "@radix-ui/react-separator"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * Visually or semantically separates content.
+ */
 function Separator({
   className,
   orientation = "horizontal",

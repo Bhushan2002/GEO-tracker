@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import { Loader } from "lucide-react";
 
+/**
+ * Audiences page for analyzing user segments.
+ * Allows setting up specific audiences for AI tools tracking.
+ */
 export default function AudiencesPage() {
   const { activeWorkspace } = useWorkspace();
   const [gaAccounts, setGaAccounts] = useState<any[]>([]);

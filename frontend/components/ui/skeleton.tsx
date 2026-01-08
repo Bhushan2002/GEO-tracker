@@ -1,5 +1,8 @@
 import { cn } from "@/lib/utils"
 
+/**
+ * Placeholder component used to indicate active loading states.
+ */
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

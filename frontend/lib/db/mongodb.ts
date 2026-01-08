@@ -18,6 +18,10 @@ if (!cached) {
   cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
+/**
+ * Establishes a connection to the MongoDB database.
+ * Uses a caching strategy to reuse connections in serverless/dev environments.
+ */
 export async function connectDatabase() {
   if (cached.conn) {
     return cached.conn;
@@ -28,6 +32,7 @@ export async function connectDatabase() {
       bufferCommands: false,
     };
 
+    // Initialize connection and run migrations
     cached.promise = mongoose.connect(MONGO_URL, opts).then(async (mongoose) => {
       console.log("Database Connected");
       await migrateToWorkspaces();

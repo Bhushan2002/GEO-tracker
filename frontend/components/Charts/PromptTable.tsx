@@ -29,6 +29,10 @@ interface PromptTableProps {
   onAddClick?: () => void;
 }
 
+/**
+ * Displays a table of prompts with their status, topic, and tags.
+ * Allows toggling schedule, adding new prompts, and viewing details.
+ */
 export function PromptTable({ data, loading, onRefresh, onRowClick, onAddClick }: PromptTableProps) {
   const handleToggle = async (e: React.MouseEvent, id: string, currentStatus: boolean) => {
     e.stopPropagation(); // Avoid triggering row click

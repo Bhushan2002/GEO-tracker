@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { TargetBrand } from "@/lib/models/targetBrand.model";
-import { initScheduler } from "@/lib/services/cronSchedule";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Target Brands API - GET.
+ * Fetches the list of all target brands (competitors or self) tracked in the workspace.
+ */
 export async function GET(req: NextRequest) {
   try {
     await connectDatabase();
@@ -20,6 +23,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
+/**
+ * Target Brands API - POST.
+ * adds a new target brand to the workspace for monitoring.
+ * Checks for duplicates before creation.
+ */
 export async function POST(req: NextRequest) {
   try {
     await connectDatabase();

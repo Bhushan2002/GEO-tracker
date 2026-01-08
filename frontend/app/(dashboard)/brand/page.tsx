@@ -9,7 +9,7 @@ import { BrandTable } from "@/components/Brands/BrandTable";
 import { brandAPI } from "@/lib/api/brand.api";
 import { TargetBrandTable } from "@/components/Brands/TargetBrandGrid";
 import { Brand } from "../../../lib/models/brand.model";
-import { BadgeCheck, Building2, ChevronRight, FileText, Globe, Info, Loader, Plus, ShieldCheck, Target } from "lucide-react";
+import { BadgeCheck, Building2, ChevronRight, FileText, Globe, Info, Loader, Plus, ShieldCheck, Tag } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
@@ -21,6 +21,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+/**
+ * Brand management page for adding and tracking target brands.
+ * Allows users to define brands, URLs, and metadata for AI tracking.
+ */
 export default function BrandPage() {
   const { targetBrands, isLoading, refreshBrands } = useDashboardData();
   const [brand_url, setBrand_url] = useState("");
@@ -66,7 +70,7 @@ export default function BrandPage() {
         <div className="max-w-[1600px] mx-auto px-8 py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg shadow-slate-200">
-              <Target className="w-5 h-5 text-white" />
+              <Tag className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Brand Management</h1>
@@ -213,7 +217,7 @@ export default function BrandPage() {
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-slate-400" />
-                <h2 className="text-lg font-bold text-slate-900">Tracked Entities</h2>
+                <h2 className="text-lg font-bold text-slate-900">Tracked Entities <span className="text-xs font-medium text-slate-400 ml-2 font-normal">• Click card for full details</span></h2>
               </div>
               <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200">
                 {targetBrands.length} Total Targets

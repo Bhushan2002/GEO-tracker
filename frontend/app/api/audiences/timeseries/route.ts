@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * Audiences Timeseries API.
+ * Fetches daily active user counts for each audience (e.g., "AI Traffic" vs "All Users") over the last 30 days.
+ * Used for comparing trends and growth of different user segments.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {
@@ -53,7 +59,7 @@ export async function GET(request: NextRequest) {
 
     const analyticsData = google.analyticsdata({ version: 'v1beta', auth: oauth2Client });
 
-    console.log(`Fetching timeseries data for property: ${account.propertyId}`);
+    // console.log(`Fetching timeseries data for property: ${account.propertyId}`);
 
     // Execute the report request for time series by audience
     const response = await analyticsData.properties.runReport({
@@ -70,7 +76,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    console.log(`Response received with ${response.data.rows?.length || 0} rows`);
+    // console.log(`Response received with ${response.data.rows?.length || 0} rows`);
 
     // Transform the data into a format suitable for multi-line chart
     const dataByDate: { [key: string]: any } = {};
@@ -93,8 +99,8 @@ export async function GET(request: NextRequest) {
       a.date.localeCompare(b.date)
     );
 
-    console.log(`Processed ${chartData.length} data points for ${audiences.size} audiences`);
-    console.log(`Audiences found: ${Array.from(audiences).join(', ')}`);
+    // console.log(`Processed ${chartData.length} data points for ${audiences.size} audiences`);
+    // console.log(`Audiences found: ${Array.from(audiences).join(', ')}`);
 
     return NextResponse.json({
       chartData,
@@ -102,8 +108,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error("Audience Timeseries Error:", error);
-    console.error("Error message:", error.message);
-    console.error("Error stack:", error.stack);
     return NextResponse.json({
       error: error.message || "Failed to fetch audience timeseries data",
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined

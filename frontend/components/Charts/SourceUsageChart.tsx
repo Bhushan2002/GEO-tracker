@@ -51,6 +51,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
 };
 
+/**
+ * Line chart displaying the usage percentage of specific sources over time.
+ */
 export function SourceUsageChart({ data, sources }: SourceUsageChartProps) {
     if (!data || data.length === 0 || !sources || sources.length === 0) {
         return (

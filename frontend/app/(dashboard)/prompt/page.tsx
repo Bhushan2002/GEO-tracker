@@ -394,6 +394,11 @@ function PromptContent() {
   );
 }
 
+/**
+ * Prompt management page.
+ * Allows users to create, execute, and organize prompts for AI tracking.
+ * Wraps content in Suspense for search params handling.
+ */
 export default function Page() {
   return (
     <Suspense fallback={<div className="p-8 flex items-center justify-center min-h-screen">Loading...</div>}>

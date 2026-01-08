@@ -34,6 +34,10 @@ interface BrandTableProps {
   onRefresh?: () => void;
 }
 
+/**
+ * Displays a grid of target brands with their monitoring status and key intelligence.
+ * Allows toggling tracking capability and viewing detailed brand reports.
+ */
 export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) {
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [selectedBrand, setSelectedBrand] = useState<any | null>(null);

@@ -9,6 +9,15 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Prompt Details API - GET.
+ * Fetches comprehensive analytics for a specific prompt.
+ * Aggregates data for:
+ * - Brand visibility trend (last 30 days)
+ * - Brand sentiment and positioning
+ * - Source citations and types
+ * - Execution history with status and latency
+ */
 export async function GET(
     request: NextRequest,
     context: { params: Promise<{ id: string }> }

@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 
+/**
+ * Mongoose Schema for Workspaces.
+ * Workspaces segregate data for different users or teams.
+ */
 const workspaceSchema = new mongoose.Schema(
     {
         name: {

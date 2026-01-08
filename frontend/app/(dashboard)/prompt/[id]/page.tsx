@@ -57,6 +57,11 @@ import { toast } from "sonner";
 
 const COLORS = ["#60A5FA", "#34D399", "#818CF8", "#FACC15", "#FB7185", "#22D3EE"];
 
+/**
+ * Prompt details page.
+ * Displays comprehensive analytics for a specific prompt, including visibility trends,
+ * brand performance, source distribution, and execution history.
+ */
 export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
     const params = useParams();
     const searchParams = useSearchParams();

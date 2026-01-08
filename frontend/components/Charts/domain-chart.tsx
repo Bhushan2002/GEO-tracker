@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 
 const COLORS = ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#d946ef"];
 
+/**
+ * Vertical bar chart displaying top domains cited as authoritative sources.
+ */
 export default function DomainAnalysisChart({ data }: { data: any[] }) {
   return (
     <Card className="border-none shadow-none bg-transparent">
@@ -17,13 +20,13 @@ export default function DomainAnalysisChart({ data }: { data: any[] }) {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} layout="vertical" margin={{ left: 40, right: 20 }}>
               <XAxis type="number" hide />
-              <YAxis 
-                dataKey="name" 
-                type="category" 
+              <YAxis
+                dataKey="name"
+                type="category"
                 tick={{ fontSize: 12, fill: '#6b7280' }}
                 width={100}
               />
-              <Tooltip 
+              <Tooltip
                 cursor={{ fill: 'transparent' }}
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />

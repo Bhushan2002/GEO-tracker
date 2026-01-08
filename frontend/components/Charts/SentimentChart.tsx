@@ -105,6 +105,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+/**
+ * Line chart visualizing the sentiment score trends for top brands over time.
+ */
 export function SentimentChart({ data }: SentimentChartProp) {
   const { chartData, top5Brands, hasData } = React.useMemo(() => {
     if (!data || data.length === 0)

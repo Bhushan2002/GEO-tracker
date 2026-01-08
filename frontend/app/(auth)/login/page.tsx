@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowRight, Eye, EyeOff, Lock, User } from "lucide-react";
 
+/**
+ * Login page component for user authentication.
+ * Handles credential submission, error handling, and session redirection.
+ */
 export default function LoginPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);

@@ -78,6 +78,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+/**
+ * Line chart visualizing the movement of brand rankings over time.
+ * Calculates average rank and displays discrete lanes for top brands.
+ */
 export function PositionChart({ data }: PositionChartProp) {
   const { chartData, brands, hasData } = React.useMemo(() => {
     if (!data || data.length === 0) {

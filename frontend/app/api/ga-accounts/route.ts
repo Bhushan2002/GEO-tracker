@@ -3,10 +3,16 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
-// GET all GA accounts
+/**
+ * Workspace-specific GA Accounts API.
+ * Allows managing Google Analytics accounts linked to a specific workspace.
+ */
+
+// GET all GA accounts for the current workspace
 export async function GET(req: NextRequest) {
   try {
     await connectDatabase();
+    // Validate workspace context
     const workspaceId = await getWorkspaceId(req);
     if (!workspaceId) return workspaceError();
 
@@ -24,7 +30,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// DELETE a GA account
+// DELETE (soft delete) a GA account from the workspace
 export async function DELETE(request: NextRequest) {
   try {
     await connectDatabase();
@@ -41,11 +47,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Ensure the account belongs to the current workspace
     const account = await GAAccount.findOne({ _id: accountId, workspaceId });
     if (!account) {
       return NextResponse.json({ error: "Account not found in this workspace" }, { status: 404 });
     }
 
+    // Perform soft delete by setting isActive to false
     await GAAccount.findByIdAndUpdate(accountId, { isActive: false });
 
     return NextResponse.json({ success: true });

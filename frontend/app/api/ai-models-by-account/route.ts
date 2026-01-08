@@ -4,6 +4,12 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * AI Models By Account API.
+ * Aggregates GA4 traffic data to show performance by AI Model (ChatGPT, Claude, Gemini, etc.).
+ * Maps raw source strings to user-friendly model names.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {

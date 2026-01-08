@@ -4,6 +4,11 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+/**
+ * AI Demographics API.
+ * Analyzes the breakdown of users by country for various AI sources.
+ */
+
 // Reuse the token refresh logic
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
@@ -46,16 +51,17 @@ export async function GET(request: NextRequest) {
 
     const aiSources = ["chatgpt", "perplexity", "copilot", "claude", "gemini"];
 
+    // Fetch active users by country, filtered by AI sources
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
         dateRanges: [{ startDate: "90daysAgo", endDate: "today" }],
         dimensions: [
-          { name: "country" }, 
+          { name: "country" },
           { name: "firstUserSource" }
         ],
         metrics: [{ name: "activeUsers" }],
-        dimensionFilter: {  
+        dimensionFilter: {
           orGroup: {
             expressions: aiSources.map(source => ({
               filter: {

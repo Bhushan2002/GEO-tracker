@@ -38,6 +38,9 @@ const brandList = [
   },
 ];
 
+/**
+ * Basic table component to display a list of brands with their visibility, sentiment, and ranking metrics.
+ */
 export function BrandTable({ data = [], loading }: { data: any[], loading: boolean }) {
   if (loading) return <div>Loading brands...</div>;
   return (

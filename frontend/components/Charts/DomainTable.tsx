@@ -3,6 +3,11 @@ import Link from 'next/link';
 import { ChevronRight, Loader } from 'lucide-react';
 
 
+
+/**
+ * Displays a table of top domains used in AI responses.
+ * Shows usage percentage, average citations, and source type.
+ */
 function DomainTable({ domainTableData, isLoading }: { domainTableData: any[], isLoading: boolean }) {
   return (
     <div className="xl:col-span-8 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">

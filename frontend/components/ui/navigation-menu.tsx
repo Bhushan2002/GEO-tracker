@@ -5,6 +5,9 @@ import { ChevronDownIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
+/**
+ * A collection of links for navigating websites.
+ */
 function NavigationMenu({
   className,
   children,

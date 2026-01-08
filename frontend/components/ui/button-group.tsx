@@ -21,6 +21,10 @@ const buttonGroupVariants = cva(
   }
 )
 
+/**
+ * Groups multiple buttons together with unified styling.
+ * Supports horizontal and vertical orientations.
+ */
 function ButtonGroup({
   className,
   orientation,

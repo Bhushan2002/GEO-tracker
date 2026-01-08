@@ -7,6 +7,10 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Prompt Actions API - POST.
+ * Handles diverse actions for a prompt: 'start-schedule', 'stop-schedule', 'run'.
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -25,11 +29,13 @@ export async function POST(request: NextRequest) {
       if (!result) return NextResponse.json({ message: "Prompt not found in workspace" }, { status: 404 });
       await initScheduler();
       return NextResponse.json({ message: "Prompt added to daily schedule" }, { status: 200 });
+
     } else if (action === 'stop-schedule') {
       const result = await Prompt.findOneAndUpdate({ _id: id, workspaceId }, { isScheduled: false });
       if (!result) return NextResponse.json({ message: "Prompt not found in workspace" }, { status: 404 });
       await initScheduler();
       return NextResponse.json({ message: "Prompt removed from daily schedule" }, { status: 200 });
+
     } else if (action === 'run') {
       // Small check for existence in workspace
       const exists = await Prompt.findOne({ _id: id, workspaceId });
@@ -37,6 +43,7 @@ export async function POST(request: NextRequest) {
 
       executePromptTask(id);
       return NextResponse.json({ message: "Extraction started" }, { status: 200 });
+
     } else {
       return NextResponse.json({ message: "Invalid action" }, { status: 400 });
     }

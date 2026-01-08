@@ -87,6 +87,10 @@ type ModelData = {
 
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
 
+/**
+ * Models analytics page.
+ * Visualizes performance metrics, sentiment, and source citations for different AI models.
+ */
 export default function ModelsPage() {
     const { modelsAnalytics, isLoading } = useDashboardData();
     const [selectedModel, setSelectedModel] = useState<string>("ChatGPT");

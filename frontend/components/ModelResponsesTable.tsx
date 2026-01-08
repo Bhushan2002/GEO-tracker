@@ -15,6 +15,10 @@ import {
 import { cn } from "@/lib/utils";
 import { Bot, Loader, ChevronRight, Smile, CheckCircle2, User } from "lucide-react";
 
+/**
+ * Displays a table of AI model responses with a detailed dialog view.
+ * Allows viewing response text, identified brands, sentiment, and sources.
+ */
 export function ModelResponsesTable() {
   const { modelResponses, isLoading } = useDashboardData();
   const [selectedResponse, setSelectedResponse] =

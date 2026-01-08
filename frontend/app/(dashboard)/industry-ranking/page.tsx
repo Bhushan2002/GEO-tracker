@@ -9,6 +9,10 @@ import Link from "next/link";
 
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
 
+/**
+ * Industry ranking page displaying a leaderboard of brands.
+ * Sorts brands based on rank and mentions.
+ */
 function IndustryRankingPage() {
     const { allBrands, isLoading } = useDashboardData();
     const [brands, setBrands] = useState<any[]>([]);

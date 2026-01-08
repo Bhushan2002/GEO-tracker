@@ -29,6 +29,10 @@ import { cn } from "@/lib/utils";
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
 import DomainTable from "@/components/Charts/DomainTable";
 
+/**
+ * Main dashboard overview page.
+ * Displays high-level metrics, charts for visibility/sentiments/position, and top sources.
+ */
 export default function Overview() {
   const { activeWorkspace } = useWorkspace();
   const { allBrands, brandHistory, isLoading, refreshAll } = useDashboardData();

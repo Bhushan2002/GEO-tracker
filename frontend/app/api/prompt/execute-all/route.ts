@@ -7,6 +7,11 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+/**
+ * Execute All Prompts API - POST.
+ * Triggers an immediate execution for all scheduled prompts in the workspace.
+ * Used for testing or manual overrides of the schedule.
+ */
 export async function POST(request: NextRequest) {
   try {
     await connectDatabase();

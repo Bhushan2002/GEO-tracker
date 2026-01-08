@@ -12,6 +12,13 @@ const Models = [
   // "nvidia/nemotron-3-nano-30b-a3b:free", 
 ];
 
+/**
+ * Fetches responses from multiple AI models via OpenRouter.
+ * Iterates through the configured `Models` list and returns raw responses with latency metrics.
+ * 
+ * @param promptText - The prompt to send to the models.
+ * @returns Array of model responses including text, latency, and token usage.
+ */
 export const getOpenRenderResponse = async (promptText: string) => {
   const result = [];
 
@@ -88,6 +95,18 @@ export const getOpenRenderResponse = async (promptText: string) => {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/**
+ * Extracts structured competitive intelligence, brand visibility metrics, and sentiment 
+ * from a raw AI chat transcript using a large language model.
+ * 
+ * @param transcript - The full text of the AI model's response.
+ * @param mainBrand - The primary brand to focus analysis on.
+ * @param mainBrandUrl - The official URL of the main brand.
+ * @param targetBrands - List of other specific brands to track.
+ * @param mainBrandDescription - Brief description of the main brand for context.
+ * @param retries - Number of retry attempts for 429 rate limits.
+ * @returns A structured JSON object containing the audit summary, brand analysis, and discovered competitors.
+ */
 export const extractBrandFromText = async (
   transcript: string,
   mainBrand: string,

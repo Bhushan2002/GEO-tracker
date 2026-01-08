@@ -23,6 +23,9 @@ interface AIDeviceBreakdownChartProps {
   loading?: boolean;
 }
 
+/**
+ * Pie chart showing the distribution of devices (Mobile vs Desktop) for AI traffic.
+ */
 export function AIDeviceBreakdownChart({ data, loading }: AIDeviceBreakdownChartProps) {
   // Safe color palette for devices
   const COLORS = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
@@ -43,13 +46,13 @@ export function AIDeviceBreakdownChart({ data, loading }: AIDeviceBreakdownChart
   return (
     <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <CardHeader className="border-b border-slate-100  px-5 ">
-                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                      Breakdown of Devices Used by AI Visitors
-                    </CardTitle>
-                    <CardDescription className="text-[10px] text-slate-500 font-medium">
-                      Mobile vs Desktop split for AI-driven sessions
-                    </CardDescription>
-                  </CardHeader>
+        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+          Breakdown of Devices Used by AI Visitors
+        </CardTitle>
+        <CardDescription className="text-[10px] text-slate-500 font-medium">
+          Mobile vs Desktop split for AI-driven sessions
+        </CardDescription>
+      </CardHeader>
 
       <CardContent className="pt-6">
         {loading ? (
@@ -74,14 +77,14 @@ export function AIDeviceBreakdownChart({ data, loading }: AIDeviceBreakdownChart
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip 
-                 contentStyle={{
+              <Tooltip
+                contentStyle={{
                   backgroundColor: "white",
                   border: "1px solid #e5e7eb",
                   borderRadius: "6px",
                 }}
               />
-              <Legend verticalAlign="bottom" height={36}/>
+              <Legend verticalAlign="bottom" height={36} />
             </PieChart>
           </ResponsiveContainer>
         ) : (

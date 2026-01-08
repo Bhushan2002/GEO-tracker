@@ -3,6 +3,14 @@ import { google } from "googleapis";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 
+/**
+ * Google OAuth Callback API.
+ * Handles the redirect from Google's OAuth consent screen.
+ * 1. Exchanges auth code for access/refresh tokens.
+ * 2. Fetches user's GA4 accounts and properties.
+ * 3. Saves credentials to the `GAAccount` collection.
+ * 4. Automatically checks for or creates an "AI Traffic" audience in GA4.
+ */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -22,7 +30,6 @@ export async function GET(request: Request) {
 
   try {
     console.log("OAuth callback received with code");
-    console.log("Redirect URI:", `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`);
 
     // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken(code);
@@ -45,7 +52,8 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get the first account's properties
+    // Default to the first account and property for the MVP
+    // Future improvement: Allow user to select specific account/property if multiple exist
     const firstAccount = accounts[0];
     const accountId = firstAccount.name?.split("/")[1] || "";
     const propertiesResponse = await admin.properties.list({
@@ -76,7 +84,6 @@ export async function GET(request: Request) {
     // Save to database
     console.log("Connecting to database...");
     await connectDatabase();
-    console.log("Database connected");
 
     console.log("Saving account with propertyId:", propertyId);
     const gaAccount = await GAAccount.findOneAndUpdate(
@@ -98,9 +105,11 @@ export async function GET(request: Request) {
       }
     );
 
-    console.log("GA Account saved to database:", gaAccount._id);
+    console.log("GA Account link saved/updated:", gaAccount._id);
 
-    // Try to create or find AI Traffic audience
+    // --- Audience Creation Logic ---
+    // Automatically attempts to create an "AI Traffic" audience in the user's GA4 property
+    // to track users coming from known AI sources (ChatGPT, Claude, etc.)
     try {
       const audiencesResponse = await admin.properties.audiences.list({
         parent: firstProperty.name,
@@ -112,7 +121,7 @@ export async function GET(request: Request) {
       );
 
       if (!aiAudience) {
-        // Create new AI Traffic audience with comprehensive filters
+        // Create new AI Traffic audience with regex filters for AI referrers
         const createResponse = await admin.properties.audiences.create({
           parent: firstProperty.name,
           requestBody: {
@@ -157,27 +166,22 @@ export async function GET(request: Request) {
         console.log("AI Traffic audience already exists:", aiAudience.name);
       }
 
-      // Store audience details in GAAccount
+      // Store audience resource name in our DB for future reference
       if (aiAudience?.name) {
         gaAccount.aiAudienceId = aiAudience.name;
         gaAccount.aiAudienceName = aiAudience.displayName || "AI Traffic";
         await gaAccount.save();
-        console.log("Audience details saved to GAAccount");
       }
     } catch (audienceError: any) {
-      console.error("Audience operation error:", audienceError.message);
+      console.error("Audience operation warning (non-fatal):", audienceError.message);
     }
 
-    // Redirect back with success
-    const response = NextResponse.redirect(
+    // Redirect back to dashboard with success flag
+    return NextResponse.redirect(
       new URL("/google-analytics?connected=true", request.url)
     );
-
-    return response;
   } catch (error: any) {
-    console.error("Auth callback error:", error);
-    console.error("Error stack:", error.stack);
-    console.error("Error message:", error.message);
+    console.error("Auth callback fatal error:", error);
     return NextResponse.redirect(
       new URL("/google-analytics?error=setup_failed", request.url)
     );

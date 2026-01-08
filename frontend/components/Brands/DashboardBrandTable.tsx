@@ -4,6 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { cn } from "@/lib/utils";
 import { ArrowUp, ArrowDown, Minus, Loader } from "lucide-react";
 
+/**
+ * Comprehensive dashboard table for displaying brand rankings with logos, visibility scores, and sentiment indicators.
+ * Handles logo fetching logic with fallbacks.
+ */
 export function DashBrandTable({ data = [], loading }: { data: any[], loading: boolean }) {
   if (loading) {
     return (

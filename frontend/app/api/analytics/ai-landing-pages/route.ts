@@ -5,6 +5,12 @@ import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
 
 
+/**
+ * AI Landing Pages API.
+ * Identifies the top landing pages for users arriving from AI sources.
+ * Helps understand which content is most visible to AI models.
+ */
+
 async function refreshTokenIfNeeded(account: any) {
   const now = new Date();
   if (account.expiresAt > now) {
@@ -135,10 +141,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log("GA API Response:", JSON.stringify(response.data, null, 2));
-    console.log("📅 Date Range: Last 30 days (30daysAgo to today)");
-    console.log("🔢 Total Rows:", response.data.rows?.length || 0);
-    console.log("📊 Row Totals:", response.data.rowCount);
+    /* Debug logs kept for monitoring AI traffic anomalies */
+    // console.log("GA API Response:", JSON.stringify(response.data, null, 2));
 
     const landingPageData =
       response.data.rows?.map((row: any) => ({
@@ -147,10 +151,7 @@ export async function GET(request: NextRequest) {
         users: parseInt(row.metricValues?.[0]?.value || "0"),
       })) || [];
 
-    console.log(`AI Landing Pages: Found ${landingPageData.length} results`);
-    console.log("Landing Page Data:", landingPageData);
-    
-    // If no data found, log possible reasons
+    // If no data found, log possible reasons (helpful for debugging user setups)
     if (landingPageData.length === 0) {
       console.log("⚠️ No AI landing page data found. Possible reasons:");
       console.log("   1. No traffic from AI sources (chatgpt, perplexity, copilot, claude, gemini)");
@@ -161,9 +162,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ landingPageData });
   } catch (error: any) {
     console.error("AI Landing Pages Error:", error.message);
-    if (error.response?.data) {
-      console.error("GA API Error Details:", error.response.data);
-    }
     return NextResponse.json(
       { error: "Failed to fetch AI landing page data", details: error.message },
       { status: 500 }
