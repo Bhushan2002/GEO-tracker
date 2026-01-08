@@ -4,16 +4,17 @@ import { Prompt } from "@/lib/models/prompt.model";
 import { PromptRun } from "@/lib/models/promptRun.model";
 import { ModelResponse } from "@/lib/models/modelResponse.model";
 import { Brand } from "@/lib/models/brand.model";
-import { initScheduler, executePromptTask } from "@/lib/services/cronSchedule";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function GET(
+    request: NextRequest,
+    context: { params: Promise<{ id: string }> }
+) {
     try {
-        const { searchParams } = new URL(request.url);
-        const promptId = searchParams.get("id");
+        const { id: promptId } = await context.params;
 
         if (!promptId) {
             return NextResponse.json({ message: "Prompt ID is required" }, { status: 400 });

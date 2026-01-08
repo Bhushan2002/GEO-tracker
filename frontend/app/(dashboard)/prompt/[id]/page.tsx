@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { PromptAPI } from "@/lib/api/prompt.api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Table,
@@ -52,7 +53,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api/api";
 import { toast } from "sonner";
 
 const COLORS = ["#60A5FA", "#34D399", "#818CF8", "#FACC15", "#FB7185", "#22D3EE"];
@@ -70,7 +70,7 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
     useEffect(() => {
         const fetchAnalytics = async () => {
             try {
-                const response = await api.get(`/api/prompt/${id}`);
+                const response = await PromptAPI.getAnalytics(id as string);
                 setData(response.data);
             } catch (error: any) {
                 const errMsg = error.response?.data?.message || error.message || "Failed to load analytics";
@@ -125,20 +125,32 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
                     Back to prompts
                 </button>
 
-                <div className="flex flex-col gap-4 border-b border-slate-100 pb-8">
-                    <div className="space-y-3 max-w-4xl">
-                        <h1 className="text-xl font-medium text-slate-800 tracking-tight leading-relaxed">
-                            {data.promptText}
-                        </h1>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5">
-                                <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full" />
-                                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Active Intelligence</span>
+                <div className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                        <div className="flex flex-col gap-0.5">
+                            <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                                <MessageSquare className="h-3 w-3 text-slate-400" />
+                                Prompt Configuration
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-medium">Targeted query for AI perceptual analysis</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5 bg-emerald-50 px-2 py-1 rounded-md border border-emerald-100">
+                                <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-[0.05em]">Active Intelligence</span>
                             </div>
-                            <div className="flex flex-wrap gap-2">
+                        </div>
+                    </div>
+                    <div className="p-6">
+                        <div className="space-y-4">
+                            <h1 className="text-xl font-medium text-slate-800 tracking-tight leading-relaxed">
+                                {data.promptText}
+                            </h1>
+                            <div className="flex flex-wrap gap-3 pt-2">
                                 {data.tags?.map((tag: string) => (
-                                    <span key={tag} className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                                        #{tag}
+                                    <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-slate-100 text-[10px] font-bold text-slate-500 border border-slate-200 uppercase tracking-wider">
+                                        <Hash className="w-2.5 h-2.5" />
+                                        {tag}
                                     </span>
                                 ))}
                             </div>
@@ -150,13 +162,16 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
             {/* Row 1: Visibility Chart (48%) + Brands Table (52%) */}
             <div className="grid grid-cols-1 xl:grid-cols-[48fr_52fr] gap-6">
                 {/* Visibility Trend (~48%) */}
-                <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
-                    <CardHeader className="border-b border-slate-100 py-3 px-5 bg-slate-50/50 shrink-0">
-                        <div className="flex items-center gap-2">
-                            <TrendingUp className="h-3.5 w-3.5 text-slate-400" />
-                            <CardTitle className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Visibility Trend</CardTitle>
+                <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px] p-0 gap-0">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                        <div className="flex flex-col gap-0.5">
+                            <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                                <TrendingUp className="h-3 w-3 text-slate-400" />
+                                Visibility Trend
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-medium">30-day cross-brand visibility tracking</p>
                         </div>
-                    </CardHeader>
+                    </div>
                     <CardContent className="p-6 flex-1 relative bg-white">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={visibilityTrend} margin={{ left: -20, right: 10, top: 10, bottom: 0 }}>
@@ -174,6 +189,8 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
                                     tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: '700' }}
                                     tickFormatter={(v) => `${v}%`}
                                     dx={-10}
+                                    domain={[0, 30]}
+                                    ticks={[0, 5, 10, 15, 20, 25, 30]}
                                 />
                                 <Tooltip
                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: '10px', fontWeight: 600 }}
@@ -195,13 +212,16 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
                 </Card>
 
                 {/* Brands Ranking (~52%) */}
-                <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
-                    <CardHeader className="border-b border-slate-100 py-3 px-5 bg-slate-50/50 shrink-0">
-                        <div className="flex items-center gap-2">
-                            <Layers className="h-3.5 w-3.5 text-slate-400" />
-                            <CardTitle className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Brand Performance</CardTitle>
+                <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px] p-0 gap-0">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                        <div className="flex flex-col gap-0.5">
+                            <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                                <Layers className="h-3 w-3 text-slate-400" />
+                                Brand Performance
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-medium">Comparative metrics for detected brands</p>
                         </div>
-                    </CardHeader>
+                    </div>
                     <div className="flex-1 overflow-auto bg-white">
                         <Table className="border-collapse">
                             <TableHeader className="bg-white">
@@ -241,14 +261,20 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
                                             </TableCell>
                                             <TableCell className="border-r border-slate-100">
                                                 <div className="flex justify-center">
-                                                    <span className={cn(
-                                                        "inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[11px] font-bold border min-w-[36px]",
-                                                        brand.sentiment >= 60 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
-                                                            brand.sentiment >= 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
-                                                                "bg-rose-50 text-rose-600 border-rose-100"
-                                                    )}>
-                                                        {brand.sentiment}
-                                                    </span>
+                                                    {(() => {
+                                                        const raw = brand.sentiment || 0;
+                                                        const score = raw <= 10 ? raw * 10 : raw;
+                                                        return (
+                                                            <span className={cn(
+                                                                "inline-flex items-center justify-center px-2.5 py-1 rounded-md text-[11px] font-bold border min-w-[36px]",
+                                                                score >= 60 ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                                                                    score >= 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
+                                                                        "bg-rose-50 text-rose-600 border-rose-100"
+                                                            )}>
+                                                                {score.toFixed(1)}%
+                                                            </span>
+                                                        );
+                                                    })()}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">
@@ -266,13 +292,16 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
             {/* Row 2: Source Channels (40%) + Sources Table (60%) */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
                 {/* Source Channels (Pie Chart 40% -> xl:col-span-5) */}
-                <Card className="xl:col-span-5 border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
-                    <CardHeader className="border-b border-slate-100 py-3 px-5 bg-slate-50/50">
-                        <div className="flex items-center gap-2">
-                            <LucidePieChart className="h-3.5 w-3.5 text-slate-400" />
-                            <CardTitle className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Source Channels</CardTitle>
+                <Card className="xl:col-span-5 border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px] p-0 gap-0">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                        <div className="flex flex-col gap-0.5">
+                            <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                                <LucidePieChart className="h-3 w-3 text-slate-400" />
+                                Source Distribution
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-medium">Types of intelligence sources cited</p>
                         </div>
-                    </CardHeader>
+                    </div>
                     <CardContent className="p-6 flex flex-col items-center justify-center flex-1 bg-white">
                         <div className="h-[200px] w-full relative">
                             {/* Center Label - Rendered first to stay behind the chart and tooltip */}
@@ -344,13 +373,16 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
                 </Card>
 
                 {/* Sources Table (60% -> xl:col-span-7) */}
-                <Card className="xl:col-span-7 border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">
-                    <CardHeader className="border-b border-slate-100 py-3 px-5 bg-slate-50/50">
-                        <div className="flex items-center gap-2">
-                            <Globe className="h-3.5 w-3.5 text-slate-400" />
-                            <CardTitle className="text-[10px] font-bold text-slate-900 uppercase tracking-widest">Top Intelligence Sources</CardTitle>
+                <Card className="xl:col-span-7 border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px] p-0 gap-0">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                        <div className="flex flex-col gap-0.5">
+                            <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                                <Globe className="h-3 w-3 text-slate-400" />
+                                Top Sources
+                            </h3>
+                            <p className="text-[10px] text-slate-500 font-medium">Domains with highest citation frequency</p>
                         </div>
-                    </CardHeader>
+                    </div>
                     <div className="flex-1 overflow-auto bg-white">
                         <Table>
                             <TableHeader className="bg-slate-50/20 sticky top-0 z-10">
@@ -418,18 +450,16 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
             </div>
 
             {/* Row 3: Detailed Execution History Table */}
-            <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                <CardHeader className="border-b border-slate-100 py-4 px-6 bg-slate-50/50">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                            <Clock className="h-4 w-4 text-slate-400" />
-                        </div>
-                        <div>
-                            <CardTitle className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Execution Registry</CardTitle>
-                            <p className="text-[10px] text-slate-500 font-medium italic mt-0.5">Comprehensive audit trail of prompt runs</p>
-                        </div>
+            <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col p-0 gap-0">
+                <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                    <div className="flex flex-col gap-0.5">
+                        <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                            <Clock className="h-3 w-3 text-slate-400" />
+                            Execution Registry
+                        </h3>
+                        <p className="text-[10px] text-slate-500 font-medium">Comprehensive audit trail of prompt runs</p>
                     </div>
-                </CardHeader>
+                </div>
                 <div className="bg-white overflow-x-auto">
                     <Table>
                         <TableHeader>
@@ -487,13 +517,19 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
                                         </TableCell>
                                         <TableCell className="text-center border-l border-slate-50">
                                             <div className="flex flex-col items-center">
-                                                <span className={cn(
-                                                    "text-[12px] font-bold",
-                                                    run.avgSentiment >= 60 ? "text-emerald-600" :
-                                                        run.avgSentiment >= 40 ? "text-amber-600" : "text-rose-600"
-                                                )}>
-                                                    {run.avgSentiment}
-                                                </span>
+                                                {(() => {
+                                                    const raw = run.avgSentiment || 0;
+                                                    const score = raw <= 10 ? raw * 10 : raw;
+                                                    return (
+                                                        <span className={cn(
+                                                            "text-[12px] font-bold",
+                                                            score >= 60 ? "text-emerald-600" :
+                                                                score >= 40 ? "text-amber-600" : "text-rose-600"
+                                                        )}>
+                                                            {score.toFixed(1)}%
+                                                        </span>
+                                                    );
+                                                })()}
                                                 <span className="text-[8px] font-bold uppercase text-slate-400 tracking-tighter">Avg Sentiment</span>
                                             </div>
                                         </TableCell>
@@ -526,23 +562,24 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
             {selectedRunBrands && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
                     <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm cursor-pointer" onClick={() => setSelectedRunBrands(null)} />
-                    <Card className="relative w-full max-w-sm border-slate-200 shadow-2xl overflow-hidden bg-white animate-in zoom-in-95 duration-300">
-                        <CardHeader className="border-b border-slate-100 py-4 px-6 bg-slate-50/50">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <ShieldCheck className="h-4 w-4 text-slate-400" />
-                                    <CardTitle className="text-[11px] font-bold text-slate-900 uppercase tracking-widest">Detected Brands</CardTitle>
-                                </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6 rounded-full hover:bg-slate-200"
-                                    onClick={() => setSelectedRunBrands(null)}
-                                >
-                                    <XCircle className="h-4 w-4 text-slate-400" />
-                                </Button>
+                    <Card className="relative w-full max-w-sm border-slate-200 shadow-2xl overflow-hidden bg-white animate-in zoom-in-95 duration-300 p-0 gap-0">
+                        <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                            <div className="flex flex-col gap-0.5">
+                                <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                                    <ShieldCheck className="h-3 w-3 text-slate-400" />
+                                    Detected Brands
+                                </h3>
+                                <p className="text-[10px] text-slate-500 font-medium">Entities identified in this execution</p>
                             </div>
-                        </CardHeader>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-lg hover:bg-white hover:border-slate-200 border border-transparent transition-all"
+                                onClick={() => setSelectedRunBrands(null)}
+                            >
+                                <XCircle className="h-4 w-4 text-slate-400" />
+                            </Button>
+                        </div>
                         <CardContent className="p-4 max-h-[300px] overflow-auto">
                             <div className="flex flex-wrap gap-2 justify-center">
                                 {selectedRunBrands.name.map((brand, idx) => (
@@ -565,16 +602,7 @@ export default function PromptDetailsPage({ manualId }: { manualId?: string }) {
                                 )}
                             </div>
                         </CardContent>
-                        <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex justify-end">
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-[10px] font-bold uppercase tracking-widest"
-                                onClick={() => setSelectedRunBrands(null)}
-                            >
-                                Close Registry
-                            </Button>
-                        </div>
+
                     </Card>
                 </div>
             )}

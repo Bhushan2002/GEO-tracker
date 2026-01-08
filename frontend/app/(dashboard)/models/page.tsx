@@ -186,7 +186,11 @@ export default function ModelsPage() {
                             />
                             <KpiCard
                                 title="Avg Sentiment"
-                                value={`${activeData.metrics.avgSentiment}/100`}
+                                value={`${(() => {
+                                    const raw = activeData.metrics.avgSentiment || 0;
+                                    const score = raw <= 10 ? raw * 10 : raw;
+                                    return score.toFixed(1);
+                                })()}/100`}
                                 label="Brand Perception"
                                 icon={TrendingUp}
                                 color="text-slate-900"

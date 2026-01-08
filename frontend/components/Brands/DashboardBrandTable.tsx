@@ -131,7 +131,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                             score > 40 ? "bg-amber-50 text-amber-600 border-amber-100" :
                               "bg-rose-50 text-rose-600 border-rose-100"
                         )}>
-                          {score.toFixed(1)}
+                          {score.toFixed(1)}%
                         </span>
                       );
                     })()}

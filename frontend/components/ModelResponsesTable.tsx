@@ -136,7 +136,11 @@ export function ModelResponsesTable() {
                   "flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm border",
                   (() => {
                     const avg = selectedResponse?.identifiedBrands?.length
-                      ? Math.round(selectedResponse.identifiedBrands.reduce((acc, b) => acc + (b.sentiment_score || 0), 0) / selectedResponse.identifiedBrands.length)
+                      ? selectedResponse.identifiedBrands.reduce((acc, b) => {
+                        const raw = b.sentiment_score || 0;
+                        const score = raw <= 10 ? raw * 10 : raw;
+                        return acc + score;
+                      }, 0) / selectedResponse.identifiedBrands.length
                       : 0;
                     if (avg >= 60) return "bg-emerald-50 text-emerald-700 border-emerald-100";
                     if (avg >= 40) return "bg-amber-50 text-amber-700 border-amber-100";
@@ -146,9 +150,13 @@ export function ModelResponsesTable() {
                   <Smile className="h-3.5 w-3.5" />
                   Avg Sentiment: {(() => {
                     const avgSentiment = selectedResponse?.identifiedBrands?.length
-                      ? Math.round(selectedResponse.identifiedBrands.reduce((acc, b) => acc + (b.sentiment_score || 0), 0) / selectedResponse.identifiedBrands.length)
+                      ? selectedResponse.identifiedBrands.reduce((acc, b) => {
+                        const raw = b.sentiment_score || 0;
+                        const score = raw <= 10 ? raw * 10 : raw;
+                        return acc + score;
+                      }, 0) / selectedResponse.identifiedBrands.length
                       : 0;
-                    return `${avgSentiment}%`;
+                    return `${avgSentiment.toFixed(1)}%`;
                   })()}
                 </span>
               </div>
@@ -296,20 +304,27 @@ export function ModelResponsesTable() {
                           <span className="font-semibold text-sm text-slate-700">{brand.brand_name}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={cn(
-                            "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tight border",
-                            (brand.sentiment_score || 0) >= 60
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-                              : (brand.sentiment_score || 0) >= 40
-                                ? "bg-amber-50 text-amber-700 border-amber-100"
-                                : "bg-rose-50 text-rose-700 border-rose-100"
-                          )}>
-                            {(brand.sentiment_score || 0) >= 60 ? "Positive" :
-                              (brand.sentiment_score || 0) >= 40 ? "Neutral" : "Negative"}
-                          </span>
-                          <span className="text-[11px] font-semibold text-slate-400 w-8 text-right">
-                            {brand.sentiment_score || 0}%
-                          </span>
+                          {(() => {
+                            const raw = brand.sentiment_score || 0;
+                            const score = raw <= 10 ? raw * 10 : raw;
+                            return (
+                              <>
+                                <span className={cn(
+                                  "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-tight border",
+                                  score >= 60
+                                    ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                                    : score >= 40
+                                      ? "bg-amber-50 text-amber-700 border-amber-100"
+                                      : "bg-rose-50 text-rose-700 border-rose-100"
+                                )}>
+                                  {score >= 60 ? "Positive" : score >= 40 ? "Neutral" : "Negative"}
+                                </span>
+                                <span className="text-[11px] font-semibold text-slate-400 w-8 text-right">
+                                  {score.toFixed(1)}%
+                                </span>
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     ))

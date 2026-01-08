@@ -60,7 +60,13 @@ export function BrandTable({ data = [], loading }: { data: any[], loading: boole
             <TableRow key={brand._id}>
               <TableCell className="font-medium">{brand.brand_name}</TableCell>
               <TableCell>{brand.mentions || 0}</TableCell>
-              <TableCell>{brand.averageSentiment || "N/A"}</TableCell>
+              <TableCell>
+                {(() => {
+                  const raw = brand.averageSentiment || 0;
+                  const score = raw <= 10 ? raw * 10 : raw;
+                  return score.toFixed(1) + "%";
+                })()}
+              </TableCell>
               <TableCell>{brand.lastRank || "Unranked"}</TableCell>
             </TableRow>
           ))
