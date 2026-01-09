@@ -13,23 +13,10 @@ export async function getWorkspaceId(req: NextRequest): Promise<mongoose.Types.O
             return new mongoose.Types.ObjectId(workspaceId);
         }
 
-        // Fallback: Get the default workspace ID
-        await connectDatabase();
-        let defaultWs = await Workspace.findOne({ isDefault: true });
-
-        // Final fallback: just get any active workspace
-        if (!defaultWs) {
-            defaultWs = await Workspace.findOne({ isActive: true });
-            if (defaultWs) {
-                console.warn(`getWorkspaceId: No default found, falling back to workspace: ${defaultWs.name}`);
-            }
-        }
-
-        if (!defaultWs) {
-            console.error("getWorkspaceId: No active workspaces found in database.");
-        }
-
-        return defaultWs ? defaultWs._id : null;
+        // REMOVED FALLBACK: Silently falling back to a "default" workspace causes
+        // data leakage. If the header is missing, the API should know and handle context appropriately.
+        console.warn("getWorkspaceId: Missing or invalid x-workspace-id header.");
+        return null;
     } catch (error) {
         console.error("Error fetching/casting workspace ID:", error);
         return null;

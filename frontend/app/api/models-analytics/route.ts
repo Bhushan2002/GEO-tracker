@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
         // 2. Fetch all model responses
-        const responses = await ModelResponse.find({})
+        const responses = await ModelResponse.find({ workspaceId })
             .populate({
                 path: 'identifiedBrands',
                 model: Brand

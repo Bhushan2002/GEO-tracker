@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { TargetBrand } from "@/lib/models/targetBrand.model";
 import { initScheduler } from "@/lib/services/cronSchedule";
+import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,10 +13,13 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
-  
+
   try {
+    const workspaceId = await getWorkspaceId(request);
+    if (!workspaceId) return workspaceError();
+
     await connectDatabase();
-    const brand = await TargetBrand.findById(id);
+    const brand = await TargetBrand.findOne({ _id: id, workspaceId });
     if (!brand) {
       return NextResponse.json({ message: "Brand not found" }, { status: 404 });
     }
@@ -33,16 +37,25 @@ export async function PATCH(
   const { id } = await context.params;
   const body = await request.json();
   const { action } = body; // 'start' or 'stop'
-  
+
   try {
+    const workspaceId = await getWorkspaceId(request);
+    if (!workspaceId) return workspaceError();
+
     await connectDatabase();
-    
+
+    // Explicitly check workspaceId during update
+    const brand = await TargetBrand.findOne({ _id: id, workspaceId });
+    if (!brand) {
+      return NextResponse.json({ message: "Brand not found in this workspace" }, { status: 404 });
+    }
+
     if (action === 'start') {
-      await TargetBrand.findByIdAndUpdate(id, { isScheduled: true });
+      await TargetBrand.updateOne({ _id: id, workspaceId }, { isScheduled: true });
       await initScheduler();
       return NextResponse.json({ message: "Brand added to daily schedule" }, { status: 200 });
     } else if (action === 'stop') {
-      await TargetBrand.findByIdAndUpdate(id, { isScheduled: false });
+      await TargetBrand.updateOne({ _id: id, workspaceId }, { isScheduled: false });
       await initScheduler();
       return NextResponse.json({ message: "Brand removed from daily schedule" }, { status: 200 });
     } else {

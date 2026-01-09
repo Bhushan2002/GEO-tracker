@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { BrandTable } from "@/components/Brands/BrandTable";
 import { brandAPI } from "@/lib/api/brand.api";
@@ -151,7 +152,7 @@ export default function BrandPage() {
                       Brand Name
                     </Label>
                     <div className="relative group">
-                      <div className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
+                      <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <Building2 className="w-4 h-4" />
                       </div>
                       <Input
@@ -173,7 +174,7 @@ export default function BrandPage() {
                       Official URL
                     </Label>
                     <div className="relative group">
-                      <div className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
+                      <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <Globe className="w-4 h-4" />
                       </div>
                       <Input
@@ -231,13 +232,13 @@ export default function BrandPage() {
                       Quick Description
                     </Label>
                     <div className="relative group">
-                      <div className="absolute left-3 top-3 text-slate-400 group-focus-within:text-slate-900 transition-colors">
+                      <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <FileText className="w-4 h-4" />
                       </div>
-                      <Input
+                      <Textarea
                         id="description"
-                        placeholder="Brief overview of the brand's core business..."
-                        className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:ring-slate-900 focus:border-slate-900 transition-all rounded-xl"
+                        placeholder="Brief brand overview..."
+                        className="pl-10 min-h-[120px] bg-slate-50/50 border-slate-200 focus:bg-white focus:ring-slate-900 focus:border-slate-900 transition-all rounded-xl py-3 resize-none"
                         value={brand_description}
                         onChange={(e) => setBrand_description(e.target.value)}
                         required
