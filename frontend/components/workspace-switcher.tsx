@@ -18,7 +18,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
  * Dropdown component to switch between different workspaces.
  */
 export function WorkspaceSwitcher() {
-    const { workspaces, activeWorkspace, setActiveWorkspace, refreshWorkspaces } = useWorkspace();
+    const { workspaces, activeWorkspace, setActiveWorkspace, isLoading } = useWorkspace();
     const { state } = useSidebar();
     const [open, setOpen] = React.useState(false);
     const [searchQuery, setSearchQuery] = React.useState("");
@@ -28,7 +28,31 @@ export function WorkspaceSwitcher() {
     );
 
 
-    if (!activeWorkspace) return null;
+    if (isLoading || !activeWorkspace) {
+        return (
+            <div className={cn(
+                "flex w-full items-center gap-2 rounded-lg p-2 bg-sidebar-accent/50 border border-sidebar-border/50 relative overflow-hidden animate-in fade-in duration-500",
+                state === "collapsed" && "justify-center p-0 h-9 w-9 bg-transparent border-none"
+            )}>
+                {/* Robotic Scan Line */}
+                <div className="absolute inset-y-0 w-[1px] bg-white/10 -translate-x-full animate-[scan_2s_linear_infinite] pointer-events-none z-10" />
+
+                <div className="h-6 w-6 shrink-0 rounded-[3px] bg-sidebar-primary/40 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3s_linear_infinite]" />
+                </div>
+                {state === "expanded" && (
+                    <div className="flex-1 space-y-1.5 overflow-hidden">
+                        <div className="h-3 w-3/4 rounded bg-sidebar-primary/30 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3s_linear_infinite]" />
+                        </div>
+                        <div className="h-2 w-1/2 rounded bg-sidebar-primary/20 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-[shimmer_3s_linear_infinite]" />
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <TooltipProvider delayDuration={400}>
@@ -36,7 +60,7 @@ export function WorkspaceSwitcher() {
                 <Popover.Trigger asChild>
                     <button
                         className={cn(
-                            "flex w-full items-center gap-2 rounded-lg p-2 text-left transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50",
+                            "flex w-full items-center gap-2 rounded-lg p-2 text-left transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50 animate-in fade-in duration-700 ease-in-out",
                             state === "collapsed" && "justify-center p-0 h-9 w-9 bg-transparent",
                             open && "bg-sidebar-accent text-sidebar-accent-foreground"
                         )}
