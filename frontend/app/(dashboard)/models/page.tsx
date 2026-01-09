@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
     Tooltip,
     TooltipProvider,
@@ -21,8 +21,15 @@ import {
     Filter,
     Sparkles,
     Target,
-    Zap
+    ChevronDown
 } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
 import {
     Card,
     CardContent,
@@ -93,10 +100,26 @@ import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
  */
 export default function ModelsPage() {
     const { modelsAnalytics, isLoading } = useDashboardData();
-    const [selectedModel, setSelectedModel] = useState<string>("ChatGPT");
+
+    // 1. Get unique models from data
+    const availableModels = useMemo(() => {
+        if (!modelsAnalytics || !Array.isArray(modelsAnalytics)) return [];
+        return (modelsAnalytics as ModelData[]).map(m => m.family);
+    }, [modelsAnalytics]);
+
+    const [selectedModel, setSelectedModel] = useState<string | null>(null);
     const [selectedActivity, setSelectedActivity] = useState<any>(null);
 
-    const activeData = (modelsAnalytics as ModelData[]).find(d => d.family === selectedModel);
+    // 2. Automatically select the first model when data loads
+    useEffect(() => {
+        if (availableModels.length > 0 && !selectedModel) {
+            setSelectedModel(availableModels[0]);
+        }
+    }, [availableModels, selectedModel]);
+
+    const activeData = selectedModel
+        ? (modelsAnalytics as ModelData[]).find(d => d.family === selectedModel)
+        : null;
 
     // Prepare chart data
     const sentimentChartData = activeData ? [
@@ -106,9 +129,7 @@ export default function ModelsPage() {
     ].filter(d => d.value > 0) : [];
 
     const sourceChartData = activeData ? activeData.topSources : [];
-    const totalCitations = activeData ? activeData.allSources?.reduce((acc, curr) => acc + curr.count, 0) || 1 : 1;
-
-    const MODELS = ["ChatGPT", "Gemini", "Claude"];
+    const totalCitations = activeData ? activeData.allSources?.reduce((acc: number, curr: { count: number }) => acc + curr.count, 0) || 1 : 1;
 
     // Premium Gradients
     const GRADIENTS = [
@@ -147,22 +168,41 @@ export default function ModelsPage() {
                             </div>
                         </div>
 
-                        <div className="bg-slate-50 p-1.5 rounded-xl flex items-center gap-1 border border-slate-100">
-                            {MODELS.map((model) => (
-                                <button
-                                    key={model}
-                                    onClick={() => setSelectedModel(model)}
-                                    className={cn(
-                                        "px-4 py-2 text-[13px] font-bold rounded-lg transition-all duration-300 min-w-[80px]",
-                                        selectedModel === model
-                                            ? "bg-white shadow-sm text-slate-900 border border-slate-200 scale-100"
-                                            : "text-slate-400 hover:text-slate-600"
-                                    )}
-                                >
-                                    {model}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button className="flex items-center gap-2.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all duration-300 group shadow-sm">
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none mb-1">Active Model</span>
+                                        <span className="text-[13px] font-bold text-slate-900 leading-none">
+                                            {selectedModel || "Select Model"}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-900 transition-colors" />
                                 </button>
-                            ))}
-                        </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56 p-1.5 bg-white border-slate-200 rounded-xl shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                                {availableModels.map((model) => (
+                                    <DropdownMenuItem
+                                        key={model}
+                                        onClick={() => setSelectedModel(model)}
+                                        className={cn(
+                                            "flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors",
+                                            selectedModel === model ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        <span className="text-[13px] font-bold">{model}</span>
+                                        {selectedModel === model && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />}
+                                    </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
+                                <div className="px-3 py-2 opacity-50">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Upcoming: Perplexity, Llama & more</span>
+                                    </div>
+                                </div>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
 
@@ -175,7 +215,7 @@ export default function ModelsPage() {
                 ) : (
                     <>
                         {/* 2. KPI Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <KpiCard
                                 title="Brand Presence"
                                 value={`${activeData.metrics.brandPresence}%`}
@@ -204,18 +244,7 @@ export default function ModelsPage() {
                                 insight={activeData.insights.sentiment}
                                 tooltip="Average sentiment score (0-100) from all detected mentions."
                             />
-                            <KpiCard
-                                title="Response Speed"
-                                value={`${(activeData.metrics.avgLatency / 1000).toFixed(2)}s`}
-                                label="Avg Latency"
-                                icon={Zap}
-                                color="text-slate-900"
-                                bg="bg-white border-2 border-slate-100"
-                                trend={activeData.trends.latency.value}
-                                trendDirection={activeData.trends.latency.direction}
-                                insight={activeData.insights.latency}
-                                tooltip="Average time taken for the model to generate a response."
-                            />
+
                             <KpiCard
                                 title="Total Activity"
                                 value={activeData.metrics.totalRuns}

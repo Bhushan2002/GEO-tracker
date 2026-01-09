@@ -421,7 +421,7 @@ function SourcesPage() {
                         <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2.5">
                             <ChartArea className="h-4 w-4 text-slate-400" />
                             <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-900">
-                                {activeTab === 'domains' ? 'Source Usage by Domain (Top 5)' : 'Source Usage by URL Type'}
+                                {activeTab === 'domains' ? 'Source Usage by Domain (Top 5)' : 'Source Usage by URL Type (Top 5)'}
                             </h2>
                         </div>
                         <div className="p-6 flex flex-col flex-1">
