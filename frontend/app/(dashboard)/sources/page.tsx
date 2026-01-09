@@ -28,6 +28,14 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 
 /**
  * Sources intelligence page.
@@ -38,6 +46,7 @@ function SourcesPage() {
     const [activeTab, setActiveTab] = useState<"domains" | "urls">("domains");
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedType, setSelectedType] = useState<string>("All Types");
+    const [expandedDomain, setExpandedDomain] = useState<string | null>(null);
 
     // Identify the "Main Brand"
     const mainBrand = useMemo(() => {
@@ -135,6 +144,8 @@ function SourcesPage() {
         });
     }, [modelResponses]);
 
+    const totalRuns = processedRuns.length || 1;
+
     const domainData = useMemo(() => {
         if (processedRuns.length === 0) return [];
 
@@ -143,7 +154,8 @@ function SourcesPage() {
             totalMentions: number;
             totalCitations: number;
             type: string;
-            brands: Set<string>
+            brands: Set<string>;
+            urlMap: Map<string, { usedCount: number; totalMentions: number; title: string }>;
         }>();
 
         processedRuns.forEach(run => {
@@ -154,18 +166,35 @@ function SourcesPage() {
                         totalMentions: 0,
                         totalCitations: 0,
                         type: d.type,
-                        brands: new Set()
+                        brands: new Set(),
+                        urlMap: new Map()
                     });
                 }
                 const m = masterMap.get(d.domain)!;
-                m.usedCount += 1; // It was used in this run
+                m.usedCount += 1;
                 m.totalMentions += d.mentions;
                 m.totalCitations += d.citations;
                 d.brands.forEach(b => m.brands.add(b));
+
+                // Join URL data from processedRuns for this domain
+                // We'll find URLs in run.urls that belong to this domain
+                run.urls.forEach(u => {
+                    try {
+                        const uDomain = new URL(u.url.startsWith('http') ? u.url : `https://${u.url}`).hostname.replace(/^www\./, '');
+                        if (uDomain === d.domain) {
+                            if (!m.urlMap.has(u.url)) {
+                                m.urlMap.set(u.url, { usedCount: 0, totalMentions: 0, title: u.title });
+                            }
+                            const um = m.urlMap.get(u.url)!;
+                            um.usedCount += 1;
+                            um.totalMentions += u.mentionsCount;
+                        }
+                    } catch (e) {
+                        // skip invalid urls
+                    }
+                });
             });
         });
-
-        const totalRuns = processedRuns.length || 1;
 
         return Array.from(masterMap.entries())
             .map(([domain, data]) => ({
@@ -173,10 +202,16 @@ function SourcesPage() {
                 used: Math.round((data.usedCount / totalRuns) * 100),
                 avgCitations: (data.totalCitations / (data.usedCount || 1)).toFixed(1),
                 type: data.type,
-                brands: Array.from(data.brands)
+                brands: Array.from(data.brands),
+                urls: Array.from(data.urlMap.entries()).map(([url, u]) => ({
+                    url,
+                    title: u.title,
+                    used: Math.round((u.usedCount / totalRuns) * 100),
+                    avgCitations: (u.totalMentions / (u.usedCount || 1)).toFixed(1)
+                })).sort((a, b) => b.used - a.used)
             }))
             .sort((a, b) => b.used - a.used);
-    }, [processedRuns]);
+    }, [processedRuns, totalRuns]);
 
     const urlData = useMemo(() => {
         if (processedRuns.length === 0) return [];
@@ -217,10 +252,11 @@ function SourcesPage() {
                 type: item.type,
                 mentions: Array.from(item.brands),
                 usedTotal: item.usedCount, // Total unique runs
+                used: Math.round((item.usedCount / totalRuns) * 100),
                 avgCitations: (item.totalMentions / (item.usedCount || 1)).toFixed(1)
             }))
             .sort((a, b) => b.usedTotal - a.usedTotal);
-    }, [processedRuns]);
+    }, [processedRuns, totalRuns]);
 
     const usageChartData = useMemo(() => {
         const top5 = activeTab === 'domains'
@@ -307,6 +343,22 @@ function SourcesPage() {
             return matchesSearch && matchesType;
         });
     }, [urlData, searchQuery, selectedType]);
+
+    // Create a lookup for brand logos
+    const brandLogoLookup = useMemo(() => {
+        const lookup: Record<string, string> = {};
+        [...(allBrands || []), ...(targetBrands || [])].forEach(b => {
+            if (b.brand_name && (b.official_url || b.brand_url)) {
+                const url = b.official_url || b.brand_url;
+                try {
+                    lookup[b.brand_name] = new URL(url.startsWith('http') ? url : `https://${url}`).hostname;
+                } catch (e) {
+                    lookup[b.brand_name] = url;
+                }
+            }
+        });
+        return lookup;
+    }, [allBrands, targetBrands]);
 
     const CHART_COLORS = ["#3B82F6", "#10B981", "#8B5CF6", "#F59E0B", "#EF4444"];
 
@@ -435,8 +487,15 @@ function SourcesPage() {
                             <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
                                 <Database className="h-4 w-4 text-slate-900" />
                             </div>
-                            <div className="flex flex-col gap-0.5">
-                                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-900 leading-none">Source Details</h4>
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                    <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-900 leading-none">Source Details</h4>
+                                    {activeTab === 'domains' && (
+                                        <span className="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full animate-pulse-slow">
+                                            • Click row for Domain-based URL analytics
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="text-[10px] text-slate-500 font-medium">Track mentions and reach across all indexed sources</p>
                             </div>
                         </div>
@@ -510,41 +569,103 @@ function SourcesPage() {
                                     filteredDomainData.length === 0 ? (
                                         <tr><td colSpan={5} className="p-20 text-center text-slate-400 italic">No domains found</td></tr>
                                     ) : (
-                                        filteredDomainData.map((item, idx) => (
-                                            <tr key={idx} className="h-14 hover:bg-slate-50/50 transition-colors group">
-                                                <td className="text-center text-slate-400 font-medium px-4 border-r border-slate-100">{idx + 1}</td>
-                                                <td className="px-4 border-r border-slate-100">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-9 h-9 rounded-full border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
-                                                            <img
-                                                                src={`https://logo.clearbit.com/${item.domain.replace(/^https?:\/\//, '').split('/')[0]}`}
-                                                                className="w-5 h-5 object-contain"
-                                                                onError={(e) => {
-                                                                    const target = e.currentTarget;
-                                                                    const domain = item.domain.replace(/^https?:\/\//, '').split('/')[0];
-                                                                    if (!target.src.includes('google.com')) {
-                                                                        target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-                                                                    } else {
-                                                                        target.style.display = 'none';
-                                                                        const parent = target.parentElement;
-                                                                        if (parent) {
-                                                                            parent.classList.add('bg-slate-50');
-                                                                            parent.innerHTML = `<span class="text-[9px] font-bold text-slate-400 capitalize">${item.domain.charAt(0)}</span>`;
-                                                                        }
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <span className="font-bold text-slate-900">{item.domain}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-4 text-center border-r border-slate-100">
-                                                    <BadgeByType type={item.type} />
-                                                </td>
-                                                <td className="px-4 text-center font-bold text-slate-900 border-r border-slate-100">{item.used}%</td>
-                                                <td className="px-4 text-center text-slate-500 font-medium">{item.avgCitations}</td>
-                                            </tr>
-                                        ))
+                                        filteredDomainData.map((item, idx) => {
+                                            const isExpanded = expandedDomain === item.domain;
+                                            return (
+                                                <React.Fragment key={idx}>
+                                                    <tr
+                                                        onClick={() => setExpandedDomain(isExpanded ? null : item.domain)}
+                                                        className={cn(
+                                                            "h-14 hover:bg-slate-50/50 transition-all duration-200 group cursor-pointer",
+                                                            isExpanded && "bg-slate-50 border-l-2 border-l-slate-900"
+                                                        )}
+                                                    >
+                                                        <td className="text-center text-slate-400 font-medium px-4 border-r border-slate-100">{idx + 1}</td>
+                                                        <td className="px-4 border-r border-slate-100">
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="w-9 h-9 rounded-full border border-slate-100 flex items-center justify-center bg-white shrink-0 overflow-hidden shadow-sm">
+                                                                        <img
+                                                                            src={`https://logo.clearbit.com/${item.domain.replace(/^https?:\/\//, '').split('/')[0]}`}
+                                                                            className="w-5 h-5 object-contain"
+                                                                            onError={(e) => {
+                                                                                const target = e.currentTarget;
+                                                                                const domain = item.domain.replace(/^https?:\/\//, '').split('/')[0];
+                                                                                if (!target.src.includes('google.com')) {
+                                                                                    target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+                                                                                } else {
+                                                                                    target.style.display = 'none';
+                                                                                    const parent = target.parentElement;
+                                                                                    if (parent) {
+                                                                                        parent.classList.add('bg-slate-50');
+                                                                                        parent.innerHTML = `<span class="text-[9px] font-bold text-slate-400 capitalize">${item.domain.charAt(0)}</span>`;
+                                                                                    }
+                                                                                }
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="font-bold text-slate-900">{item.domain}</span>
+                                                                </div>
+                                                                {isExpanded ? (
+                                                                    <ChevronDown className="w-4 h-4 text-slate-900 transition-transform duration-300" />
+                                                                ) : (
+                                                                    <ChevronRight className="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-all" />
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 text-center border-r border-slate-100">
+                                                            <BadgeByType type={item.type} />
+                                                        </td>
+                                                        <td className="px-4 text-center font-bold text-slate-900 border-r border-slate-100">{item.used}%</td>
+                                                        <td className="px-4 text-center text-slate-500 font-medium">{item.avgCitations}</td>
+                                                    </tr>
+
+                                                    {/* Expanded Content */}
+                                                    {isExpanded && (
+                                                        <tr className="bg-slate-50/30 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                            <td />
+                                                            <td colSpan={4} className="p-0">
+                                                                <div className="p-6 space-y-4">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <FileText className="w-4 h-4 text-slate-400" />
+                                                                            <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest leading-none">CITED URLS ({item.urls.length})</h4>
+                                                                        </div>
+                                                                        <p className="text-[10px] font-bold text-slate-400">* Analytics based on total processed prompt runs</p>
+                                                                    </div>
+
+                                                                    <div className="grid gap-3">
+                                                                        {item.urls.map((u, i) => (
+                                                                            <div key={i} className="group p-4 bg-white/60 hover:bg-white rounded-2xl border border-slate-100/50 hover:border-slate-200 transition-all duration-300 shadow-sm hover:shadow-md flex items-center justify-between gap-4">
+                                                                                <div className="min-w-0 flex-1">
+                                                                                    <h5 className="font-bold text-slate-900 truncate mb-1 text-[13px]">{u.title}</h5>
+                                                                                    <a href={u.url} target="_blank" className="text-[11px] text-blue-500 hover:underline truncate opacity-80 flex items-center gap-1 w-fit">
+                                                                                        {u.url} <ExternalLink className="w-2.5 h-2.5 opacity-50" />
+                                                                                    </a>
+                                                                                </div>
+                                                                                <div className="flex items-center gap-8 shrink-0">
+                                                                                    <div className="text-right">
+                                                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Coverage</p>
+                                                                                        <p className="text-[13px] font-black text-slate-900">{u.used}%</p>
+                                                                                    </div>
+                                                                                    <div className="text-right">
+                                                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">Avg Citations</p>
+                                                                                        <p className="text-[13px] font-black text-slate-900">{u.avgCitations}</p>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                        {item.urls.length === 0 && (
+                                                                            <div className="text-center py-6 text-slate-400 italic text-xs">No specific landing pages mapped for this domain</div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </React.Fragment>
+                                            );
+                                        })
                                     )
                                 ) : (
                                     filteredUrlData.length === 0 ? (
@@ -604,7 +725,7 @@ function SourcesPage() {
                                                         </span>
                                                     </td>
                                                     <td className="px-4 text-center border-r border-slate-100">
-                                                        <MentionsPopover mentions={item.mentions} />
+                                                        <MentionsPopover mentions={item.mentions} logoLookup={brandLogoLookup} />
                                                     </td>
                                                     <td className="px-4 text-center font-bold text-slate-900 border-r border-slate-100">{item.usedTotal}</td>
                                                     <td className="px-4 text-center text-slate-500 font-medium">{item.avgCitations}</td>
@@ -646,29 +767,47 @@ function BadgeByType({ type, isUrl }: { type: string, isUrl?: boolean }) {
     );
 }
 
-function MentionsPopover({ mentions }: { mentions: string[] }) {
+function MentionsPopover({ mentions, logoLookup }: { mentions: string[], logoLookup?: Record<string, string> }) {
     if (!mentions || mentions.length === 0) return <span className="text-slate-300">-</span>;
+
+    const getBrandDomain = (brand: string) => {
+        if (logoLookup && logoLookup[brand]) return logoLookup[brand];
+        return `${brand.toLowerCase().replace(/\s+/g, '')}.com`;
+    };
 
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <div className="flex items-center justify-center cursor-pointer group/mentions">
-                    <div className="flex -space-x-2">
-                        {mentions.slice(0, 3).map((brand, i) => (
-                            <div key={i} className="w-6 h-6 rounded-full border border-white bg-white shadow-sm flex items-center justify-center overflow-hidden transition-transform group-hover/mentions:translate-x-0.5 first:group-hover/mentions:translate-x-0">
-                                <img
-                                    src={`https://logo.clearbit.com/${brand.toLowerCase().replace(/\s+/g, '')}.com`}
-                                    className="w-3.5 h-3.5 object-contain"
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.parentElement!.innerHTML = `<span class="text-[8px] font-bold text-slate-400">${brand.charAt(0)}</span>`;
-                                    }}
-                                />
-                            </div>
-                        ))}
+                <div className="flex items-center gap-2 cursor-pointer group/mentions overflow-hidden justify-center bg-slate-50/50 hover:bg-white px-2 py-1 rounded-full border border-transparent hover:border-slate-200 transition-all w-fit mx-auto">
+                    <div className="flex -space-x-1.5 shrink-0">
+                        {mentions.slice(0, 2).map((brand, i) => {
+                            const domain = getBrandDomain(brand);
+                            return (
+                                <div key={i} className="w-5 h-5 rounded-full border border-white bg-white shadow-sm flex items-center justify-center overflow-hidden transition-transform group-hover/mentions:translate-x-0.5 first:group-hover/mentions:translate-x-0">
+                                    <img
+                                        src={`https://logo.clearbit.com/${domain}`}
+                                        className="w-3 h-3 object-contain"
+                                        onError={(e) => {
+                                            const target = e.currentTarget;
+                                            if (!target.src.includes('google.com')) {
+                                                target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+                                            } else {
+                                                target.style.display = 'none';
+                                                target.parentElement!.innerHTML = `<span class="text-[8px] font-bold text-slate-400 capitalize">${brand.charAt(0)}</span>`;
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            );
+                        })}
                     </div>
-                    {mentions.length > 3 && (
-                        <span className="text-[11px] font-bold text-slate-400 ml-2">+{mentions.length - 3}</span>
+                    <span className="text-[10px] font-bold text-slate-700 truncate max-w-[70px] leading-none">
+                        {mentions[0]}
+                    </span>
+                    {mentions.length > 1 && (
+                        <span className="text-[9px] font-black text-slate-400 bg-white px-1 rounded-sm border border-slate-100 leading-none">
+                            +{mentions.length - 1}
+                        </span>
                     )}
                 </div>
             </PopoverTrigger>
@@ -678,21 +817,29 @@ function MentionsPopover({ mentions }: { mentions: string[] }) {
                     <span className="px-1.5 py-0.5 rounded-full bg-slate-200 text-[10px] font-bold text-slate-600">{mentions.length}</span>
                 </div>
                 <div className="p-1 max-h-[240px] overflow-auto custom-scrollbar">
-                    {mentions.map((brand, i) => (
-                        <div key={i} className="flex items-center gap-2.5 p-2 hover:bg-slate-50 rounded-lg transition-colors group cursor-default">
-                            <div className="w-6 h-6 rounded-md border border-slate-100 flex items-center justify-center bg-white overflow-hidden shadow-sm">
-                                <img
-                                    src={`https://logo.clearbit.com/${brand.toLowerCase().replace(/\s+/g, '')}.com`}
-                                    className="w-3.5 h-3.5 object-contain"
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                        e.currentTarget.parentElement!.innerHTML = `<span class="text-[8px] font-bold text-slate-400">${brand.charAt(0)}</span>`;
-                                    }}
-                                />
+                    {mentions.map((brand, i) => {
+                        const domain = getBrandDomain(brand);
+                        return (
+                            <div key={i} className="flex items-center gap-2.5 p-2 hover:bg-slate-50 rounded-lg transition-colors group cursor-default">
+                                <div className="w-6 h-6 rounded-md border border-slate-100 flex items-center justify-center bg-white overflow-hidden shadow-sm">
+                                    <img
+                                        src={`https://logo.clearbit.com/${domain}`}
+                                        className="w-3.5 h-3.5 object-contain"
+                                        onError={(e) => {
+                                            const target = e.currentTarget;
+                                            if (!target.src.includes('google.com')) {
+                                                target.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+                                            } else {
+                                                target.style.display = 'none';
+                                                target.parentElement!.innerHTML = `<span class="text-[8px] font-bold text-slate-400 capitalize">${brand.charAt(0)}</span>`;
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <span className="text-[13px] font-medium text-slate-700 group-hover:text-slate-900 transition-colors">{brand}</span>
                             </div>
-                            <span className="text-[13px] font-medium text-slate-700 group-hover:text-slate-900 transition-colors">{brand}</span>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </PopoverContent>
         </Popover>
