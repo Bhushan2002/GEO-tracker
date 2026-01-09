@@ -12,7 +12,7 @@ function InfoButton({content}: {content: string}) {
   return (
     <Tooltip>
       <TooltipTrigger>
-        <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-move" />
+        <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-default" />
       </TooltipTrigger>
       <TooltipContent>
         {content}

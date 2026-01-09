@@ -637,7 +637,7 @@ export default function GoogleAnalyticsPage() {
                       </div>
                       <InfoTooltip>
                         <TooltipTrigger>
-                          <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                          <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                         </TooltipTrigger>
                         <TooltipContent>
                           Shows daily active user trends comparing total website traffic with AI-referred traffic
@@ -731,7 +731,7 @@ export default function GoogleAnalyticsPage() {
                         </div>
                         <InfoTooltip>
                           <TooltipTrigger>
-                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                           </TooltipTrigger>
                           <TooltipContent>
                             Tracks impressions and brand searches where users don't directly click but are influenced by brand awareness
@@ -888,7 +888,7 @@ export default function GoogleAnalyticsPage() {
                         </div>
                         <InfoTooltip>
                           <TooltipTrigger>
-                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                           </TooltipTrigger>
                           <TooltipContent>
                             Breakdown of user traffic distribution across different AI models (ChatGPT, Copilot, Perplexity, etc.)
@@ -946,7 +946,7 @@ export default function GoogleAnalyticsPage() {
                         </div>
                         <InfoTooltip>
                           <TooltipTrigger>
-                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                           </TooltipTrigger>
                           <TooltipContent>
                             Bar chart showing the number of active users coming from each AI model over the last 30 days
@@ -992,7 +992,7 @@ export default function GoogleAnalyticsPage() {
                         </div>
                         <InfoTooltip>
                           <TooltipTrigger>
-                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                           </TooltipTrigger>
                           <TooltipContent>
                             Detailed performance metrics including active users, sessions, and conversion rates for each AI model
@@ -1064,7 +1064,7 @@ export default function GoogleAnalyticsPage() {
                       </div>
                       <InfoTooltip>
                         <TooltipTrigger>
-                          <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                          <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                         </TooltipTrigger>
                         <TooltipContent>
                           Shows the top landing pages and entry points for users coming from AI sources with their traffic distribution
