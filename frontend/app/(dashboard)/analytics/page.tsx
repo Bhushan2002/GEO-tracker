@@ -64,7 +64,13 @@ import {
   Globe,
   Layout,
   Smartphone,
+  Info,
 } from "lucide-react";
+import {
+  Tooltip as InfoTooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { AIConversionRateChart } from "@/components/Charts/AIConversionRateChart";
 import { TopicClustersTreemap } from "@/components/Charts/TopicClusterTree";
 import { AIGrowthRateChart } from "@/components/Charts/AIGrowthRateChart";
@@ -607,12 +613,24 @@ export default function GoogleAnalyticsPage() {
 
                 <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                   <CardHeader className="border-b border-slate-100  px-5 ">
-                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                      Website Traffic Trends
-                    </CardTitle>
-                    <CardDescription className="text-[10px] text-slate-500 font-medium">
-                      Daily active users comparing Total vs AI traffic
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                          Website Traffic Trends
+                        </CardTitle>
+                        <CardDescription className="text-[10px] text-slate-500 font-medium">
+                          Daily active users comparing Total vs AI traffic
+                        </CardDescription>
+                      </div>
+                      <InfoTooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Shows daily active user trends comparing total website traffic with AI-referred traffic
+                        </TooltipContent>
+                      </InfoTooltip>
+                    </div>
                   </CardHeader>
 
                   <CardContent className="pt-6">
@@ -689,12 +707,24 @@ export default function GoogleAnalyticsPage() {
                   {/* Zero touch chart */}
                   <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <CardHeader className="border-b border-slate-100  px-5 ">
-                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                        Zero Touch Attribution
-                      </CardTitle>
-                      <CardDescription className="text-[10px] text-slate-500 font-medium">
-                        Brand awareness & indirect influence
-                      </CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                            Zero Touch Attribution
+                          </CardTitle>
+                          <CardDescription className="text-[10px] text-slate-500 font-medium">
+                            Brand awareness & indirect influence
+                          </CardDescription>
+                        </div>
+                        <InfoTooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Tracks impressions and brand searches where users don't directly click but are influenced by brand awareness
+                          </TooltipContent>
+                        </InfoTooltip>
+                      </div>
                     </CardHeader>
                     <CardContent className="pt-6">
                       {loading ? (
@@ -834,12 +864,24 @@ export default function GoogleAnalyticsPage() {
                   {/* AI Models Distribution Pie */}
                   <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <CardHeader className="border-b border-slate-100  px-5 ">
-                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                        AI Models Distribution
-                      </CardTitle>
-                      <CardDescription className="text-[10px] text-slate-500 font-medium">
-                        Traffic share by AI model
-                      </CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                            AI Models Distribution
+                          </CardTitle>
+                          <CardDescription className="text-[10px] text-slate-500 font-medium">
+                            Traffic share by AI model
+                          </CardDescription>
+                        </div>
+                        <InfoTooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Breakdown of user traffic distribution across different AI models (ChatGPT, Copilot, Perplexity, etc.)
+                          </TooltipContent>
+                        </InfoTooltip>
+                      </div>
                     </CardHeader>
 
                     <CardContent className="pt-6">
@@ -880,12 +922,24 @@ export default function GoogleAnalyticsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                   <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <CardHeader className="border-b border-slate-100  px-5 ">
-                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                        Taffic by AI model
-                      </CardTitle>
-                      <CardDescription className="text-[10px] text-slate-500 font-medium">
-                        Users from AI sources (Last 30 Days)
-                      </CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                            Traffic by AI model
+                          </CardTitle>
+                          <CardDescription className="text-[10px] text-slate-500 font-medium">
+                            Users from AI sources (Last 30 Days)
+                          </CardDescription>
+                        </div>
+                        <InfoTooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Bar chart showing the number of active users coming from each AI model over the last 30 days
+                          </TooltipContent>
+                        </InfoTooltip>
+                      </div>
                     </CardHeader>
                     <CardContent className="pt-6">
                       {loading ? (
@@ -914,12 +968,24 @@ export default function GoogleAnalyticsPage() {
                   <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     
                     <CardHeader className="border-b border-slate-100  px-5 ">
-                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                        AI Models Performance
-                      </CardTitle>
-                      <CardDescription className="text-[10px] text-slate-500 font-medium">
-                        Detailed metrics for each AI model
-                      </CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                            AI Models Performance
+                          </CardTitle>
+                          <CardDescription className="text-[10px] text-slate-500 font-medium">
+                            Detailed metrics for each AI model
+                          </CardDescription>
+                        </div>
+                        <InfoTooltip>
+                          <TooltipTrigger>
+                            <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            Detailed performance metrics including active users, sessions, and conversion rates for each AI model
+                          </TooltipContent>
+                        </InfoTooltip>
+                      </div>
                     </CardHeader>
 
                     <CardContent className="pt-6">
@@ -974,12 +1040,24 @@ export default function GoogleAnalyticsPage() {
                 {/* Landing Pages */}
                 <Card className=" bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                   <CardHeader className="border-b border-slate-100  px-5 ">
-                    <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                      AI Traffic Landing pages
-                    </CardTitle>
-                    <CardDescription className="text-[10px] text-slate-500 font-medium">
-                      Top pages where AI-referred user land
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                          AI Traffic Landing pages
+                        </CardTitle>
+                        <CardDescription className="text-[10px] text-slate-500 font-medium">
+                          Top pages where AI-referred user land
+                        </CardDescription>
+                      </div>
+                      <InfoTooltip>
+                        <TooltipTrigger>
+                          <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Shows the top landing pages and entry points for users coming from AI sources with their traffic distribution
+                        </TooltipContent>
+                      </InfoTooltip>
+                    </div>
                   </CardHeader>
                   <CardContent className="pt-6">
                     {loading ? (

@@ -39,5 +39,22 @@ export const PromptAPI = {
    */
   getAnalytics(id: string) {
     return api.get(`/api/prompt/${id}`);
+  },
+
+  /**
+   * Updates a prompt's tags.
+   * @param id - The prompt ID.
+   * @param data - The updated data (currently only tags are updatable).
+   */
+  update(id: string, data: { tags: string[] }) {
+    return api.patch(`/api/prompt/${id}`, data);
+  },
+
+  /**
+   * Deletes a prompt.
+   * @param id - The prompt ID.
+   */
+  delete(id: string) {
+    return api.delete(`/api/prompt/${id}`);
   }
 };

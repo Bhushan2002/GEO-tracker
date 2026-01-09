@@ -103,10 +103,10 @@ export const executePromptTask = async (promptId: string) => {
 
       console.log(` Main brand for extraction: ${mainBrandDoc ? mainBrandDoc.brand_name : 'None'}`);
 
-      const competitorBrandDoc = await TargetBrand.findOne({ workspaceId }).sort({ mentions: -1 });
-      const competitorBrand = competitorBrandDoc ? [competitorBrandDoc.actual_brand_name] : [];
-      const targetBrandUrl = competitorBrandDoc?.official_url || "";
-      console.log(` target brand url : ${targetBrandUrl}`);
+      // const competitorBrandDoc = await TargetBrand.findOne({ workspaceId }).sort({ mentions: -1 });
+      // const competitorBrand = competitorBrandDoc ? [competitorBrandDoc.actual_brand_name] : [];
+      // const targetBrandUrl = competitorBrandDoc?.official_url || "";
+      // console.log(` target brand url : ${targetBrandUrl}`);
 
       // --- STEP 3: Batch Extraction Analysis ---
       // Runs analysis concurrently for all responses using OpenRender/LLM

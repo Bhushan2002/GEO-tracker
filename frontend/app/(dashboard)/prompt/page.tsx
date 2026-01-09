@@ -4,29 +4,33 @@ import { PromptAPI } from "@/lib/api/prompt.api";
 import { PromptTable } from "@/components/Charts/PromptTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 // Removed Sheet imports
-import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 import React, { useEffect, useState, Suspense } from "react";
 import { toast } from "sonner";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import { api } from "@/lib/api/api";
 import {
   Search,
-  Download,
   Plus,
   MessageSquare,
-  ListFilter,
-  Play,
-  Globe,
-  User,
-  ShieldCheck,
-  Heart,
-  Info,
-  Clock,
-  ExternalLink,
   ChevronDown,
-  Tag as TagIcon
+  Tag as TagIcon,
 } from "lucide-react";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -34,17 +38,19 @@ import { cn } from "@/lib/utils";
 import { Prompt } from "@/types";
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
 import PromptDetailsPage from "./[id]/page";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 function PromptContent() {
   const { activeWorkspace } = useWorkspace();
-  const { prompts, modelResponses, isLoading, refreshPrompts } = useDashboardData();
+  const { prompts, modelResponses, isLoading, refreshPrompts } =
+    useDashboardData();
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedPromptId = searchParams.get("id");
-
-
-
 
   const [promptText, setPromptText] = useState("");
   const [topic, setTopic] = useState("");
@@ -59,6 +65,10 @@ function PromptContent() {
 
   // UI States
   const [isAddPromptOpen, setIsAddPromptOpen] = useState(false);
+  const [isEditPromptOpen, setIsEditPromptOpen] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
+  const [editTagsText, setEditTagsText] = useState("");
+  const [editTagSearch, setEditTagSearch] = useState("");
 
   useEffect(() => {
     const storedTopics = localStorage.getItem("promptTopics");
@@ -110,7 +120,10 @@ function PromptContent() {
     if (!topic.trim()) return toast.error("Topic is required.");
 
     try {
-      const tags = tagsText.split(",").map((t) => t.trim()).filter(Boolean);
+      const tags = tagsText
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
       await PromptAPI.create({
         promptText,
         topic: topic.trim(),
@@ -151,7 +164,7 @@ function PromptContent() {
   const handleExecuteAll = async () => {
     setIsExecuting(true);
     try {
-      const response = await api.post('/api/prompt/execute-all');
+      const response = await api.post("/api/prompt/execute-all");
       toast.success(response.data.message || "Prompts execution started!");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to execute prompts");
@@ -160,13 +173,55 @@ function PromptContent() {
     }
   };
 
+  const handleEdit = (prompt: Prompt) => {
+    setEditingPrompt(prompt);
+    setEditTagsText((prompt.tags || []).join(", "));
+    setEditTagSearch("");
+    setIsEditPromptOpen(true);
+  };
+
+  const handleDelete = async (promptId: string) => {
+    if (!confirm("Are you sure you want to delete this prompt?")) return;
+
+    try {
+      await PromptAPI.delete(promptId);
+      toast.success("Prompt deleted successfully!");
+      refreshPrompts();
+    } catch (error) {
+      toast.error("Failed to delete prompt.");
+    }
+  };
+
+  const handleUpdatePrompt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPrompt) return;
+
+    try {
+      const tags = editTagsText
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      await PromptAPI.update(editingPrompt._id, {
+        tags,
+      });
+
+      toast.success("Prompt updated successfully!");
+      refreshPrompts();
+      setIsEditPromptOpen(false);
+      setEditingPrompt(null);
+      setEditTagsText("");
+    } catch (error) {
+      toast.error("Failed to update prompt.");
+    }
+  };
 
   const handleRowClick = (prompt: Prompt) => {
     router.push(`/prompt?id=${prompt._id}`);
   };
 
-  const filteredPrompts = prompts.filter(p => {
-    const matchesSearch = p.promptText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredPrompts = prompts.filter((p) => {
+    const matchesSearch =
+      p.promptText.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.topic?.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
 
@@ -175,9 +230,12 @@ function PromptContent() {
     return true;
   });
 
-
   if (selectedPromptId) {
     return <PromptDetailsPage manualId={selectedPromptId} />;
+  }
+
+  function setNewTag(value: string): void {
+    throw new Error("Function not implemented.");
   }
 
   return (
@@ -190,9 +248,12 @@ function PromptContent() {
               <MessageSquare className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">AI Prompts</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">
+                AI Prompts
+              </h1>
               <p className="text-[13px] text-slate-500 mt-1.5 font-medium">
-                Build, test, and schedule prompts to monitor how AI models perceive and rank your brand.
+                Build, test, and schedule prompts to monitor how AI models
+                perceive and rank your brand.
               </p>
             </div>
           </div>
@@ -256,13 +317,17 @@ function PromptContent() {
         onRefresh={refreshPrompts}
         onRowClick={handleRowClick}
         onAddClick={() => setIsAddPromptOpen(true)}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
       />
 
       {/* Add Prompt Dialog */}
       <AlertDialog open={isAddPromptOpen} onOpenChange={setIsAddPromptOpen}>
         <AlertDialogContent className="max-w-lg bg-white rounded-xl p-0 overflow-hidden border border-slate-200 shadow-lg">
           <div className="px-6 py-4 border-b border-slate-100">
-            <AlertDialogTitle className="text-lg font-bold text-slate-900">New Prompt</AlertDialogTitle>
+            <AlertDialogTitle className="text-lg font-bold text-slate-900">
+              New Prompt
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-slate-500 mt-0.5">
               Configure a new prompt to track AI sentiment.
             </AlertDialogDescription>
@@ -270,7 +335,9 @@ function PromptContent() {
 
           <form onSubmit={handleAddPrompt} className="p-6 space-y-5 bg-white">
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-700">Prompt Text</label>
+              <label className="text-xs font-semibold text-slate-700">
+                Prompt Text
+              </label>
               <textarea
                 placeholder="Enter prompt criteria..."
                 value={promptText}
@@ -281,7 +348,9 @@ function PromptContent() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700">Topic</label>
+                <label className="text-xs font-semibold text-slate-700">
+                  Topic
+                </label>
                 <Select value={topic} onValueChange={setTopic}>
                   <SelectTrigger className="h-10 rounded-lg border-slate-200 text-sm">
                     <SelectValue placeholder="Select topic" />
@@ -292,13 +361,20 @@ function PromptContent() {
                         placeholder="Add new..."
                         value={newTopic}
                         onChange={(e) => setNewTopic(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddTopic())}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" &&
+                          (e.preventDefault(), handleAddTopic())
+                        }
                         className="h-8 text-xs rounded-md border-slate-100"
                       />
                     </div>
                     <div className="max-h-[220px] overflow-y-auto p-1">
-                      {topics.map(t => (
-                        <SelectItem key={t} value={t} className="text-xs rounded-md cursor-pointer">
+                      {topics.map((t) => (
+                        <SelectItem
+                          key={t}
+                          value={t}
+                          className="text-xs rounded-md cursor-pointer"
+                        >
                           {t}
                         </SelectItem>
                       ))}
@@ -308,74 +384,160 @@ function PromptContent() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-700">Tags</label>
-                <div className="relative group">
-                  <Input
-                    placeholder="e.g. tech, medical"
-                    value={tagsText}
-                    onChange={(e) => setTagsText(e.target.value)}
-                    className="h-10 rounded-lg border-slate-200 text-sm pr-10"
-                  />
-                  {availableTags.length > 0 && (
-                    <Popover>
-                      <PopoverTrigger asChild>
+                <label className="text-xs font-semibold text-slate-700">
+                  Tags
+                </label>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="h-10 w-full px-3 flex items-center justify-between text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors text-left"
+                  >
+                    <span className="text-slate-500 truncate">
+                    {tagsText.trim() || "Select tags"}
+                    </span>
+                    <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0 rounded-lg shadow-md border-slate-100">
+                  <div className="p-2 border-b border-slate-50">
+                    <div className="relative">
+                    <TagIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                    <Input
+                      placeholder="Search or add new tag..."
+                      value={tagSearch}
+                      onChange={(e) => setTagSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                      if (e.key === "Enter" && tagSearch.trim()) {
+                        e.preventDefault();
+                        const newTag = tagSearch.trim();
+                        const tags = tagsText
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean);
+                        if (!tags.some((t) => t.toLowerCase() === newTag.toLowerCase())) {
+                        setTagsText([...tags, newTag].join(", "));
+                        if (!availableTags.includes(newTag)) {
+                          setAvailableTags((prev) => {
+                          const updated = [...prev, newTag];
+                          localStorage.setItem("promptTags", JSON.stringify(updated));
+                          return updated;
+                          });
+                        }
+                        }
+                        setTagSearch("");
+                      }
+                      }}
+                      className="h-8 text-xs rounded-md border-slate-100 pl-8"
+                    />
+                    </div>
+                  </div>
+                  
+                  <div className="max-h-[200px] overflow-y-auto p-1">
+                    {availableTags
+                    .filter((tag) =>
+                      tag.toLowerCase().includes(tagSearch.toLowerCase())
+                    )
+                    .map((tag) => {
+                      const isSelected = tagsText
+                      .split(",")
+                      .map((t) => t.trim().toLowerCase())
+                      .includes(tag.toLowerCase());
+                      return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                        const tags = tagsText
+                          .split(",")
+                          .map((t) => t.trim())
+                          .filter(Boolean);
+                        if (isSelected) {
+                          setTagsText(
+                          tags
+                            .filter((t) => t.toLowerCase() !== tag.toLowerCase())
+                            .join(", ")
+                          );
+                        } else {
+                          setTagsText([...tags, tag].join(", "));
+                        }
+                        }}
+                        className={cn(
+                        "w-full text-left px-2 py-1.5 my-2 text-xs rounded-md transition-colors flex items-center justify-between",
+                        isSelected
+                          ? "bg-slate-200 "
+                          : "hover:bg-slate-100 "
+                        )}
+                      >
+                        <span>#{tag}</span>
+                        {isSelected && <span className="text-xs">✓</span>}
+                      </button>
+                      );
+                    })}
+                    
+                    {tagSearch.trim() && 
+                     !availableTags.some((t) => t.toLowerCase() === tagSearch.trim().toLowerCase()) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                      const newTag = tagSearch.trim();
+                      const tags = tagsText
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean);
+                      setTagsText([...tags, newTag].join(", "));
+                      if (!availableTags.includes(newTag)) {
+                        setAvailableTags((prev) => {
+                        const updated = [...prev, newTag];
+                        localStorage.setItem("promptTags", JSON.stringify(updated));
+                        return updated;
+                        });
+                      }
+                      setTagSearch("");
+                      }}
+                      className="w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-slate-100 text-slate-700 border-t border-slate-100 mt-1 pt-2"
+                    >
+                      <Plus className="w-3 h-3 inline mr-1" />
+                      Add "{tagSearch.trim()}"
+                    </button>
+                    )}
+                  </div>
+                  
+                  {tagsText.trim() && (
+                    <div className="p-2 border-t border-slate-100">
+                    <div className="flex flex-wrap gap-1">
+                      {tagsText
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean)
+                      .map((tag, index) => (
+                        <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-900 text-white text-[10px] font-medium rounded-md"
+                        >
+                        #{tag}
                         <button
                           type="button"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
+                          onClick={() => {
+                          const tags = tagsText
+                            .split(",")
+                            .map((t) => t.trim())
+                            .filter(Boolean)
+                            .filter((t) => t !== tag);
+                          setTagsText(tags.join(", "));
+                          }}
+                          className="hover:text-slate-300 transition-colors"
                         >
-                          <ChevronDown className="h-4 w-4 text-slate-400" />
+                          ×
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-0 bg-white border border-slate-200 shadow-xl rounded-xl overflow-hidden" align="end">
-                        <div className="p-2 border-b border-slate-50 bg-slate-50/50 flex flex-col gap-2 sticky top-0 bg-white z-10">
-                          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider flex items-center gap-1.5 ml-1">
-                            <TagIcon className="h-3 w-3" />
-                            Select Tags
-                          </span>
-                          <Input
-                            placeholder="Search tags..."
-                            value={tagSearch}
-                            onChange={(e) => setTagSearch(e.target.value)}
-                            className="h-8 text-[11px] rounded-md border-slate-100"
-                          />
-                        </div>
-                        <div className="max-h-[220px] overflow-y-auto p-1.5 space-y-0.5">
-                          {availableTags
-                            .filter(tag => tag.toLowerCase().includes(tagSearch.toLowerCase()))
-                            .map((tag) => {
-                              const isSelected = tagsText.split(',').map(t => t.trim().toLowerCase()).includes(tag.toLowerCase());
-                              return (
-                                <button
-                                  key={tag}
-                                  type="button"
-                                  onClick={() => {
-                                    const tags = tagsText.split(',').map(t => t.trim()).filter(Boolean);
-                                    if (isSelected) {
-                                      setTagsText(tags.filter(t => t.toLowerCase() !== tag.toLowerCase()).join(', '));
-                                    } else {
-                                      setTagsText([...tags, tag].join(', '));
-                                    }
-                                  }}
-                                  className={cn(
-                                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer",
-                                    isSelected
-                                      ? "bg-slate-900 text-white"
-                                      : "text-slate-600 hover:bg-slate-100"
-                                  )}
-                                >
-                                  <span>#{tag}</span>
-                                  {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />}
-                                </button>
-                              );
-                            })}
-                          {availableTags.filter(tag => tag.toLowerCase().includes(tagSearch.toLowerCase())).length === 0 && (
-                            <div className="p-4 text-center text-[11px] text-slate-400 italic">No tags found</div>
-                          )}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                        </span>
+                      ))}
+                    </div>
+                    </div>
                   )}
-                </div>
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
@@ -383,8 +545,218 @@ function PromptContent() {
               <AlertDialogCancel className="h-10 px-4 rounded-lg border-slate-200 text-slate-600 font-semibold text-xs hover:bg-slate-50 transition-colors cursor-pointer">
                 Cancel
               </AlertDialogCancel>
-              <Button type="submit" className="h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-xs transition-all shadow-none cursor-pointer">
+              <Button
+                type="submit"
+                className="h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-xs transition-all shadow-none cursor-pointer"
+              >
                 Save Prompt
+              </Button>
+            </div>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Prompt Dialog */}
+      <AlertDialog open={isEditPromptOpen} onOpenChange={setIsEditPromptOpen}>
+        <AlertDialogContent className="max-w-lg bg-white rounded-xl p-0 overflow-hidden border border-slate-200 shadow-lg">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <AlertDialogTitle className="text-lg font-bold text-slate-900">
+              Edit Prompt
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-slate-500 mt-0.5">
+              Update tags for this prompt.
+            </AlertDialogDescription>
+          </div>
+
+          <form 
+            onSubmit={handleUpdatePrompt}
+            className="p-6 space-y-5 bg-white"
+          >
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700">
+                Prompt Text
+              </label>
+              <div className="w-full min-h-[100px] p-3 text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-600">
+                {editingPrompt?.promptText}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">
+                  Topic
+                </label>
+                <div className="h-10 px-3 flex items-center text-sm border border-slate-200 rounded-lg bg-slate-50 text-slate-600">
+                  {editingPrompt?.topic || "No topic"}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">
+                  Tags
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="h-10 w-full px-3 flex items-center justify-between text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors text-left"
+                    >
+                      <span className="text-slate-500 truncate">
+                        {editTagsText.trim() || "Select tags"}
+                      </span>
+                      <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0 rounded-lg shadow-md border-slate-100">
+                    <div className="p-2 border-b border-slate-50">
+                      <div className="relative">
+                        <TagIcon className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                        <Input
+                          placeholder="Search or add new tag..."
+                          value={editTagSearch}
+                          onChange={(e) => setEditTagSearch(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && editTagSearch.trim()) {
+                              e.preventDefault();
+                              const newTag = editTagSearch.trim();
+                              const tags = editTagsText
+                                .split(",")
+                                .map((t) => t.trim())
+                                .filter(Boolean);
+                              if (!tags.some((t) => t.toLowerCase() === newTag.toLowerCase())) {
+                                setEditTagsText([...tags, newTag].join(", "));
+                                if (!availableTags.includes(newTag)) {
+                                  setAvailableTags((prev) => {
+                                    const updated = [...prev, newTag];
+                                    localStorage.setItem("promptTags", JSON.stringify(updated));
+                                    return updated;
+                                  });
+                                }
+                              }
+                              setEditTagSearch("");
+                            }
+                          }}
+                          className="h-8 text-xs rounded-md border-slate-100 pl-8"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="max-h-[200px] overflow-y-auto p-1">
+                      {availableTags
+                        .filter((tag) =>
+                          tag.toLowerCase().includes(editTagSearch.toLowerCase())
+                        )
+                        .map((tag) => {
+                          const isSelected = editTagsText
+                            .split(",")
+                            .map((t) => t.trim().toLowerCase())
+                            .includes(tag.toLowerCase());
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => {
+                                const tags = editTagsText
+                                  .split(",")
+                                  .map((t) => t.trim())
+                                  .filter(Boolean);
+                                if (isSelected) {
+                                  setEditTagsText(
+                                    tags
+                                      .filter((t) => t.toLowerCase() !== tag.toLowerCase())
+                                      .join(", ")
+                                  );
+                                } else {
+                                  setEditTagsText([...tags, tag].join(", "));
+                                }
+                              }}
+                              className={cn(
+                                "w-full text-left px-2 py-1.5 my-2 text-xs rounded-md transition-colors flex items-center justify-between",
+                                isSelected
+                                  ? "bg-slate-200 "
+                                  : "hover:bg-slate-100 "
+                              )}
+                            >
+                              <span>#{tag}</span>
+                              {isSelected && <span className="text-xs">✓</span>}
+                            </button>
+                          );
+                        })}
+                      
+                      {editTagSearch.trim() && 
+                       !availableTags.some((t) => t.toLowerCase() === editTagSearch.trim().toLowerCase()) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newTag = editTagSearch.trim();
+                            const tags = editTagsText
+                              .split(",")
+                              .map((t) => t.trim())
+                              .filter(Boolean);
+                            setEditTagsText([...tags, newTag].join(", "));
+                            if (!availableTags.includes(newTag)) {
+                              setAvailableTags((prev) => {
+                                const updated = [...prev, newTag];
+                                localStorage.setItem("promptTags", JSON.stringify(updated));
+                                return updated;
+                              });
+                            }
+                            setEditTagSearch("");
+                          }}
+                          className="w-full text-left px-2 py-1.5 text-xs rounded-md hover:bg-slate-100 text-slate-700 border-t border-slate-100 mt-1 pt-2"
+                        >
+                          <Plus className="w-3 h-3 inline mr-1" />
+                          Add "{editTagSearch.trim()}"
+                        </button>
+                      )}
+                    </div>
+                    
+                    {editTagsText.trim() && (
+                      <div className="p-2 border-t border-slate-100">
+                        <div className="flex flex-wrap gap-1">
+                          {editTagsText
+                            .split(",")
+                            .map((t) => t.trim())
+                            .filter(Boolean)
+                            .map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-900 text-white text-[10px] font-medium rounded-md"
+                              >
+                                #{tag}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const tags = editTagsText
+                                      .split(",")
+                                      .map((t) => t.trim())
+                                      .filter(Boolean)
+                                      .filter((t) => t !== tag);
+                                    setEditTagsText(tags.join(", "));
+                                  }}
+                                  className="hover:text-slate-300 transition-colors"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            <div className="pt-4 flex items-center justify-end gap-3">
+              <AlertDialogCancel className="h-10 px-4 rounded-lg border-slate-200 text-slate-600 font-semibold text-xs hover:bg-slate-50 transition-colors cursor-pointer">
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                type="submit"
+                className="h-10 px-6 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-xs transition-all shadow-none cursor-pointer"
+              >
+                Update Prompt
               </Button>
             </div>
           </form>
@@ -401,7 +773,13 @@ function PromptContent() {
  */
 export default function Page() {
   return (
-    <Suspense fallback={<div className="p-8 flex items-center justify-center min-h-screen">Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-8 flex items-center justify-center min-h-screen">
+          Loading...
+        </div>
+      }
+    >
       <PromptContent />
     </Suspense>
   );

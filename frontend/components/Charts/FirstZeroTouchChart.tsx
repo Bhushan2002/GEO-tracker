@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2, MousePointerClick } from "lucide-react";
+import InfoButton from "../InfoButton";
 /**
  * Line chart visualizing the first touch attribution data (New Users vs Conversions).
  */
@@ -32,12 +33,17 @@ export default function FirstZeroTouchChart({
   return (
     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <CardHeader className="border-b border-slate-100  px-5 ">
-        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-          First Touch Attribution
-        </CardTitle>
-        <CardDescription className="text-[10px] text-slate-500 font-medium">
-          How user first discover your brand
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+              First Touch Attribution
+            </CardTitle>
+            <CardDescription className="text-[10px] text-slate-500 font-medium">
+              How user first discover your brand
+            </CardDescription>
+          </div>
+          <InfoButton content="Shows new users and conversions tracking the first touchpoint where users discover your brand"/>
+        </div>
       </CardHeader>
 
       <CardContent className="pt-6">

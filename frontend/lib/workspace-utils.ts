@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "./db/mongodb";
 import { Workspace } from "./models/workspace.model";
 import mongoose from "mongoose";
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 export async function getWorkspaceId(req: NextRequest): Promise<mongoose.Types.ObjectId | null> {
     const workspaceId = req.headers.get("x-workspace-id");
@@ -40,3 +42,10 @@ export function workspaceError(reason?: string) {
         { status: 400 }
     );
 }
+
+
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+};
+

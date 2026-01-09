@@ -226,3 +226,78 @@ export async function GET(
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
     }
 }
+
+// PATCH /api/prompt/[id] - Update prompt tags
+export async function PATCH(
+    request: Request,
+    context: { params: Promise<{ id: string }> }
+) {
+    try {
+        await connectDatabase();
+
+        const { id } = await context.params;
+        const body = await request.json();
+        const { tags } = body;
+
+        const workspaceId = await getWorkspaceId(request as NextRequest);
+        if (!workspaceId) return workspaceError();
+
+        // Find and update prompt
+        const prompt = await Prompt.findOneAndUpdate(
+            { _id: id, workspaceId },
+            { tags },
+            { new: true }
+        );
+
+        if (!prompt) {
+            return NextResponse.json({ message: "Prompt not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({
+            message: "Prompt updated successfully",
+            prompt: {
+                _id: prompt._id,
+                promptText: prompt.promptText,
+                tags: prompt.tags,
+                topic: prompt.topic,
+                isActive: prompt.isActive,
+                isScheduled: prompt.isScheduled
+            }
+        }, { status: 200 });
+
+    } catch (error) {
+        console.error("Error updating prompt:", error);
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    }
+}
+
+// DELETE /api/prompt/[id] - Delete prompt
+export async function DELETE(
+    request: Request,
+    context: { params: Promise<{ id: string }> }
+) {
+    try {
+        await connectDatabase();
+
+        const { id } = await context.params;
+
+        const workspaceId = await getWorkspaceId(request as NextRequest);
+        if (!workspaceId) return workspaceError();
+
+        // Find and delete prompt
+        const prompt = await Prompt.findOneAndDelete({ _id: id, workspaceId });
+
+        if (!prompt) {
+            return NextResponse.json({ message: "Prompt not found" }, { status: 404 });
+        }
+
+        return NextResponse.json({
+            message: "Prompt deleted successfully",
+            promptId: id
+        }, { status: 200 });
+
+    } catch (error) {
+        console.error("Error deleting prompt:", error);
+        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    }
+}

@@ -17,6 +17,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Loader } from "lucide-react";
+import InfoButton from "../InfoButton";
 
 interface AIDeviceBreakdownChartProps {
   data: any[];
@@ -46,12 +47,17 @@ export function AIDeviceBreakdownChart({ data, loading }: AIDeviceBreakdownChart
   return (
     <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <CardHeader className="border-b border-slate-100  px-5 ">
-        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-          Breakdown of Devices Used by AI Visitors
-        </CardTitle>
-        <CardDescription className="text-[10px] text-slate-500 font-medium">
-          Mobile vs Desktop split for AI-driven sessions
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+              Breakdown of Devices Used by AI Visitors
+            </CardTitle>
+            <CardDescription className="text-[10px] text-slate-500 font-medium">
+              Mobile vs Desktop split for AI-driven sessions
+            </CardDescription>
+          </div>
+          <InfoButton content="Device breakdown showing the distribution of AI-referred traffic between mobile, desktop, and other devices"/>
+        </div>
       </CardHeader>
 
       <CardContent className="pt-6">
