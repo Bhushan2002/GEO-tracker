@@ -115,8 +115,12 @@ export default function GoogleAnalyticsPage() {
   }, [selectedAccountId]);
 
   const loadGAAccounts = async () => {
+    if (!activeWorkspace?._id) return;
+
     try {
-      const cached = sessionStorage.getItem("ga-accounts-cache");
+      const CACHE_KEY = `ga-accounts-cache-${activeWorkspace._id}`;
+      const cached = sessionStorage.getItem(CACHE_KEY);
+
       if (cached) {
         const parsed = JSON.parse(cached);
         setGaAccounts(parsed);
@@ -135,7 +139,7 @@ export default function GoogleAnalyticsPage() {
 
       const response = await api.get("/api/ga-accounts");
       setGaAccounts(response.data);
-      sessionStorage.setItem("ga-accounts-cache", JSON.stringify(response.data));
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify(response.data));
 
       if (response.data.length > 0 && !selectedAccountId) {
         setSelectedAccountId(response.data[0]._id);
@@ -182,7 +186,7 @@ export default function GoogleAnalyticsPage() {
           setTopicClusterData(parsed.topicClusterData || []);
           setDemographicsData(parsed.demographicsData || []);
           setLoading(false);
-      
+
 
 
           return;
@@ -275,7 +279,7 @@ export default function GoogleAnalyticsPage() {
       setTopicClusterData(topicRes.data);
       setDemographicsData(demoRes.data);
 
-   
+
 
       // Save to cache
       sessionStorage.setItem(
@@ -315,7 +319,7 @@ export default function GoogleAnalyticsPage() {
       }
     } finally {
       setLoading(false);
-      
+
     }
   };
 
@@ -386,20 +390,25 @@ export default function GoogleAnalyticsPage() {
                 value={selectedAccountId}
                 onValueChange={setSelectedAccountId}
               >
-                <SelectTrigger className="w-full md:w-[280px] bg-slate-50 border-slate-200 h-10 font-bold text-[13px] rounded-xl transition-all hover:bg-white text-slate-900">
+                <SelectTrigger className="w-full md:w-auto md:min-w-[160px] px-4 bg-slate-50 border-slate-200 h-10 font-bold text-[13px] rounded-xl transition-all hover:bg-white text-slate-900">
                   <SelectValue placeholder="Select Account" />
                 </SelectTrigger>
                 <SelectContent>
-                  {gaAccounts.map((account) => (
-                    <SelectItem key={account._id} value={account._id}>
-                      <span className="font-bold text-slate-900">
-                        {account.propertyName}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-bold ml-2">
-                        ({account.propertyId})
-                      </span>
-                    </SelectItem>
-                  ))}
+                  {gaAccounts.map((account) => {
+                    const cleanName = account.propertyName
+                      .replace(/GA4/gi, "")
+                      .replace(/Google Analytics/gi, "")
+                      .replace(/-/g, "")
+                      .trim();
+
+                    return (
+                      <SelectItem key={account._id} value={account._id}>
+                        <span className="font-bold text-slate-900">
+                          {cleanName}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             )}
@@ -446,7 +455,11 @@ export default function GoogleAnalyticsPage() {
                                 {account.accountName}
                               </p>
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                {account.propertyName} ({account.propertyId})
+                                {account.propertyName
+                                  .replace(/GA4/gi, "")
+                                  .replace(/Google Analytics/gi, "")
+                                  .replace(/-/g, "")
+                                  .trim()}
                               </p>
                             </div>
                             <Button
@@ -912,7 +925,7 @@ export default function GoogleAnalyticsPage() {
                   </Card>
 
                   <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    
+
                     <CardHeader className="border-b border-slate-100  px-5 ">
                       <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
                         AI Models Performance
