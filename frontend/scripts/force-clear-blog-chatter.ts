@@ -3,13 +3,21 @@ import mongoose from 'mongoose';
 import * as dotenv from 'dotenv';
 import path from 'path';
 
-// Manual connection for script
-const MONGO_URL = "mongodb+srv://bhushansatpute2002:vV4vM0tL1200T6Xq@geo-cluster.f93sh.mongodb.net/test?retryWrites=true&w=majority&appName=geo-cluster";
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '../.env.local') });
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+const MONGO_URL = process.env.MONGO_URL;
+
+if (!MONGO_URL) {
+    console.error("MONGO_URL environment variable is missing.");
+    process.exit(1);
+}
 
 async function clearData() {
     try {
         console.log('Connecting to MongoDB...');
-        await mongoose.connect(MONGO_URL);
+        await mongoose.connect(MONGO_URL as string);
         console.log('Connected.');
 
         const WorkspaceSchema = new mongoose.Schema({ name: String });
