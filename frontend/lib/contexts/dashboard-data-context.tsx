@@ -118,23 +118,35 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
 
 
     // --- Aggregated Actions ---
-
     /**
      * Refreshes all dashboard data in parallel.
      * Sets global loading state during the process.
      */
     const refreshAll = useCallback(async () => {
         setIsLoading(true);
-        await Promise.all([
-            fetchPrompts(),
-            fetchBrands(),
-            fetchResponses(),
-            fetchAllBrands(),
-            fetchBrandHistory(),
-            fetchModelsAnalytics(),
-        ]);
-        setIsLoading(false);
-        setHasLoaded(true);
+        // Clear existing data to avoid stale UI state while fetching new workspace data
+        setPrompts([]);
+        setTargetBrands([]);
+        setModelResponses([]);
+        setAllBrands([]);
+        setBrandHistory([]);
+        setModelsAnalytics([]);
+
+        try {
+            await Promise.all([
+                fetchPrompts(),
+                fetchBrands(),
+                fetchResponses(),
+                fetchAllBrands(),
+                fetchBrandHistory(),
+                fetchModelsAnalytics(),
+            ]);
+        } catch (error) {
+            console.error("Error refreshing dashboard data:", error);
+        } finally {
+            setIsLoading(false);
+            setHasLoaded(true);
+        }
     }, [fetchPrompts, fetchBrands, fetchResponses, fetchAllBrands, fetchBrandHistory, fetchModelsAnalytics]);
 
 
@@ -143,6 +155,8 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     // Trigger data refresh whenever the workspace context changes
     useEffect(() => {
         if (activeWorkspace?._id) {
+            // Reset loading tracking flags for a fresh start in the new workspace
+            setHasLoaded(false);
             refreshAll();
         }
     }, [activeWorkspace?._id, refreshAll]);
@@ -156,7 +170,7 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
                 allBrands,
                 brandHistory,
                 modelsAnalytics,
-                isLoading: isLoading && !hasLoaded,
+                isLoading: isLoading || !hasLoaded,
                 refreshAll,
                 refreshPrompts: fetchPrompts,
                 refreshBrands: fetchBrands,

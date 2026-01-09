@@ -161,9 +161,9 @@
   }
 
   /* Global Interactivity - Enforce hand cursor on all clickable elements */
-  button, 
-  a, 
-  select, 
+  button,
+  a,
+  select,
   label,
   [role="button"],
   .cursor-pointer,
