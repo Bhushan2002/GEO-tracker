@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { BrandTable } from "@/components/Brands/BrandTable";
 import { brandAPI } from "@/lib/api/brand.api";
@@ -108,18 +109,17 @@ export default function BrandPage() {
                 {/* Left Column: Basic Info */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="brandName" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Brand Name</Label>
+                    <Label htmlFor="actualName" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Legal Name (Official Company Name)</Label>
                     <div className="relative group">
-                      <div className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
+                      <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <Building2 className="w-4 h-4" />
                       </div>
                       <Input
-                        id="brandName"
-                        placeholder="e.g. MyBrand"
+                        id="actualName"
+                        placeholder="Legal Name"
                         className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:ring-slate-900 focus:border-slate-900 transition-all rounded-xl"
-                        value={brand_name}
-                        onChange={(e) => setBrand_name(e.target.value)}
-                        required
+                        value={actualBrandName}
+                        onChange={(e) => setActualBrandName(e.target.value)}
                       />
                     </div>
                   </div>
@@ -127,7 +127,7 @@ export default function BrandPage() {
                   <div className="space-y-2">
                     <Label htmlFor="officialUrl" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Official URL</Label>
                     <div className="relative group">
-                      <div className="absolute left-3 top-2.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
+                      <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <Globe className="w-4 h-4" />
                       </div>
                       <Input
@@ -146,13 +146,14 @@ export default function BrandPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="actualName" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Legal Entity Name</Label>
+                      <Label htmlFor="brandName" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Brand Name (Marketing)</Label>
                       <Input
-                        id="actualName"
-                        placeholder="Legal Name"
+                        id="brandName"
+                        placeholder="e.g. MyBrand"
                         className="h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:ring-slate-900 focus:border-slate-900 transition-all rounded-xl"
-                        value={actualBrandName}
-                        onChange={(e) => setActualBrandName(e.target.value)}
+                        value={brand_name}
+                        onChange={(e) => setBrand_name(e.target.value)}
+                        required
                       />
                     </div>
                     <div className="space-y-2">
@@ -170,13 +171,13 @@ export default function BrandPage() {
                   <div className="space-y-2">
                     <Label htmlFor="description" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Quick Description</Label>
                     <div className="relative group">
-                      <div className="absolute left-3 top-3 text-slate-400 group-focus-within:text-slate-900 transition-colors">
+                      <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <FileText className="w-4 h-4" />
                       </div>
-                      <Input
+                      <Textarea
                         id="description"
-                        placeholder="Brief overview of the brand's core business..."
-                        className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:ring-slate-900 focus:border-slate-900 transition-all rounded-xl"
+                        placeholder="Brief brand overview..."
+                        className="pl-10 min-h-[120px] bg-slate-50/50 border-slate-200 focus:bg-white focus:ring-slate-900 focus:border-slate-900 transition-all rounded-xl py-3 resize-none"
                         value={brand_description}
                         onChange={(e) => setBrand_description(e.target.value)}
                         required
@@ -217,7 +218,7 @@ export default function BrandPage() {
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-slate-400" />
-                <h2 className="text-lg font-bold text-slate-900">Tracked Entities <span className="text-xs font-medium text-slate-400 ml-2 font-normal">• Click card for full details</span></h2>
+                <h2 className="text-lg font-bold text-slate-900">Tracked Brands <span className="text-xs font-medium text-slate-400 ml-2 font-normal">• Click card for full details</span></h2>
               </div>
               <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200">
                 {targetBrands.length} Total Targets
