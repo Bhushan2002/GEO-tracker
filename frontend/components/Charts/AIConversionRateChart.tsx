@@ -17,6 +17,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import InfoButton from "../InfoButton";
 
 /**
  * Bar chart displaying the conversion rate for different AI models.
@@ -27,12 +28,17 @@ export function AIConversionRateChart({ data }: { data: any[] }) {
   return (
     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 ">
-        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-          Conversion Rate by AI Model
-        </CardTitle>
-        <CardDescription className="text-[10px] text-slate-500 font-medium">
-          Percentage of sessions that resulted in a key event
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+              Conversion Rate by AI Model
+            </CardTitle>
+            <CardDescription className="text-[10px] text-slate-500 font-medium">
+              Percentage of sessions that resulted in a key event
+            </CardDescription>
+          </div>
+          <InfoButton content="Shows the conversion rate for each AI model as a percentage of sessions that resulted in a key event"/>
+        </div>
       </CardHeader>
 
       <CardContent className="pt-6">

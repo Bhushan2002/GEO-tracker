@@ -4,6 +4,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { cn } from "@/lib/utils";
 import { ArrowUp, ArrowDown, Minus, Loader } from "lucide-react";
 
+/* ---- Brand Color Palette ---- */
+const BRAND_COLORS = [
+  "#EF4444", // red
+  "#3B82F6", // blue
+  "#10B981", // green
+  "#F59E0B", // amber
+  "#8B5CF6", // purple
+  "#EC4899", // pink
+  "#F97316", // orange
+  "#14B8A6", // teal
+  "#6366F1", // indigo
+  "#84CC16", // lime
+  "#06B6D4", // cyan
+  "#F43F5E", // rose
+  "#A855F7", // violet
+  "#22D3EE", // sky
+  "#FB923C", // orange-400
+];
+
 /**
  * Comprehensive dashboard table for displaying brand rankings with logos, visibility scores, and sentiment indicators.
  * Handles logo fetching logic with fallbacks.
@@ -17,6 +36,11 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
       </div>
     );
   }
+
+  const getBrandColor = (brand: any, index: number) => {
+    // Use brand's assigned color if available, otherwise assign from palette
+    return brand.color || BRAND_COLORS[index % BRAND_COLORS.length];
+  };
 
   const getLogoUrl = (brand: any) => {
     if (brand.logo_url) return brand.logo_url;
@@ -73,13 +97,17 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
           </TableRow>
         ) : (
           data.map((brand, index) => {
+            const brandColor = getBrandColor(brand, index);
             const logoUrl = getLogoUrl(brand);
             return (
               <TableRow key={brand._id || index} className="hover:bg-slate-50/50 transition-all border-b border-slate-100 last:border-0 h-12 group">
                 <TableCell className="text-center text-slate-400 text-xs font-bold border-r border-slate-100">
                   {index + 1}
                 </TableCell>
-                <TableCell className="border-r border-slate-100 pl-5">
+                <TableCell className="flex border-r border-slate-100 pl-5 space-x-2">
+                  <div className="flex items-center gap-3.5 ">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: brandColor}} title="Brand Color"></div>
+                  </div>
                   <div className="flex items-center gap-3.5">
                     <div className="h-8 w-8 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-110 transition-transform duration-300">
                       {logoUrl ? (

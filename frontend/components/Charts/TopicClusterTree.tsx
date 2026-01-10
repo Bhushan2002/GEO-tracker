@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import InfoButton from "../InfoButton";
 
 interface TopicClustersTreemapProps {
   data: { name: string; size: number }[];
@@ -144,19 +145,25 @@ interface TopicClustersTreemapProps {
   data: { name: string; size: number }[];
 }
 
-/**
+/** 
  * Treemap visualization of topic clusters showing user interest distribution.
  */
 export function TopicClustersTreemap({ data }: TopicClustersTreemapProps) {
   return (
     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 ">
-        <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-          Topic Clusters
-        </CardTitle>
-        <CardDescription className="text-[10px] text-slate-500 font-medium">
-          Which content sections attract the most AI traffic?
-        </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+              Topic Clusters
+            </CardTitle>
+            <CardDescription className="text-[10px] text-slate-500 font-medium">
+              Which content sections attract the most AI traffic?
+            </CardDescription>
+          </div>
+         
+          <InfoButton content="Treemap visualization showing which content topics and sections attract the most AI-referred traffic"/>
+        </div>
       </CardHeader>
       <CardContent className="pt-6">
         {data.length === 0 ? (

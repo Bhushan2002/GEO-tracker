@@ -79,6 +79,12 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
                 setIsDialogOpen(true);
               }}
             >
+              {/* Top colored border on hover */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-0 group-hover:h-0.5 transition-all duration-300 z-10"
+                style={{ backgroundColor: brand.color || '#94a3b8' }}
+              />
+              
               {/* Compact Card Header */}
               <div className="p-5 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg border border-slate-100 bg-white shadow-sm flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform">
@@ -263,13 +269,19 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
   );
 }
 
-function BrandLogo({ url, name }: { url: string; name: string }) {
+function BrandLogo({ url, name }: { url?: string; name: string }) {
   const [errorCount, setErrorCount] = useState(0);
 
   const hostname = (() => {
     try {
-      const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
-      return new URL(normalizedUrl).hostname;
+      // If URL is provided, use it
+      if (url) {
+        const normalizedUrl = url.startsWith("http") ? url : `https://${url}`;
+        return new URL(normalizedUrl).hostname;
+      }
+      // Otherwise, derive from brand name (convert "Brand Name" to "brandname.com")
+      const derivedDomain = name.toLowerCase().replace(/\s+/g, "") + ".com";
+      return derivedDomain;
     } catch {
       return "";
     }

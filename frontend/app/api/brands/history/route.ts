@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
         timeSeriesData.push({
           name: brand.brand_name,
           mentions: mentions,
+          color: brand.color,
           sentiment_score: sentimentScore,
           lastRank: rankPosition,
           timeStamp: dateStr

@@ -1,6 +1,12 @@
 import { Schema, model, models } from "mongoose";
 import { IBrand } from "../types/brand.type";
 
+
+
+const generateRandomPastelColor = () => {
+  const hue = Math.floor(Math.random() * 360);
+  return `hsl(${hue}, 70%, 60%)`;
+};
 /**
  * Mongoose Schema for the Brand entity.
  * Stores analysis data for a specific brand found within a prompt response.
@@ -9,9 +15,8 @@ import { IBrand } from "../types/brand.type";
 const brandSchema = new Schema<IBrand>(
   {
     workspaceId: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
-
     brand_name: { type: String, required: true },
-
+    color: {type: String, default: generateRandomPastelColor },
     // Core KPIs
     mentions: { type: Number, default: 0 },
     lastRank: { type: Number, default: undefined, sparse: true }, // Sparse index allows multiple nulls

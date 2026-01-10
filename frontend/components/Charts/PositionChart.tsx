@@ -16,18 +16,23 @@ interface PositionChartProp {
   data: any[];
 }
 
-/* ---------- Colors ---------- */
+/* ---------- Brand Color Palette (Consistent across all charts) ---------- */
 const BRAND_COLORS = [
-  "#60A5FA", // Blue
-  "#34D399", // Emerald
-  "#818CF8", // Indigo
-  "#22D3EE", // Cyan
-  "#FACC15", // Amber
-  "#FB7185", // Rose
-  "#A78BFA", // Violet
-  "#F472B6", // Pink
-  "#FB923C", // Orange
-  "#94A3B8", // Slate
+  "#EF4444", // red
+  "#3B82F6", // blue
+  "#10B981", // green
+  "#F59E0B", // amber
+  "#8B5CF6", // purple
+  "#EC4899", // pink
+  "#F97316", // orange
+  "#14B8A6", // teal
+  "#6366F1", // indigo
+  "#84CC16", // lime
+  "#06B6D4", // cyan
+  "#F43F5E", // rose
+  "#A855F7", // violet
+  "#22D3EE", // sky
+  "#FB923C", // orange-400
 ];
 
 /* ---------- Tooltip ---------- */
@@ -83,22 +88,40 @@ const CustomTooltip = ({ active, payload, label }: any) => {
  * Calculates average rank and displays discrete lanes for top brands.
  */
 export function PositionChart({ data }: PositionChartProp) {
-  const { chartData, brands, hasData } = React.useMemo(() => {
+  const { chartData, brands, hasData, brandColors } = React.useMemo(() => {
     if (!data || data.length === 0) {
-      return { chartData: [], brands: [], hasData: false };
+      return { chartData: [], brands: [], hasData: false, brandColors: {} };
     }
 
     /* ---- Compute avg rank per brand ---- */
     const stats: Record<string, { sum: number; count: number }> = {};
+    const colors: Record<string, string> = {};
+    const brandIndex: Record<string, number> = {};
+    let currentIndex = 0;
 
     data.forEach((row) => {
       if (row.lastRank == null) return;
       const rank = Number(row.lastRank);
       if (Number.isNaN(rank)) return;
 
-      stats[row.name] ??= { sum: 0, count: 0 };
+      if (!stats[row.name]) {
+        stats[row.name] = { sum: 0, count: 0 };
+        brandIndex[row.name] = currentIndex++;
+      }
       stats[row.name].sum += rank;
       stats[row.name].count += 1;
+
+      // Store brand color if available
+      if (row.color && !colors[row.name]) {
+        colors[row.name] = row.color;
+      }
+    });
+
+    // Assign fallback colors to brands that don't have one
+    Object.keys(stats).forEach((brandName) => {
+      if (!colors[brandName]) {
+        colors[brandName] = BRAND_COLORS[brandIndex[brandName] % BRAND_COLORS.length];
+      }
     });
 
     /* ---- Top 7 brands by best average rank ---- */
@@ -151,6 +174,7 @@ export function PositionChart({ data }: PositionChartProp) {
       chartData: transformed,
       brands: dynamicBrands,
       hasData: transformed.length > 0 && dynamicBrands.length > 0,
+      brandColors: colors,
     };
   }, [data]);
 
@@ -210,24 +234,27 @@ export function PositionChart({ data }: PositionChartProp) {
           cursor={{ stroke: "#9CA3AF", strokeDasharray: "3 3" }}
         />
 
-        {brands.map((brand, index) => (
-          <Line
-            key={brand}
-            type="monotone"
-            dataKey={brand}
-            stroke={BRAND_COLORS[index % BRAND_COLORS.length]}
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{
-              r: 4,
-              fill: "#fff",
-              stroke: BRAND_COLORS[index % BRAND_COLORS.length],
-              strokeWidth: 2,
-            }}
-            animationDuration={500}
-            name={brand}
-          />
-        ))}
+        {brands.map((brand, index) => {
+          const color = brandColors[brand] || BRAND_COLORS[index % BRAND_COLORS.length];
+          return (
+            <Line
+              key={brand}
+              type="monotone"
+              dataKey={brand}
+              stroke={color}
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{
+                r: 4,
+                fill: "#fff",
+                stroke: color,
+                strokeWidth: 2,
+              }}
+              animationDuration={500}
+              name={brand}
+            />
+          );
+        })}
       </LineChart>
     </ResponsiveContainer>
   );

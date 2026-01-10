@@ -2,6 +2,7 @@ export interface IBrand {
   workspaceId?: string;
   brand_name: string;
   mentions: number;
+  color?: string;
   lastRank: number;
   sentiment_sum?: number;
   total_evaluations?: number;

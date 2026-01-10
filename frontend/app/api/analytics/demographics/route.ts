@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: "90daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
         dimensions: [
           { name: "country" },
           { name: "firstUserSource" }

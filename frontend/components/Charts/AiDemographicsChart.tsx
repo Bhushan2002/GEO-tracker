@@ -18,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import InfoButton from "../InfoButton";
 
 interface AiDemographicsChartProps {
   data: any[];
@@ -47,8 +48,7 @@ export function AiDemographicsChart({ data }: AiDemographicsChartProps) {
   return (
     <Card className="col-span-1 bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300">
       <CardHeader className="border-b border-slate-100 px-6 py-4">
-        <div className="flex items-center gap-2">
-
+        <div className="flex items-center justify-between">
           <div>
             <CardTitle className="font-bold text-xs uppercase tracking-wider text-slate-800">
               AI Model Usage by Country
@@ -57,6 +57,7 @@ export function AiDemographicsChart({ data }: AiDemographicsChartProps) {
               Traffic distribution across top regions
             </CardDescription>
           </div>
+          <InfoButton content="Shows the distribution of AI model usage across different countries/regions with stacked bar breakdown"/>
         </div>
       </CardHeader>
 

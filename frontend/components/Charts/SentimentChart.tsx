@@ -15,18 +15,23 @@ interface SentimentChartProp {
   data: any[];
 }
 
-/* ---- Refined Soft Colors (Same as Visibility) ---- */
+/* ---- Brand Color Palette (Consistent across all charts) ---- */
 const BRAND_COLORS = [
-  "#60A5FA", // Blue 400
-  "#34D399", // Emerald 400
-  "#818CF8", // Indigo 400
-  "#22D3EE", // Cyan 400
-  "#FACC15", // Amber 400
-  "#FB7185", // Rose 400
-  "#A78BFA", // Violet 400
-  "#F472B6", // Pink 400
-  "#FB923C", // Orange 400
-  "#94A3B8", // Slate 400
+  "#EF4444", // red
+  "#3B82F6", // blue
+  "#10B981", // green
+  "#F59E0B", // amber
+  "#8B5CF6", // purple
+  "#EC4899", // pink
+  "#F97316", // orange
+  "#14B8A6", // teal
+  "#6366F1", // indigo
+  "#84CC16", // lime
+  "#06B6D4", // cyan
+  "#F43F5E", // rose
+  "#A855F7", // violet
+  "#22D3EE", // sky
+  "#FB923C", // orange-400
 ];
 
 
@@ -109,9 +114,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
  * Line chart visualizing the sentiment score trends for top brands over time.
  */
 export function SentimentChart({ data }: SentimentChartProp) {
-  const { chartData, top5Brands, hasData } = React.useMemo(() => {
+  const { chartData, top5Brands, hasData, brandColors } = React.useMemo(() => {
     if (!data || data.length === 0)
-      return { chartData: [], top5Brands: [], hasData: false };
+      return { chartData: [], top5Brands: [], hasData: false, brandColors: {} };
 
     const valid = data.some(
       (row) =>
@@ -119,17 +124,33 @@ export function SentimentChart({ data }: SentimentChartProp) {
         row.sentiment_score !== null
     );
     if (!valid)
-      return { chartData: [], top5Brands: [], hasData: false };
+      return { chartData: [], top5Brands: [], hasData: false, brandColors: {} };
 
     const brandTotals: Record<string, { sum: number; count: number }> = {};
+    const colors: Record<string, string> = {};
+    const brandIndex: Record<string, number> = {};
+    let currentIndex = 0;
 
     data.forEach((row) => {
       const value = parseFloat(row.sentiment_score) || 0;
       if (!brandTotals[row.name]) {
         brandTotals[row.name] = { sum: 0, count: 0 };
+        brandIndex[row.name] = currentIndex++;
       }
       brandTotals[row.name].sum += value;
       brandTotals[row.name].count += 1;
+
+      // Store brand color if available
+      if (row.color && !colors[row.name]) {
+        colors[row.name] = row.color;
+      }
+    });
+
+    // Assign fallback colors to brands that don't have one
+    Object.keys(brandTotals).forEach((brandName) => {
+      if (!colors[brandName]) {
+        colors[brandName] = BRAND_COLORS[brandIndex[brandName] % BRAND_COLORS.length];
+      }
     });
 
     const top5 = Object.entries(brandTotals)
@@ -158,7 +179,7 @@ export function SentimentChart({ data }: SentimentChartProp) {
       return da.getTime() - db.getTime();
     });
 
-    return { chartData: transformed, top5Brands: top5, hasData: true };
+    return { chartData: transformed, top5Brands: top5, hasData: true, brandColors: colors };
   }, [data]);
 
   if (!hasData || chartData.length === 0) {
@@ -210,7 +231,7 @@ export function SentimentChart({ data }: SentimentChartProp) {
         />
 
         {top5Brands.map((brand, index) => {
-          const color = BRAND_COLORS[index % BRAND_COLORS.length];
+          const color = brandColors[brand] || BRAND_COLORS[index % BRAND_COLORS.length];
           const isPrimary = index < 3;
 
           return (

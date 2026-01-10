@@ -10,7 +10,18 @@ import { BrandTable } from "@/components/Brands/BrandTable";
 import { brandAPI } from "@/lib/api/brand.api";
 import { TargetBrandTable } from "@/components/Brands/TargetBrandGrid";
 import { Brand } from "../../../lib/models/brand.model";
-import { BadgeCheck, Building2, ChevronRight, FileText, Globe, Info, Loader, Plus, ShieldCheck, Tag } from "lucide-react";
+import {
+  BadgeCheck,
+  Building2,
+  ChevronRight,
+  FileText,
+  Globe,
+  Info,
+  Loader,
+  Plus,
+  ShieldCheck,
+  Tag,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
@@ -28,14 +39,30 @@ import {
  */
 export default function BrandPage() {
   const { targetBrands, isLoading, refreshBrands } = useDashboardData();
+  const { allBrands, refreshAllBrands, isLoading: isAllBrandsLoading } = useDashboardData();
   const [brand_url, setBrand_url] = useState("");
   const [brand_name, setBrand_name] = useState("");
   const [actualBrandName, setActualBrandName] = useState("");
   const [brand_description, setBrand_description] = useState("");
   const [brandType, setBrandType] = useState("");
   const [mainBrand, setMainBrand] = useState(false);
+  const [isSyncingColors, setIsSyncingColors] = useState(false);
 
   const { activeWorkspace } = useWorkspace();
+
+  const handleSyncColors = async () => {
+    setIsSyncingColors(true);
+    try {
+      const response = await fetch('/api/brands/sync-colors');
+      const data = await response.json();
+      toast.success(`Colors synced! Updated ${data.updated} brands.`);
+      refreshAllBrands();
+    } catch (error) {
+      toast.error("Failed to sync colors.");
+    } finally {
+      setIsSyncingColors(false);
+    }
+  };
 
   const handleAddBrand = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,7 +77,7 @@ export default function BrandPage() {
         actual_brand_name: actualBrandName.trim() || undefined,
         brand_type: brandType.trim() || undefined,
         brand_description: brand_description.trim() || undefined,
-        mainBrand: mainBrand || false
+        mainBrand: mainBrand || false,
       });
       toast.success("Target brand added!");
       refreshBrands();
@@ -74,9 +101,12 @@ export default function BrandPage() {
               <Tag className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Brand Management</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">
+                Brand Management
+              </h1>
               <p className="text-[13px] text-slate-500 mt-1.5 font-medium">
-                Define and track brands to analyze AI mentions, sentiment patterns, and ranking trends.
+                Define and track brands to analyze AI mentions, sentiment
+                patterns, and ranking trends.
               </p>
             </div>
           </div>
@@ -90,7 +120,9 @@ export default function BrandPage() {
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <Plus className="w-4 h-4 text-slate-400" />
-                <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-900 m-0">Add New Target Brand</h2>
+                <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-900 m-0">
+                  Add New Target Brand
+                </h2>
               </div>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -99,33 +131,48 @@ export default function BrandPage() {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[250px] text-xs bg-slate-900 text-slate-50 border-slate-800">
-                  Adding a brand allows our system to track its mentions across AI responses and calculate visibility scores.
+                  Adding a brand allows our system to track its mentions across
+                  AI responses and calculate visibility scores.
                 </TooltipContent>
               </Tooltip>
             </div>
 
             <div className="p-8">
-              <form onSubmit={handleAddBrand} className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <form
+                onSubmit={handleAddBrand}
+                className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"
+              >
                 {/* Left Column: Basic Info */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="actualName" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Legal Name (Official Company Name)</Label>
+                    <Label
+                      htmlFor="brandName"
+                      className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1"
+                    >
+                      Brand Name
+                    </Label>
                     <div className="relative group">
                       <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <Building2 className="w-4 h-4" />
                       </div>
                       <Input
-                        id="actualName"
-                        placeholder="Legal Name"
+                        id="brandName"
+                        placeholder="e.g. MyBrand"
                         className="pl-10 h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:ring-slate-900 focus:border-slate-900 transition-all rounded-xl"
-                        value={actualBrandName}
-                        onChange={(e) => setActualBrandName(e.target.value)}
+                        value={brand_name}
+                        onChange={(e) => setBrand_name(e.target.value)}
+                        required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="officialUrl" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Official URL</Label>
+                    <Label
+                      htmlFor="officialUrl"
+                      className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1"
+                    >
+                      Official URL
+                    </Label>
                     <div className="relative group">
                       <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <Globe className="w-4 h-4" />
@@ -146,18 +193,27 @@ export default function BrandPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="brandName" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Brand Name (Marketing)</Label>
+                      <Label
+                        htmlFor="actualName"
+                        className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1"
+                      >
+                        Legal Entity Name
+                      </Label>
                       <Input
-                        id="brandName"
-                        placeholder="e.g. MyBrand"
+                        id="actualName"
+                        placeholder="Legal Name"
                         className="h-11 bg-slate-50/50 border-slate-200 focus:bg-white focus:ring-slate-900 focus:border-slate-900 transition-all rounded-xl"
-                        value={brand_name}
-                        onChange={(e) => setBrand_name(e.target.value)}
-                        required
+                        value={actualBrandName}
+                        onChange={(e) => setActualBrandName(e.target.value)}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="brandType" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Industry / Category</Label>
+                      <Label
+                        htmlFor="brandType"
+                        className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1"
+                      >
+                        Industry / Category
+                      </Label>
                       <Input
                         id="brandType"
                         placeholder="e.g. Fintech"
@@ -169,7 +225,12 @@ export default function BrandPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="description" className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1">Quick Description</Label>
+                    <Label
+                      htmlFor="description"
+                      className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1"
+                    >
+                      Quick Description
+                    </Label>
                     <div className="relative group">
                       <div className="absolute left-3 top-3.5 text-slate-400 group-focus-within:text-slate-900 transition-colors">
                         <FileText className="w-4 h-4" />
@@ -194,16 +255,29 @@ export default function BrandPage() {
                         id="main"
                         className="border-slate-400"
                         checked={mainBrand}
-                        onCheckedChange={(checked: boolean | "indeterminate") => setMainBrand(checked === true)}
+                        onCheckedChange={(checked: boolean | "indeterminate") =>
+                          setMainBrand(checked === true)
+                        }
                       />
                       <div className="flex flex-col">
-                        <Label htmlFor="main" className="text-[13px] font-bold text-slate-900 cursor-pointer">Main Tracking Brand</Label>
-                        <span className="text-[10px] text-slate-500 font-medium">Use for comparative gap analysis</span>
+                        <Label
+                          htmlFor="main"
+                          className="text-[13px] font-bold text-slate-900 cursor-pointer"
+                        >
+                          Main Tracking Brand
+                        </Label>
+                        <span className="text-[10px] text-slate-500 font-medium">
+                          Use for comparative gap analysis
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <Button type="submit" size="lg" className="bg-slate-900 hover:bg-black text-white px-8 h-12 rounded-xl shadow-lg shadow-slate-200 flex items-center gap-2 group transition-all active:scale-95">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="bg-slate-900 hover:bg-black text-white px-8 h-12 rounded-xl shadow-lg shadow-slate-200 flex items-center gap-2 group transition-all active:scale-95"
+                  >
                     <BadgeCheck className="w-4 h-4 text-emerald-400" />
                     Add to Tracking
                     <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
@@ -218,7 +292,12 @@ export default function BrandPage() {
             <div className="flex items-center justify-between mb-6 px-1">
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-slate-400" />
-                <h2 className="text-lg font-bold text-slate-900">Tracked Brands <span className="text-xs font-medium text-slate-400 ml-2 font-normal">• Click card for full details</span></h2>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Tracked Entities{" "}
+                  <span className="text-xs font-medium text-slate-400 ml-2 font-normal">
+                    • Click card for full details
+                  </span>
+                </h2>
               </div>
               <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200">
                 {targetBrands.length} Total Targets
@@ -231,6 +310,32 @@ export default function BrandPage() {
                 loading={isLoading}
                 onRefresh={refreshBrands}
               />
+            </div>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 mt-8">
+              <div className="flex items-center justify-between mb-6 px-1">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-slate-400" />
+                <h2 className="text-lg font-bold text-slate-900">
+                  Discovered Brands{" "}
+                  <span className="text-xs font-medium text-slate-400 ml-2 font-normal">
+                    • Click card for full details
+                  </span>
+                </h2>
+              </div>
+              <div className="flex items-center gap-3">
+                
+                <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200">
+                  {allBrands.length} Total Targets
+                </div>
+              </div>
+              </div>
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <TargetBrandTable
+                data={allBrands}
+                loading={isAllBrandsLoading}
+                onRefresh={refreshAllBrands}
+              />
+            </div>
             </div>
           </div>
         </div>
