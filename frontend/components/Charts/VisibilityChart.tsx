@@ -126,28 +126,21 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
 
     const brandTotals: Record<string, { sum: number; count: number }> = {};
     const colors: Record<string, string> = {};
-    const brandIndex: Record<string, number> = {};
-    let currentIndex = 0;
 
     data.forEach((row) => {
       const value = parseFloat(row.mentions) || 0;
       if (!brandTotals[row.name]) {
         brandTotals[row.name] = { sum: 0, count: 0 };
-        brandIndex[row.name] = currentIndex++;
+        // Debug: Log first occurrence of each brand
+        console.log(`First occurrence of ${row.name}:`, { color: row.color, mentions: row.mentions });
       }
       brandTotals[row.name].sum += value;
       brandTotals[row.name].count += 1;
 
-      // Store brand color if available
+      // Store brand color if available (prioritize database color)
       if (row.color && !colors[row.name]) {
         colors[row.name] = row.color;
-      }
-    });
-
-    // Assign fallback colors to brands that don't have one
-    Object.keys(brandTotals).forEach((brandName) => {
-      if (!colors[brandName]) {
-        colors[brandName] = BRAND_COLORS[brandIndex[brandName] % BRAND_COLORS.length];
+        console.log(`Assigned color to ${row.name}:`, row.color);
       }
     });
 
@@ -174,6 +167,11 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
       const db = new Date(b.timeStamp.split("/").reverse().join("-"));
       return da.getTime() - db.getTime();
     });
+
+    // Debug: Log the colors being used
+    console.log('VisibilityChart - Brand Colors:', colors);
+    console.log('VisibilityChart - Top Brands:', top5);
+    console.log('VisibilityChart - Sample Data:', data.slice(0, 3));
 
     return { chartData: transformed, top5Brands: top5, hasData: true, brandColors: colors };
   }, [data]);
@@ -228,6 +226,7 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
         />
 
         {top5Brands.map((brand, index) => {
+          // Use the brand's assigned color from database, fallback to palette only if missing
           const color = brandColors[brand] || BRAND_COLORS[index % BRAND_COLORS.length];
           const isPrimary = index < 3;
 

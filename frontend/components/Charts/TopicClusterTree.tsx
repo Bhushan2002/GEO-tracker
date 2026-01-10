@@ -48,8 +48,8 @@ const CustomizedContent = (props: any) => {
         y={y}
         width={width}
         height={height}
-        rx={6}
-        ry={6}
+        rx={4}
+        ry={4}
         style={{
           fill: COLORS[index % COLORS.length],
           stroke: "#fff",
@@ -79,11 +79,12 @@ const CustomizedContent = (props: any) => {
             y={y + height / 2 - 8}
             textAnchor="middle"
             fill="#fff"
+            
             fontSize={14}
             fontWeight="700"
-            style={{ textShadow: "0 1px 2px rgba(0,0,0,0.3)" }}
+            style={{ textShadow: "0 0 1px rgb(0,0,0)" }}
           >
-            {name.length > 20 ? `${name.substring(0, 20)}...` : name}
+            {name.length > 10 ? `${name.substring(0, 9)}...` : name}
           </text>
           <text
             x={x + width / 2}

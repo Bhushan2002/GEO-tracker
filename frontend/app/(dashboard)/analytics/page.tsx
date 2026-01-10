@@ -65,6 +65,7 @@ import {
   Layout,
   Smartphone,
   Info,
+  RefreshCw,
 } from "lucide-react";
 import {
   Tooltip as InfoTooltip,
@@ -101,11 +102,17 @@ export default function GoogleAnalyticsPage() {
     keyEvents: 0,
   });
   const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
+
+  // property selection state
+  const [propertiesMap, setPropertiesMap] = useState<Record<string, any[]>>({});
+  const [loadingProperties, setLoadingProperties] = useState<Record<string, boolean>>({})
+
   const [conversionRateData, setConversionRateData] = useState<any[]>([]);
   const [topicClusterData, setTopicClusterData] = useState<any[]>([]);
   const [aiGrowthData, setAiGrowthData] = useState<any[]>([]);
   const [aiDeviceData, setAiDeviceData] = useState<any[]>([]);
   const [demographicsData, setDemographicsData] = useState<any[]>([]);
+  const [missingAudience, setMissingAudience] = useState(false);
   const [searchConsoleData, setSearchConsoleData] = useState<any>(null);
   const [scLoading, setScLoading] = useState(false);
   const [scSites, setScSites] = useState<any[]>([]);
@@ -184,13 +191,19 @@ export default function GoogleAnalyticsPage() {
   };
 
   const loadAccountData = async (accountId: string) => {
-    if (!accountId || isQuotaExceeded) return;
+    
+    if (!accountId || isQuotaExceeded) {
+     
+      return;
+    }
 
     setLoading(true);
+    setMissingAudience(false); // Reset the warning
 
     // Check cache first
     const cacheKey = `ga-account-data-${accountId}`;
     const cachedData = sessionStorage.getItem(cacheKey);
+
 
     if (cachedData) {
       try {
@@ -198,6 +211,7 @@ export default function GoogleAnalyticsPage() {
         const cacheAge = Date.now() - parsed.timestamp;
         const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours (effectively session-only)
 
+        
         if (cacheAge < CACHE_DURATION) {
           // Use cached data
           setChartData(parsed.chartData || []);
@@ -218,8 +232,6 @@ export default function GoogleAnalyticsPage() {
           setTopicClusterData(parsed.topicClusterData || []);
           setDemographicsData(parsed.demographicsData || []);
           setLoading(false);
-
-
 
           return;
         }
@@ -267,15 +279,8 @@ export default function GoogleAnalyticsPage() {
       });
 
       // Fetch First Touch, Zero Touch & AI Landing Pages data in parallel
-      const [
-        firstTouchRes,
-        zeroTouchRes,
-        landingPagesRes,
-        convRes,
-        growthRes,
-        deviceRes,
-        demoRes,
-      ] = await Promise.all([
+    
+      const results = await Promise.allSettled([
         api.get(`/api/analytics/first-touch?accountId=${accountId}`),
         api.get(`/api/analytics/zero-touch?accountId=${accountId}`),
         api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}`),
@@ -284,6 +289,48 @@ export default function GoogleAnalyticsPage() {
         api.get(`/api/analytics/ai-device-split?accountId=${accountId}`),
         api.get(`/api/analytics/demographics?accountId=${accountId}`),
       ]);
+      // Extract data from settled promises, using empty arrays as fallbacks
+      const endpoints = [
+        'first-touch',
+        'zero-touch',
+        'ai-landing-pages',
+        'ai-conversions',
+        'ai-growth-mom',
+        'ai-device-split',
+        'demographics'
+      ];
+      
+      const [
+        firstTouchRes,
+        zeroTouchRes,
+        landingPagesRes,
+        convRes,
+        growthRes,
+        deviceRes,
+        demoRes,
+      ] = results.map((result, index) => {
+        if (result.status === 'fulfilled') {
+         
+          return result.value;
+        } else {
+          // Check if the error is about missing AI audience
+          const errorMsg = result.reason?.response?.data?.error || result.reason?.message || '';
+          const errorStatus = result.reason?.response?.status;
+          
+          console.error(` ${endpoints[index]} failed:`, {
+            status: errorStatus,
+            error: errorMsg,
+            fullError: result.reason
+          });
+          
+          if (errorMsg.includes('AI Traffic audience not found') || errorMsg.includes('audience')) {
+            setMissingAudience(true);
+          }
+          
+          console.warn(`Failed to load ${endpoints[index]}:`, errorMsg);
+          return { data: [] };
+        }
+      });
 
       // Fetch topic clusters separately (optional, may not exist yet)
       let topicRes = { data: [] };
@@ -298,6 +345,7 @@ export default function GoogleAnalyticsPage() {
       const fTouch = firstTouchRes.data || [];
       const zTouch = zeroTouchRes.data || [];
       const landingPages = landingPagesRes.data?.landingPageData || [];
+
 
       setChartData(mainData);
       setKeyMetrics(metrics);
@@ -430,6 +478,55 @@ export default function GoogleAnalyticsPage() {
       toast.error("Failed to remove account");
     }
   };
+  const fetchPropertiesForAccount = async (accountId: string) => {
+    if (propertiesMap[accountId]) return;
+    setLoadingProperties(prev => ({ ...prev, [accountId]: true }));
+    try {
+      const res = await api.get(`/api/ga-accounts/${accountId}/properties`);
+      setPropertiesMap(prev => ({ ...prev, [accountId]: res.data }))
+    } catch (error) {
+      console.error("Failed to fetch properties", error);
+      toast.error("Could not load properties");
+    } finally {
+      setLoadingProperties(prev => ({ ...prev, [accountId]: false }));
+    }
+  }
+  const handlePropertyChange = async (accountId: string, propertyId: string) => {
+    const properties = propertiesMap[accountId];
+    const selectedProp = properties?.find(p => p.id === propertyId);
+
+    if (!selectedProp) return;
+
+    try {
+      await api.patch(`/api/ga-accounts/${accountId}`, {
+        propertyId: selectedProp.id,
+        propertyName: selectedProp.name
+      });
+
+      toast.success("Property updated successfully");
+
+      // Update local state to reflect change immediately
+      setGaAccounts(prev => prev.map(acc => {
+        if (acc._id === accountId) {
+          return { ...acc, propertyId: selectedProp.id, propertyName: selectedProp.name };
+        }
+        return acc;
+      }));
+
+      // Clear cache and reload
+      const cacheKey = `ga-account-data-${accountId}`;
+      sessionStorage.removeItem(cacheKey);
+      
+      // If this is the currently selected account, reload data
+      if (selectedAccountId === accountId) {
+        loadAccountData(accountId);
+      }
+
+    } catch (error) {
+      console.error("Failed to update property", error);
+      toast.error("Failed to update property");
+    }
+  };
 
   const formatDate = (dateValue: any) => {
     if (!dateValue) return "";
@@ -524,28 +621,58 @@ export default function GoogleAnalyticsPage() {
                         {gaAccounts.map((account) => (
                           <div
                             key={account._id}
-                            className="p-4 flex items-center justify-between bg-white hover:bg-slate-50 transition-colors"
+                            className="p-4 bg-white hover:bg-slate-50 transition-colors space-y-3"
                           >
-                            <div className="space-y-1">
-                              <p className="font-bold text-slate-900 text-sm">
-                                {account.accountName}
-                              </p>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                {account.propertyName
-                                  .replace(/GA4/gi, "")
-                                  .replace(/Google Analytics/gi, "")
-                                  .replace(/-/g, "")
-                                  .trim()}
-                              </p>
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-1">
+                                <p className="font-bold text-slate-900 text-sm">
+                                  {account.accountName}
+                                </p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                  Current Property: {account.propertyName}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteAccount(account._id)}
+                                className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteAccount(account._id)}
-                              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+
+                            {/* Property Selector */}
+                            <div className="pt-2">
+                              <Select
+                                value={account.propertyId}
+                                onValueChange={(val) => handlePropertyChange(account._id, val)}
+                                onOpenChange={(isOpen) => {
+                                  if (isOpen) fetchPropertiesForAccount(account._id);
+                                }}
+                              >
+                                <SelectTrigger className="w-full h-9 text-xs bg-slate-100 border-slate-200">
+                                  <SelectValue placeholder="Switch Property/App" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {loadingProperties[account._id] ? (
+                                    <div className="flex items-center justify-center p-3 text-xs text-muted-foreground">
+                                      <Loader2 className="h-3 w-3 animate-spin mr-2" />
+                                      Loading properties...
+                                    </div>
+                                  ) : (
+                                    propertiesMap[account._id]?.map((prop) => (
+                                      <SelectItem key={prop.id} value={prop.id} className="text-xs">
+                                        {prop.name}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                  {propertiesMap[account._id]?.length === 0 && !loadingProperties[account._id] && (
+                                    <div className="p-2 text-xs text-center text-muted-foreground">No other properties found</div>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
                         ))}
                       </div>

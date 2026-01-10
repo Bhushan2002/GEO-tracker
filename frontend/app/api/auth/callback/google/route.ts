@@ -41,7 +41,16 @@ export async function GET(request: Request) {
       version: "v1alpha",
       auth: oauth2Client,
     });
+    
+    const searchConsole = google.searchconsole({
+      version: "v1",
+      auth: oauth2Client,
+    });
 
+    const tagManager = google.tagmanager({
+      version: "v2",
+      auth: oauth2Client,
+    });
     // List all accounts the user has access to
     const accountsResponse = await admin.accounts.list();
     const accounts = accountsResponse.data.accounts || [];

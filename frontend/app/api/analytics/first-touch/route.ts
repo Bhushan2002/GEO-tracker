@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     // Refresh token if needed
     const accessToken = await refreshTokenIfNeeded(account);
 
-    // Check if AI audience exists, if not try to fetch it
+    // Check if AI audience exists, if not try to fetch or create it
     if (!account.aiAudienceId) {
       try {
         const oauth2Client = new google.auth.OAuth2();
@@ -73,26 +73,72 @@ export async function GET(request: NextRequest) {
         });
 
         const existingAudiences = audiencesResponse.data.audiences || [];
-        const aiAudience = existingAudiences.find((aud: any) => {
+        let aiAudience = existingAudiences.find((aud: any) => {
           const dName = aud.displayName?.toLowerCase() || "";
           return dName.includes("ai traffic") || (dName.includes("ai") && dName.includes("traffic"));
         });
 
         if (aiAudience?.name) {
+          // Found existing audience
           account.aiAudienceId = aiAudience.name;
           account.aiAudienceName = aiAudience.displayName || "AI Traffic";
           await account.save();
           console.log("Audience ID fetched and saved:", aiAudience.name);
         } else {
-          return NextResponse.json(
-            { error: "AI Traffic audience not found. Please reconnect your Google Analytics account to create it." },
-            { status: 400 }
-          );
+          // Create the AI Traffic audience
+          console.log("AI Traffic audience not found, creating it...");
+          const createResponse = await admin.properties.audiences.create({
+            parent: `properties/${account.propertyId}`,
+            requestBody: {
+              displayName: "AI Traffic",
+              description: "Users coming from various AI model sources (ChatGPT, Claude, Gemini, etc)",
+              membershipDurationDays: 30,
+              filterClauses: [
+                {
+                  clauseType: "INCLUDE",
+                  simpleFilter: {
+                    scope: "AUDIENCE_FILTER_SCOPE_ACROSS_ALL_SESSIONS",
+                    filterExpression: {
+                      andGroup: {
+                        filterExpressions: [
+                          {
+                            orGroup: {
+                              filterExpressions: [
+                                {
+                                  dimensionOrMetricFilter: {
+                                    fieldName: "firstUserSource",
+                                    stringFilter: {
+                                      matchType: "FULL_REGEXP",
+                                      value:
+                                        "(chatgpt|openai|anthropic|deepseek|grok)\\.com|(gemini|bard)\\.google\\.com|(perplexity|claude)\\.ai|(copilot\\.microsoft|edgeservices\\.bing)\\.com|edge.*copilot",
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          });
+          
+          aiAudience = createResponse.data;
+          console.log("AI Traffic audience created successfully:", aiAudience?.name);
+          
+          if (aiAudience?.name) {
+            account.aiAudienceId = aiAudience.name;
+            account.aiAudienceName = aiAudience.displayName || "AI Traffic";
+            await account.save();
+          }
         }
       } catch (audienceError: any) {
-        console.error("Failed to fetch audience:", audienceError.message);
+        console.error("Failed to setup AI Traffic audience:", audienceError.message);
         return NextResponse.json(
-          { error: "Could not verify AI Traffic audience. Please reconnect your Google Analytics account." },
+          { error: "Could not create AI Traffic audience. Error: " + audienceError.message },
           { status: 400 }
         );
       }
