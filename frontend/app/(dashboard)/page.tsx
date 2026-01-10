@@ -44,23 +44,19 @@ export default function Overview() {
   const [chartType, setChartType] = useState<'mentions' | 'sentiments' | 'position'>('mentions');
 
   useEffect(() => {
-    if (allBrands.length > 0) {
-      const top10 = [...allBrands].sort((a: any, b: any) => {
-        // Always Sort by Position: 1, 2, 3...
-        const rA = a.lastRank || a.rank || 999;
-        const rB = b.lastRank || b.rank || 999;
-        return rA - rB;
-      }).slice(0, 10);
-      setTopBrands(top10);
-    }
+    const top10 = [...allBrands].sort((a: any, b: any) => {
+      // Always Sort by Position: 1, 2, 3...
+      const rA = a.lastRank || a.rank || 999;
+      const rB = b.lastRank || b.rank || 999;
+      return rA - rB;
+    }).slice(0, 10);
+    setTopBrands(top10);
   }, [allBrands]);
 
   useEffect(() => {
-    if (brandHistory.length > 0) {
-      setMentionsData(brandHistory);
-      setSentimentsData(brandHistory);
-      setPositionData(brandHistory);
-    }
+    setMentionsData(brandHistory);
+    setSentimentsData(brandHistory);
+    setPositionData(brandHistory);
   }, [brandHistory]);
 
   const domainTableData = React.useMemo(() => {

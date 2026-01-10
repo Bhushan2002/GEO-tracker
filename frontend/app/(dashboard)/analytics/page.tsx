@@ -103,6 +103,27 @@ export default function GoogleAnalyticsPage() {
 
   useEffect(() => {
     if (activeWorkspace?._id) {
+      // Reset local state to ensure clean transition before loading new data
+      setGaAccounts([]);
+      setSelectedAccountId("");
+      setChartData([]);
+      setAiModelsData([]);
+      setFirstTouchData([]);
+      setZeroTouchData([]);
+      setAiLandingPageData([]);
+      setConversionRateData([]);
+      setAiGrowthData([]);
+      setAiDeviceData([]);
+      setTopicClusterData([]);
+      setDemographicsData([]);
+      setKeyMetrics({
+        activeUsers: 0,
+        engagedSessions: 0,
+        keyEvents: 0,
+      });
+      setIsQuotaExceeded(false);
+
+      setInitialLoading(true);
       loadGAAccounts();
     }
   }, [activeWorkspace?._id]);
