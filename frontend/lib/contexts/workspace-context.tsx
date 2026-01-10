@@ -66,9 +66,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         // Persist selection to survive page reloads
         localStorage.setItem("selectedWorkspaceId", workspace._id);
 
-        // Force a full page reload to clear all React state and ensure 
-        // fresh API calls with the new workspace ID header.
-        window.location.reload();
+        // Update state immediately
+        setActiveWorkspace(workspace);
     };
 
     // --- Effects ---
