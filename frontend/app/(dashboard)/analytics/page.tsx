@@ -312,7 +312,7 @@ export default function GoogleAnalyticsPage() {
           const errorMsg = result.reason?.response?.data?.error || result.reason?.message || '';
           const errorStatus = result.reason?.response?.status;
           
-          console.error(`❌ ${endpoints[index]} failed:`, {
+          console.error(` ${endpoints[index]} failed:`, {
             status: errorStatus,
             error: errorMsg,
             fullError: result.reason

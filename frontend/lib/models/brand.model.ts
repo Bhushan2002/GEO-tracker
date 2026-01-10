@@ -16,7 +16,7 @@ const brandSchema = new Schema<IBrand>(
   {
     workspaceId: { type: Schema.Types.ObjectId, ref: "Workspace", required: true },
     brand_name: { type: String, required: true },
-    color: {type: String, default: generateRandomPastelColor },
+    color: { type: String, default: generateRandomPastelColor },
     // Core KPIs
     mentions: { type: Number, default: 0 },
     lastRank: { type: Number, default: undefined, sparse: true }, // Sparse index allows multiple nulls

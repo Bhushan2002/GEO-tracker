@@ -51,13 +51,42 @@ export default function Overview() {
       return rA - rB;
     }).slice(0, 10);
     setTopBrands(top10);
+
+    // Debug: Check if brands have colors
+    console.log('Dashboard - allBrands sample:', allBrands.slice(0, 3).map(b => ({ name: b.brand_name, color: b.color })));
+  }, [allBrands]);
+
+  // Create a color map from allBrands
+  const brandColorMap = React.useMemo(() => {
+    const map: Record<string, string> = {};
+    allBrands.forEach(brand => {
+      if (brand.brand_name && brand.color) {
+        map[brand.brand_name] = brand.color;
+      }
+    });
+    console.log('Brand Color Map:', map);
+    return map;
   }, [allBrands]);
 
   useEffect(() => {
-    setMentionsData(brandHistory);
-    setSentimentsData(brandHistory);
-    setPositionData(brandHistory);
-  }, [brandHistory]);
+    // Inject colors into the history data
+    const enrichedMentions = brandHistory.map(item => ({
+      ...item,
+      color: item.color || brandColorMap[item.name] || undefined
+    }));
+    const enrichedSentiments = brandHistory.map(item => ({
+      ...item,
+      color: item.color || brandColorMap[item.name] || undefined
+    }));
+    const enrichedPosition = brandHistory.map(item => ({
+      ...item,
+      color: item.color || brandColorMap[item.name] || undefined
+    }));
+
+    setMentionsData(enrichedMentions);
+    setSentimentsData(enrichedSentiments);
+    setPositionData(enrichedPosition);
+  }, [brandHistory, brandColorMap]);
 
   const domainTableData = React.useMemo(() => {
     if (!allBrands || allBrands.length === 0) return [];

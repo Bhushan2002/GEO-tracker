@@ -313,29 +313,29 @@ export default function BrandPage() {
             </div>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 mt-8">
               <div className="flex items-center justify-between mb-6 px-1">
-              <div className="flex items-center gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-slate-400" />
-                <h2 className="text-lg font-bold text-slate-900">
-                  Discovered Brands{" "}
-                  <span className="text-xs font-medium text-slate-400 ml-2 font-normal">
-                    • Click card for full details
-                  </span>
-                </h2>
-              </div>
-              <div className="flex items-center gap-3">
-                
-                <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200">
-                  {allBrands.length} Total Targets
+                <div className="flex items-center gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-slate-400" />
+                  <h2 className="text-lg font-bold text-slate-900">
+                    Discovered Brands{" "}
+                    <span className="text-xs font-medium text-slate-400 ml-2 font-normal">
+                      • Click card for full details
+                    </span>
+                  </h2>
+                </div>
+                <div className="flex items-center gap-3">
+
+                  <div className="px-3 py-1 bg-slate-100 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200">
+                    {allBrands.length} Total Targets
+                  </div>
                 </div>
               </div>
-              </div>
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <TargetBrandTable
-                data={allBrands}
-                loading={isAllBrandsLoading}
-                onRefresh={refreshAllBrands}
-              />
-            </div>
+                <TargetBrandTable
+                  data={allBrands}
+                  loading={isAllBrandsLoading}
+                  onRefresh={refreshAllBrands}
+                />
+              </div>
             </div>
           </div>
         </div>
