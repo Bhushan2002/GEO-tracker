@@ -66,6 +66,9 @@ import {
   Smartphone,
   Info,
   RefreshCw,
+  TrafficCone,
+  LucideTrafficCone,
+  Group,
 } from "lucide-react";
 import {
   Tooltip as InfoTooltip,
@@ -100,6 +103,7 @@ export default function GoogleAnalyticsPage() {
     activeUsers: 0,
     engagedSessions: 0,
     keyEvents: 0,
+    aiOverviewClicks: 0,
   });
   const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
 
@@ -139,6 +143,7 @@ export default function GoogleAnalyticsPage() {
         activeUsers: 0,
         engagedSessions: 0,
         keyEvents: 0,
+        aiOverviewClicks: 0,
       });
       setIsQuotaExceeded(false);
 
@@ -773,7 +778,23 @@ export default function GoogleAnalyticsPage() {
                 </div>
 
                 {/* Key Metrics Cards */}
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-4">
+                  <Card className=" bg-card  rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                      <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        AI Overview Clicks
+                      </h3>
+                      <Users className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <CardContent className="pt-6">
+                      <div className="text-2xl font-bold text-slate-900">
+                        {(keyMetrics.aiOverviewClicks ?? 0).toLocaleString()}
+                      </div>
+                      <p className="text-xs text-slate-600/80 mt-1">
+                        Visits via "AI Overview" highlights
+                      </p>
+                    </CardContent>
+                  </Card>
                   <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
                       <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">

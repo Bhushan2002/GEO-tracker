@@ -83,6 +83,56 @@ export async function GET(request: NextRequest) {
       },
     });
 
+
+
+    // fetch ai overview click 
+    // we filter for the speciific event ai_overview_click yout created in GTM
+    const aiOverviewResponse = await analyticsData.properties.runReport({
+      property: `properties/${account.propertyId}`,
+      requestBody: {
+        dateRanges: [{
+          startDate: "30daysAgo",
+          endDate: "today",
+        }],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          filter: {
+
+            fieldName: "eventName",
+            stringFilter: {
+              matchType: "CONTAINS",
+              value: "ai_overview_click",
+            },
+          },
+        }
+      }
+    });
+
+    //fetch broad AI Traffic (using regex)
+
+    const aiOverviewTrafficResponse = await analyticsData.properties.runReport({
+      property: `properties/${account.propertyId}`,
+      requestBody: {
+        dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+        dimensions: [{ name: 'date' }],
+        metrics: [{ name: 'activeUsers' }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "sessionSourceMedium",
+            stringFilter: {
+              matchType: 'FULL_REGEXP',
+              value: '(.*gpt.*|.*chatgpt.*|.*x\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\.google.*)',
+              caseSensitive: false,
+            }
+          }
+        }
+      }
+    });
+
+
+
+
+
     // Fetch AI traffic specifically
     const aiTrafficResponse = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
@@ -189,7 +239,15 @@ export async function GET(request: NextRequest) {
         ) || 0,
     };
 
-    return NextResponse.json({ chartData, metrics });
+
+    const aiOverviewClicks = parseInt(aiOverviewTrafficResponse.data.rows?.[0]?.metricValues?.[0]?.value || "0");
+
+    return NextResponse.json({
+      chartData, metrics: {
+        ...metrics,
+        aiOverviewClicks
+      }
+    });
   } catch (error: any) {
     console.error("Analytics Error:", error);
 
