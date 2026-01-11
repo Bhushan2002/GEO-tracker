@@ -531,6 +531,10 @@ export default function ModelsPage() {
                                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-900 leading-none m-0">
                                         {selectedModel} Responses
                                     </h3>
+                                    <div className="h-4 w-[1px] bg-slate-200 mx-2" />
+                                    <span className="text-[10px] font-medium text-slate-400/80 tracking-wide uppercase">
+                                        Click cards for details
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2"></div>
                             </div>
