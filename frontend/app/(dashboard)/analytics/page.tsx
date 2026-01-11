@@ -1513,10 +1513,10 @@ export default function GoogleAnalyticsPage() {
                           <MousePointerClick className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-2xl font-bold text-slate-900">
                             {searchConsoleData?.totals?.totalClicks?.toLocaleString() || 0}
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-600/80 mt-1">
                             From long-tail queries
                           </p>
                         </CardContent>
@@ -1530,10 +1530,10 @@ export default function GoogleAnalyticsPage() {
                           <Users className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-2xl font-bold text-slate-900">
                             {searchConsoleData?.totals?.totalImpressions?.toLocaleString() || 0}
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-600/80 mt-1">
                             Times shown in search
                           </p>
                         </CardContent>
@@ -1547,10 +1547,10 @@ export default function GoogleAnalyticsPage() {
                           <Zap className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-2xl font-bold text-slate-900">
                             {((searchConsoleData?.totals?.avgCtr || 0) * 100).toFixed(2)}%
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-600/80 mt-1">
                             Click-through rate
                           </p>
                         </CardContent>
@@ -1564,10 +1564,10 @@ export default function GoogleAnalyticsPage() {
                           <ChartBar className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-2xl font-bold text-slate-900">
                             {(searchConsoleData?.totals?.avgPosition || 0).toFixed(1)}
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-600/80 mt-1">
                             In search results
                           </p>
                         </CardContent>
@@ -1576,7 +1576,7 @@ export default function GoogleAnalyticsPage() {
 
                     {/* Long-Tail Queries Chart */}
                     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                      <CardHeader className="border-b border-slate-100 px-5">
+                      <CardHeader className="border-b border-slate-100 px-5 bg-slate-50/50">
                         <div className="flex items-center justify-between">
                           <div>
                             <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
@@ -1644,7 +1644,7 @@ export default function GoogleAnalyticsPage() {
                     {/* Top Queries Table */}
                     {scTopQueries.length > 0 && (
                       <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <CardHeader className="border-b border-slate-100 px-5 bg-white">
+                        <CardHeader className="border-b border-slate-100 px-5 bg-slate-50/50">
                           <div className="flex items-center justify-between">
                             <div className="flex flex-col gap-1">
                               <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
@@ -1693,35 +1693,35 @@ export default function GoogleAnalyticsPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead className="font-semibold">#</TableHead>
-                                <TableHead className="font-semibold">Query</TableHead>
-                                <TableHead className="font-semibold text-right">Clicks</TableHead>
-                                <TableHead className="font-semibold text-right">Impressions</TableHead>
-                                <TableHead className="font-semibold text-right">CTR</TableHead>
-                                <TableHead className="font-semibold text-right">Avg Position</TableHead>
+                                <TableHead className="font-semibold border-r border-slate-100 last:border-r-0 w-[50px]">#</TableHead>
+                                <TableHead className="font-semibold border-r border-slate-100 last:border-r-0">Query</TableHead>
+                                <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Clicks</TableHead>
+                                <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Impressions</TableHead>
+                                <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">CTR</TableHead>
+                                <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Avg Position</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {scTopQueries.map((query: any, index: number) => (
                                 <TableRow key={index} className="hover:bg-slate-50/50 transition-colors">
-                                  <TableCell className="font-medium text-gray-600">
+                                  <TableCell className="font-medium text-gray-600 border-r border-slate-100 last:border-r-0">
                                     {index + 1}
                                   </TableCell>
-                                  <TableCell className="max-w-md">
+                                  <TableCell className="max-w-md border-r border-slate-100 last:border-r-0">
                                     <span className="text-sm font-medium">{query.query}</span>
                                   </TableCell>
-                                  <TableCell className="text-right font-semibold text-blue-600">
+                                  <TableCell className="text-right font-semibold text-blue-600 border-r border-slate-100 last:border-r-0">
                                     {query.clicks.toLocaleString()}
                                   </TableCell>
-                                  <TableCell className="text-right">
+                                  <TableCell className="text-right border-r border-slate-100 last:border-r-0">
                                     {query.impressions.toLocaleString()}
                                   </TableCell>
-                                  <TableCell className="text-right">
+                                  <TableCell className="text-right border-r border-slate-100 last:border-r-0">
                                     <span className={`font-medium ${query.ctr > 0.05 ? 'text-green-600' : 'text-gray-600'}`}>
                                       {(query.ctr * 100).toFixed(2)}%
                                     </span>
                                   </TableCell>
-                                  <TableCell className="text-right">
+                                  <TableCell className="text-right border-r border-slate-100 last:border-r-0">
                                     <span className={`font-medium ${query.position <= 10 ? 'text-green-600' : 'text-gray-600'}`}>
                                       {query.position.toFixed(1)}
                                     </span>
