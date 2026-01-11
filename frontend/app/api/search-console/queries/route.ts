@@ -53,9 +53,12 @@ export async function GET(request: NextRequest) {
 
     if (!account.searchConsoleSiteUrl) {
       return NextResponse.json({
-        error: "Search Console not configured for this account"
+        error: "Search Console not linked. Please reconnect your account."
       }, { status: 400 });
     }
+
+    const siteUrl = account.searchConsoleSiteUrl;
+    console.log("Fetching Search Console data for:", siteUrl);
 
     const accessToken = await refreshTokenIfNeeded(account);
     const oauth2Client = new google.auth.OAuth2();

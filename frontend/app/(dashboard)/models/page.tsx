@@ -194,13 +194,6 @@ export default function ModelsPage() {
                                         {selectedModel === model && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />}
                                     </DropdownMenuItem>
                                 ))}
-                                <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
-                                <div className="px-3 py-2 opacity-50">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Upcoming: Perplexity, Llama & more</span>
-                                    </div>
-                                </div>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -538,6 +531,10 @@ export default function ModelsPage() {
                                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-900 leading-none m-0">
                                         {selectedModel} Responses
                                     </h3>
+                                    <div className="h-4 w-[1px] bg-slate-200 mx-2" />
+                                    <span className="text-[10px] font-medium text-slate-400/80 tracking-wide uppercase">
+                                        Click cards for details
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-2"></div>
                             </div>

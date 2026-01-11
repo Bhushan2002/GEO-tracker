@@ -126,6 +126,8 @@ export default function GoogleAnalyticsPage() {
   const [scSites, setScSites] = useState<any[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("");
   const [scChartData, setScChartData] = useState<any[]>([]);
+  const [scLimit, setScLimit] = useState<string>("50");
+  const [scTopQueries, setScTopQueries] = useState<any[]>([]);
   const [isGtmDialogOpen, setIsGtmDialogOpen] = useState(false);
   const [gtmContainers, setGtmContainers] = useState<any[]>([]);
   const [selectedGtmContainer, setSelectedGtmContainer] = useState<string>("");
@@ -155,6 +157,7 @@ export default function GoogleAnalyticsPage() {
         aiOverviewClicks: 0,
       });
       setIsQuotaExceeded(false);
+      setScLimit("50"); // Reset limit
 
       setInitialLoading(true);
       loadGAAccounts();
@@ -373,14 +376,24 @@ export default function GoogleAnalyticsPage() {
     }
   };
 
+  useEffect(() => {
+    if (selectedAccountId && !isQuotaExceeded) {
+      loadSearchConsoleData(selectedAccountId);
+    }
+  }, [scLimit, selectedAccountId, isQuotaExceeded]); // Re-fetch when limit changes
+
   const loadSearchConsoleData = useCallback(async (accountId: string) => {
     setScLoading(true);
     try {
-      // Only fetch chart data
-      const response = await api.get(`/api/search-console/queries?accountId=${accountId}`);
+      // Fetch BOTH chart data and top queries
+      const [chartResponse, queriesResponse] = await Promise.all([
+        api.get(`/api/search-console/queries?accountId=${accountId}`),
+        api.get(`/api/search-console/top-queries?accountId=${accountId}&limit=${scLimit}`),
+      ]);
 
-      setScChartData(response.data.chartData || []);
-      setSearchConsoleData({ totals: response.data.totals }); // For metrics cards
+      setScChartData(chartResponse.data.chartData || []);
+      setSearchConsoleData({ totals: chartResponse.data.totals });
+      setScTopQueries(queriesResponse.data.queries || []);
     } catch (error: any) {
       console.error("Search Console data error:", error);
       if (error.response?.data?.error?.includes("not configured")) {
@@ -391,7 +404,7 @@ export default function GoogleAnalyticsPage() {
     } finally {
       setScLoading(false);
     }
-  }, []);
+  }, [scLimit]);
 
   const handleConnectAccount = () => {
     const client_id = process.env.NEXT_PUBLIC_GA_CLIENT_ID;
@@ -1546,10 +1559,10 @@ export default function GoogleAnalyticsPage() {
                           <MousePointerClick className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-2xl font-bold text-slate-900">
                             {searchConsoleData?.totals?.totalClicks?.toLocaleString() || 0}
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-600/80 mt-1">
                             From long-tail queries
                           </p>
                         </CardContent>
@@ -1563,10 +1576,10 @@ export default function GoogleAnalyticsPage() {
                           <Users className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-2xl font-bold text-slate-900">
                             {searchConsoleData?.totals?.totalImpressions?.toLocaleString() || 0}
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-600/80 mt-1">
                             Times shown in search
                           </p>
                         </CardContent>
@@ -1580,10 +1593,10 @@ export default function GoogleAnalyticsPage() {
                           <Zap className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-2xl font-bold text-slate-900">
                             {((searchConsoleData?.totals?.avgCtr || 0) * 100).toFixed(2)}%
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-600/80 mt-1">
                             Click-through rate
                           </p>
                         </CardContent>
@@ -1597,10 +1610,10 @@ export default function GoogleAnalyticsPage() {
                           <ChartBar className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                          <div className="text-2xl font-bold text-foreground">
+                          <div className="text-2xl font-bold text-slate-900">
                             {(searchConsoleData?.totals?.avgPosition || 0).toFixed(1)}
                           </div>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-600/80 mt-1">
                             In search results
                           </p>
                         </CardContent>
@@ -1609,7 +1622,7 @@ export default function GoogleAnalyticsPage() {
 
                     {/* Long-Tail Queries Chart */}
                     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                      <CardHeader className="border-b border-slate-100 px-5">
+                      <CardHeader className="border-b border-slate-100 px-5 bg-slate-50/50">
                         <div className="flex items-center justify-between">
                           <div>
                             <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
@@ -1673,6 +1686,99 @@ export default function GoogleAnalyticsPage() {
                         </ResponsiveContainer>
                       </CardContent>
                     </Card>
+
+                    {/* Top Queries Table */}
+                    {scTopQueries.length > 0 && (
+                      <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <CardHeader className="border-b border-slate-100 px-5 bg-slate-50/50">
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col gap-1">
+                              <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                                Top Long-Tail Queries
+                              </CardTitle>
+                              <CardDescription className="text-[10px] text-slate-500 font-medium">
+                                Search queries with 4+ words driving traffic
+                              </CardDescription>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              {/* Limit Selector */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] uppercase font-bold text-slate-400">Rows:</span>
+                                <Select value={scLimit} onValueChange={setScLimit}>
+                                  <SelectTrigger className="h-7 w-[70px] text-xs font-semibold bg-slate-50 border-slate-200">
+                                    <SelectValue placeholder="50" />
+                                  </SelectTrigger>
+                                  <SelectContent align="end">
+                                    <SelectItem value="25" className="text-xs">25</SelectItem>
+                                    <SelectItem value="50" className="text-xs">50</SelectItem>
+                                    <SelectItem value="100" className="text-xs">100</SelectItem>
+                                    <SelectItem value="250" className="text-xs">250</SelectItem>
+                                    <SelectItem value="500" className="text-xs">500</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <InfoTooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Shows the most common long-tail search queries (4+ words) that bring users to your site
+                                </TooltipContent>
+                              </InfoTooltip>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                          {scLoading && (
+                            <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+                              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                            </div>
+                          )}
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="font-semibold border-r border-slate-100 last:border-r-0 w-[50px]">#</TableHead>
+                                <TableHead className="font-semibold border-r border-slate-100 last:border-r-0">Query</TableHead>
+                                <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Clicks</TableHead>
+                                <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Impressions</TableHead>
+                                <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">CTR</TableHead>
+                                <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Avg Position</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {scTopQueries.map((query: any, index: number) => (
+                                <TableRow key={index} className="hover:bg-slate-50/50 transition-colors">
+                                  <TableCell className="font-medium text-gray-600 border-r border-slate-100 last:border-r-0">
+                                    {index + 1}
+                                  </TableCell>
+                                  <TableCell className="max-w-md border-r border-slate-100 last:border-r-0">
+                                    <span className="text-sm font-medium">{query.query}</span>
+                                  </TableCell>
+                                  <TableCell className="text-right font-semibold text-blue-600 border-r border-slate-100 last:border-r-0">
+                                    {query.clicks.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell className="text-right border-r border-slate-100 last:border-r-0">
+                                    {query.impressions.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell className="text-right border-r border-slate-100 last:border-r-0">
+                                    <span className={`font-medium ${query.ctr > 0.05 ? 'text-green-600' : 'text-gray-600'}`}>
+                                      {(query.ctr * 100).toFixed(2)}%
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-right border-r border-slate-100 last:border-r-0">
+                                    <span className={`font-medium ${query.position <= 10 ? 'text-green-600' : 'text-gray-600'}`}>
+                                      {query.position.toFixed(1)}
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      </Card>
+                    )}
                   </>
                 ) : (
                   <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
