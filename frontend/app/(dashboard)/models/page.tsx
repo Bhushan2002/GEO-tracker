@@ -194,13 +194,6 @@ export default function ModelsPage() {
                                         {selectedModel === model && <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_white]" />}
                                     </DropdownMenuItem>
                                 ))}
-                                <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
-                                <div className="px-3 py-2 opacity-50">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Upcoming: Perplexity, Llama & more</span>
-                                    </div>
-                                </div>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
