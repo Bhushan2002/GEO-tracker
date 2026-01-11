@@ -118,6 +118,7 @@ export default function GoogleAnalyticsPage() {
   const [scSites, setScSites] = useState<any[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("");
   const [scChartData, setScChartData] = useState<any[]>([]);
+  const [scTopQueries, setScTopQueries] = useState<any[]>([]);
 
   useEffect(() => {
     if (activeWorkspace?._id) {
@@ -191,9 +192,9 @@ export default function GoogleAnalyticsPage() {
   };
 
   const loadAccountData = async (accountId: string) => {
-    
+
     if (!accountId || isQuotaExceeded) {
-     
+
       return;
     }
 
@@ -211,7 +212,7 @@ export default function GoogleAnalyticsPage() {
         const cacheAge = Date.now() - parsed.timestamp;
         const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours (effectively session-only)
 
-        
+
         if (cacheAge < CACHE_DURATION) {
           // Use cached data
           setChartData(parsed.chartData || []);
@@ -279,7 +280,7 @@ export default function GoogleAnalyticsPage() {
       });
 
       // Fetch First Touch, Zero Touch & AI Landing Pages data in parallel
-    
+
       const results = await Promise.allSettled([
         api.get(`/api/analytics/first-touch?accountId=${accountId}`),
         api.get(`/api/analytics/zero-touch?accountId=${accountId}`),
@@ -299,7 +300,7 @@ export default function GoogleAnalyticsPage() {
         'ai-device-split',
         'demographics'
       ];
-      
+
       const [
         firstTouchRes,
         zeroTouchRes,
@@ -310,23 +311,23 @@ export default function GoogleAnalyticsPage() {
         demoRes,
       ] = results.map((result, index) => {
         if (result.status === 'fulfilled') {
-         
+
           return result.value;
         } else {
           // Check if the error is about missing AI audience
           const errorMsg = result.reason?.response?.data?.error || result.reason?.message || '';
           const errorStatus = result.reason?.response?.status;
-          
+
           console.error(` ${endpoints[index]} failed:`, {
             status: errorStatus,
             error: errorMsg,
             fullError: result.reason
           });
-          
+
           if (errorMsg.includes('AI Traffic audience not found') || errorMsg.includes('audience')) {
             setMissingAudience(true);
           }
-          
+
           console.warn(`Failed to load ${endpoints[index]}:`, errorMsg);
           return { data: [] };
         }
@@ -429,11 +430,15 @@ export default function GoogleAnalyticsPage() {
   const loadSearchConsoleData = async (accountId: string) => {
     setScLoading(true);
     try {
-      // Only fetch chart data
-      const response = await api.get(`/api/search-console/queries?accountId=${accountId}`);
+      // Fetch BOTH chart data and top queries
+      const [chartResponse, queriesResponse] = await Promise.all([
+        api.get(`/api/search-console/queries?accountId=${accountId}`),
+        api.get(`/api/search-console/top-queries?accountId=${accountId}`),
+      ]);
 
-      setScChartData(response.data.chartData || []);
-      setSearchConsoleData({ totals: response.data.totals }); // For metrics cards
+      setScChartData(chartResponse.data.chartData || []);
+      setSearchConsoleData({ totals: chartResponse.data.totals });
+      setScTopQueries(queriesResponse.data.queries || []);
     } catch (error: any) {
       console.error("Search Console data error:", error);
       if (error.response?.data?.error?.includes("not configured")) {
@@ -516,7 +521,7 @@ export default function GoogleAnalyticsPage() {
       // Clear cache and reload
       const cacheKey = `ga-account-data-${accountId}`;
       sessionStorage.removeItem(cacheKey);
-      
+
       // If this is the currently selected account, reload data
       if (selectedAccountId === accountId) {
         loadAccountData(accountId);
@@ -1606,6 +1611,74 @@ export default function GoogleAnalyticsPage() {
                         </ResponsiveContainer>
                       </CardContent>
                     </Card>
+
+                    {/* Top Queries Table */}
+                    {scTopQueries.length > 0 && (
+                      <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <CardHeader className="border-b border-slate-100 px-5">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                                Top Long-Tail Queries
+                              </CardTitle>
+                              <CardDescription className="text-[10px] text-slate-500 font-medium">
+                                Search queries with 4+ words driving traffic
+                              </CardDescription>
+                            </div>
+                            <InfoTooltip>
+                              <TooltipTrigger>
+                                <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Shows the most common long-tail search queries (4+ words) that bring users to your site
+                              </TooltipContent>
+                            </InfoTooltip>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="pt-6">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="font-semibold">#</TableHead>
+                                <TableHead className="font-semibold">Query</TableHead>
+                                <TableHead className="font-semibold text-right">Clicks</TableHead>
+                                <TableHead className="font-semibold text-right">Impressions</TableHead>
+                                <TableHead className="font-semibold text-right">CTR</TableHead>
+                                <TableHead className="font-semibold text-right">Avg Position</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {scTopQueries.slice(0, 50).map((query: any, index: number) => (
+                                <TableRow key={index} className="hover:bg-slate-50/50 transition-colors">
+                                  <TableCell className="font-medium text-gray-600">
+                                    {index + 1}
+                                  </TableCell>
+                                  <TableCell className="max-w-md">
+                                    <span className="text-sm font-medium">{query.query}</span>
+                                  </TableCell>
+                                  <TableCell className="text-right font-semibold text-blue-600">
+                                    {query.clicks.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    {query.impressions.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <span className={`font-medium ${query.ctr > 0.05 ? 'text-green-600' : 'text-gray-600'}`}>
+                                      {(query.ctr * 100).toFixed(2)}%
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <span className={`font-medium ${query.position <= 10 ? 'text-green-600' : 'text-gray-600'}`}>
+                                      {query.position.toFixed(1)}
+                                    </span>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      </Card>
+                    )}
                   </>
                 ) : (
                   <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">

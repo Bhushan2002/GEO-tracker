@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       version: "v1alpha",
       auth: oauth2Client,
     });
-    
+
     const searchConsole = google.searchconsole({
       version: "v1",
       auth: oauth2Client,
@@ -115,6 +115,61 @@ export async function GET(request: Request) {
     );
 
     console.log("GA Account link saved/updated:", gaAccount._id);
+
+    // --- AUTO-LINK SEARCH CONSOLE ---
+    try {
+      console.log("Attempting to auto-link Search Console...");
+
+      // Fetch available Search Console sites
+      const searchconsole = google.searchconsole({
+        version: 'v1',
+        auth: oauth2Client,
+      });
+
+      const sitesResponse = await searchconsole.sites.list();
+      const sites = sitesResponse.data.siteEntry || [];
+
+      console.log("Found Search Console sites:", sites.length);
+
+      if (sites.length > 0) {
+        // Strategy: Pick the best matching site
+        let selectedSite = null;
+
+        // 1. Try to find a site that matches the GA property domain
+        const propertyDomain = (firstProperty.displayName || '').toLowerCase();
+
+        // First, look for exact domain match (https://example.com)
+        selectedSite = sites.find((site: any) =>
+          site.siteUrl?.toLowerCase().includes(propertyDomain) && site.siteUrl?.startsWith('https://')
+        );
+
+        // If not found, look for sc-domain match
+        if (!selectedSite) {
+          selectedSite = sites.find((site: any) =>
+            site.siteUrl?.toLowerCase().includes(propertyDomain) && site.siteUrl?.startsWith('sc-domain:')
+          );
+        }
+
+        // If still not found, just use the first site
+        if (!selectedSite) {
+          selectedSite = sites[0];
+        }
+
+        console.log("Selected Search Console site:", selectedSite.siteUrl);
+
+        // Save to database
+        gaAccount.searchConsoleSiteUrl = selectedSite.siteUrl;
+        gaAccount.searchConsoleVerified = true;
+        await gaAccount.save();
+
+        console.log("Search Console auto-linked successfully!");
+      } else {
+        console.log("No Search Console sites found for this account");
+      }
+    } catch (scError: any) {
+      console.error("Search Console auto-link warning (non-fatal):", scError.message);
+      // Don't fail the whole flow if Search Console linking fails
+    }
 
     // --- Audience Creation Logic ---
     // Automatically attempts to create an "AI Traffic" audience in the user's GA4 property

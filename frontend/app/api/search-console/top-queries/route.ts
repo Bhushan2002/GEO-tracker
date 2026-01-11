@@ -5,8 +5,7 @@ import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 /**
- * Search Console Queries API - Fetch query-level search performance
- * Filtered for long-tail queries (4+ words)
+ * Search Console Top Queries API - Fetch query-level data for table
  */
 
 async function refreshTokenIfNeeded(account: any) {
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest) {
     const accountId = searchParams.get('accountId');
     const startDate = searchParams.get('startDate') || '30daysAgo';
     const endDate = searchParams.get('endDate') || 'today';
-
+    
     if (!accountId) {
       return NextResponse.json({ error: "Account ID required" }, { status: 400 });
     }
@@ -50,13 +49,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!account.searchConsoleSiteUrl) {
-      return NextResponse.json({
-        error: "Search Console not linked. Please reconnect your account."
+      return NextResponse.json({ 
+        error: "Search Console not linked" 
       }, { status: 400 });
     }
-
-    const siteUrl = account.searchConsoleSiteUrl;
-    console.log("Fetching Search Console data for:", siteUrl);
 
     const accessToken = await refreshTokenIfNeeded(account);
     const oauth2Client = new google.auth.OAuth2();
@@ -67,7 +63,7 @@ export async function GET(request: NextRequest) {
       auth: oauth2Client,
     });
 
-    // Convert GA date format to Search Console format (YYYY-MM-DD)
+    // Convert GA date format to Search Console format
     const formatDate = (dateStr: string) => {
       if (dateStr === 'today') {
         return new Date().toISOString().split('T')[0];
@@ -84,13 +80,13 @@ export async function GET(request: NextRequest) {
     const formattedStartDate = formatDate(startDate);
     const formattedEndDate = formatDate(endDate);
 
-    // Fetch data with date dimension for time series chart
+    // Fetch data grouped by QUERY (not date)
     const response = await searchconsole.searchanalytics.query({
       siteUrl: account.searchConsoleSiteUrl,
       requestBody: {
         startDate: formattedStartDate,
         endDate: formattedEndDate,
-        dimensions: ['date'], // Group by date for time series
+        dimensions: ['query'],  // ← GROUP BY QUERY for table
         dimensionFilterGroups: [
           {
             groupType: 'and',
@@ -98,45 +94,32 @@ export async function GET(request: NextRequest) {
               {
                 dimension: 'query',
                 operator: 'includingRegex',
-                expression: '^(\\S+\\s){3,}\\S+$', // 4+ word queries (long-tail)
+                expression: '^(\\S+\\s){3,}\\S+$',  // 4+ words filter
               },
             ],
           },
         ],
-        rowLimit: 1000,
+        rowLimit: 100,  // Top 100 queries
         dataState: 'final',
       },
     });
 
-    // Format response for chart
-    const chartData = response.data.rows?.map((row: any) => ({
-      date: row.keys?.[0] || '',
+    // Format response for table
+    const queries = response.data.rows?.map((row: any) => ({
+      query: row.keys?.[0] || '',
       clicks: row.clicks || 0,
       impressions: row.impressions || 0,
       ctr: row.ctr || 0,
       position: row.position || 0,
     })) || [];
 
-    // Calculate totals
-    const totals = {
-      totalClicks: chartData.reduce((sum: number, item: any) => sum + item.clicks, 0),
-      totalImpressions: chartData.reduce((sum: number, item: any) => sum + item.impressions, 0),
-      avgCtr: chartData.length > 0
-        ? chartData.reduce((sum: number, item: any) => sum + item.ctr, 0) / chartData.length
-        : 0,
-      avgPosition: chartData.length > 0
-        ? chartData.reduce((sum: number, item: any) => sum + item.position, 0) / chartData.length
-        : 0,
-    };
-
     return NextResponse.json({
-      chartData,
-      totals,
+      queries,
     });
 
   } catch (error: any) {
-    console.error('Search Console Queries API Error:', error);
-    return NextResponse.json({
+    console.error('Search Console Top Queries API Error:', error);
+    return NextResponse.json({ 
       error: error.message,
       details: error.response?.data || 'No additional details'
     }, { status: 500 });
