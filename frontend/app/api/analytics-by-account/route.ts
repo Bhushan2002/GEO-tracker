@@ -4,6 +4,7 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
+
 /**
  * Analytics By Account API.
  * Fetches overall traffic metrics (Users, Sessions, Key Events) and overlays AI-specific user counts.
@@ -60,7 +61,6 @@ export async function GET(request: NextRequest) {
 
     // Refresh token if needed
     const accessToken = await refreshTokenIfNeeded(account);
-
     const oauth2Client = new google.auth.OAuth2();
     oauth2Client.setCredentials({ access_token: accessToken });
 
@@ -87,29 +87,28 @@ export async function GET(request: NextRequest) {
 
     // fetch ai overview click 
     // we filter for the speciific event ai_overview_click yout created in GTM
-    const aiOverviewResponse = await analyticsData.properties.runReport({
-      property: `properties/${account.propertyId}`,
-      requestBody: {
-        dateRanges: [{
-          startDate: "30daysAgo",
-          endDate: "today",
-        }],
-        metrics: [{ name: "eventCount" }],
-        dimensionFilter: {
-          filter: {
+    // const aiOverviewResponse = await analyticsData.properties.runReport({
+    //   property: `properties/${account.propertyId}`,
+    //   requestBody: {
+    //     dateRanges: [{
+    //       startDate: "30daysAgo",
+    //       endDate: "today",
+    //     }],
+    //     metrics: [{ name: "eventCount" }],
+    //     dimensionFilter: {
+    //       filter: {
 
-            fieldName: "eventName",
-            stringFilter: {
-              matchType: "CONTAINS",
-              value: "ai_overview_click",
-            },
-          },
-        }
-      }
-    });
+    //         fieldName: "eventName",
+    //         stringFilter: {
+    //           matchType: "CONTAINS",
+    //           value: "ai_overview_click",
+    //         },
+    //       },
+    //     }
+    //   }
+    // });
 
     //fetch broad AI Traffic (using regex)
-
     const aiOverviewTrafficResponse = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
@@ -129,7 +128,21 @@ export async function GET(request: NextRequest) {
       }
     });
 
-
+    // fetch ai overview click (Time series)
+    const aiOverviewReport = await analyticsData.properties.runReport({
+      property: `properties/${account.propertyId}`,
+      requestBody: {
+        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dimensions: [{ name: "date" }], // Now grouping by date
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "eventName",
+            stringFilter: { matchType: "EXACT", value: "ai_overview_click" },
+          },
+        },
+      },
+    });
 
 
 
@@ -209,12 +222,19 @@ export async function GET(request: NextRequest) {
       aiTrafficMap.set(date, users);
     });
 
+
+    const aiOverviewMap = new Map();
+    aiOverviewReport.data.rows?.forEach((row: any) => {
+      aiOverviewMap.set(row.dimensionValues?.[0]?.value, parseInt(row.metricValues?.[0]?.value || "0"));
+    });
+
     const chartData = response.data.rows?.map((row: any) => ({
       name: row.dimensionValues?.[0]?.value || "",
       users: parseInt(row.metricValues?.[0]?.value || "0"),
       sessions: parseInt(row.metricValues?.[1]?.value || "0"),
       keyEvents: parseInt(row.metricValues?.[2]?.value || "0"),
       aiUsers: aiTrafficMap.get(row.dimensionValues?.[0]?.value) || 0,
+      aiOverview: aiOverviewMap.get(row.dimensionValues?.[0]?.value) || 0,
     }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
@@ -237,16 +257,12 @@ export async function GET(request: NextRequest) {
             sum + parseInt(row.metricValues?.[2]?.value || "0"),
           0
         ) || 0,
+      aiOverviewClicks: aiOverviewReport.data.rows?.reduce((sum: number, row: any) => sum + parseInt(row.metricValues?.[0]?.value || "0"), 0) || 0,
     };
 
-
-    const aiOverviewClicks = parseInt(aiOverviewTrafficResponse.data.rows?.[0]?.metricValues?.[0]?.value || "0");
-
     return NextResponse.json({
-      chartData, metrics: {
-        ...metrics,
-        aiOverviewClicks
-      }
+      chartData, 
+      metrics
     });
   } catch (error: any) {
     console.error("Analytics Error:", error);

@@ -56,14 +56,13 @@ export async function GET(request: NextRequest) {
         dimensions: [{ name: "yearMonth" }],
         metrics: [{ name: "sessions" }],
         dimensionFilter: {
-          orGroup: {
-            // Using widely known AI identifiers
-            expressions: ["chatgpt", "perplexity", "copilot", "claude", "gemini", "ai_search", "generative"].map(model => ({
-              filter: {
-                fieldName: "sessionSource",
-                stringFilter: { matchType: "CONTAINS", value: model, caseSensitive: false }
-              }
-            }))
+          filter: {
+            fieldName: "sessionSourceMedium",
+            stringFilter: {
+              matchType: "FULL_REGEXP",
+              value: "(.*gpt.*|.*chatgpt.*|.*x\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\.google.*)",
+              caseSensitive: false,
+            }
           }
         },
         orderBys: [{ dimension: { dimensionName: "yearMonth" } }]

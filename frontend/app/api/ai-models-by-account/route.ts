@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       property: `properties/${account.propertyId}`,
       requestBody: {
         dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-        dimensions: [{ name: "sessionSource" }],
+        dimensions: [{ name: "sessionSourceMedium" }],
         metrics: [
           { name: "activeUsers" },
           { name: "sessions" },
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         ],
         dimensionFilter: {
           filter: {
-            fieldName: "sessionSource",
+            fieldName: "sessionSourceMedium",
             stringFilter: {
               matchType: "FULL_REGEXP",
               value: "(.*gpt.*|.*chatgpt.*|.*x\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\.google.*)",

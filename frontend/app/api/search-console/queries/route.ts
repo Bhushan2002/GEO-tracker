@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     const accountId = searchParams.get('accountId');
     const startDate = searchParams.get('startDate') || '30daysAgo';
     const endDate = searchParams.get('endDate') || 'today';
-    
+
     if (!accountId) {
       return NextResponse.json({ error: "Account ID required" }, { status: 400 });
     }
@@ -49,9 +49,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
+
+
     if (!account.searchConsoleSiteUrl) {
-      return NextResponse.json({ 
-        error: "Search Console not configured for this account" 
+      return NextResponse.json({
+        error: "Search Console not configured for this account"
       }, { status: 400 });
     }
 
@@ -118,11 +120,11 @@ export async function GET(request: NextRequest) {
     const totals = {
       totalClicks: chartData.reduce((sum: number, item: any) => sum + item.clicks, 0),
       totalImpressions: chartData.reduce((sum: number, item: any) => sum + item.impressions, 0),
-      avgCtr: chartData.length > 0 
-        ? chartData.reduce((sum: number, item: any) => sum + item.ctr, 0) / chartData.length 
+      avgCtr: chartData.length > 0
+        ? chartData.reduce((sum: number, item: any) => sum + item.ctr, 0) / chartData.length
         : 0,
-      avgPosition: chartData.length > 0 
-        ? chartData.reduce((sum: number, item: any) => sum + item.position, 0) / chartData.length 
+      avgPosition: chartData.length > 0
+        ? chartData.reduce((sum: number, item: any) => sum + item.position, 0) / chartData.length
         : 0,
     };
 
@@ -133,7 +135,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error('Search Console Queries API Error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: error.message,
       details: error.response?.data || 'No additional details'
     }, { status: 500 });

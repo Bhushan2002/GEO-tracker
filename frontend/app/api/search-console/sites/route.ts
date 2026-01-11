@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { secretmanager } from "googleapis/build/src/apis/secretmanager";
 
 /**
  * List all Search Console sites the user has access to
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const accountId = searchParams.get('accountId');
-    
+
     if (!accountId) {
       return NextResponse.json({ error: "Account ID required" }, { status: 400 });
     }
@@ -56,15 +57,16 @@ export async function GET(request: NextRequest) {
     });
 
     const response = await searchconsole.sites.list();
-    
+
+
     return NextResponse.json({
       sites: response.data.siteEntry || [],
     });
 
   } catch (error: any) {
     console.error('Search Console Sites Error:', error);
-    return NextResponse.json({ 
-      error: error.message 
+    return NextResponse.json({
+      error: error.message
     }, { status: 500 });
   }
 }

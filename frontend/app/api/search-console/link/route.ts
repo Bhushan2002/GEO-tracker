@@ -9,10 +9,11 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 export async function POST(request: NextRequest) {
   try {
     const { accountId, siteUrl } = await request.json();
-    
+
+
     if (!accountId || !siteUrl) {
-      return NextResponse.json({ 
-        error: "Account ID and Site URL required" 
+      return NextResponse.json({
+        error: "Account ID and Site URL required"
       }, { status: 400 });
     }
 
@@ -33,15 +34,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      account 
+      account
     });
 
   } catch (error: any) {
     console.error('Search Console Link Error:', error);
-    return NextResponse.json({ 
-      error: error.message 
+    return NextResponse.json({
+      error: error.message
     }, { status: 500 });
   }
 }

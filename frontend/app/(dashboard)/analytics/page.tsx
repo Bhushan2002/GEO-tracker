@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/api";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -83,6 +84,9 @@ import { cn } from "@/lib/utils";
 import { AiDemographicsChart } from "@/components/Charts/AiDemographicsChart";
 import FirstZeroTouchChart from "@/components/Charts/FirstZeroTouchChart";
 import CitationsPieChart from "@/components/Charts/CitationsPieChart";
+import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
+import { DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { AiOverviewStats } from "@/components/Charts/AiOverviewStats";
 
 /**
  * Analytics page integrating Google Analytics data.
@@ -122,6 +126,12 @@ export default function GoogleAnalyticsPage() {
   const [scSites, setScSites] = useState<any[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("");
   const [scChartData, setScChartData] = useState<any[]>([]);
+  const [isGtmDialogOpen, setIsGtmDialogOpen] = useState(false);
+  const [gtmContainers, setGtmContainers] = useState<any[]>([]);
+  const [selectedGtmContainer, setSelectedGtmContainer] = useState<string>("");
+  const [gtmLoading, setGtmLoading] = useState(false);
+  const [activeSetupAccount, setActiveSetupAccount] = useState<any>(null);
+  const [aiOverviewStats, setAiOverviewStats] = useState<{ pages: any[], devices: any[] }>({ pages: [], devices: [] });
 
   useEffect(() => {
     if (activeWorkspace?._id) {
@@ -151,39 +161,34 @@ export default function GoogleAnalyticsPage() {
     }
   }, [activeWorkspace?._id]);
 
+  // Handle OAuth callback - force refresh when account is connected
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const connected = urlParams.get('connected');
+
+    if (connected === 'true' && activeWorkspace?._id) {
+      // Remove the query parameter from URL
+      window.history.replaceState({}, '', window.location.pathname);
+
+      // Force reload accounts
+      loadGAAccounts();
+      toast.success("Google Analytics connected successfully!");
+    }
+  }, [activeWorkspace?._id]);
+
   useEffect(() => {
     if (selectedAccountId) {
-      sessionStorage.setItem("ga-last-account-id", selectedAccountId);
       loadAccountData(selectedAccountId);
     }
   }, [selectedAccountId]);
 
-  const loadGAAccounts = async () => {
+  // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
+  const loadGAAccounts = useCallback(async () => {
     if (!activeWorkspace?._id) return;
 
     try {
-      const CACHE_KEY = `ga-accounts-cache-${activeWorkspace._id}`;
-      const cached = sessionStorage.getItem(CACHE_KEY);
-
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        setGaAccounts(parsed);
-        if (parsed.length > 0 && !selectedAccountId) {
-          // Try to restore last selected account
-          const lastId = sessionStorage.getItem("ga-last-account-id");
-          if (lastId && parsed.find((a: any) => a._id === lastId)) {
-            setSelectedAccountId(lastId);
-          } else {
-            setSelectedAccountId(parsed[0]._id);
-          }
-        }
-        setInitialLoading(false);
-        return;
-      }
-
       const response = await api.get("/api/ga-accounts");
       setGaAccounts(response.data);
-      sessionStorage.setItem(CACHE_KEY, JSON.stringify(response.data));
 
       if (response.data.length > 0 && !selectedAccountId) {
         setSelectedAccountId(response.data[0]._id);
@@ -193,9 +198,9 @@ export default function GoogleAnalyticsPage() {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [activeWorkspace?._id, selectedAccountId]);
 
-  const loadAccountData = async (accountId: string) => {
+  const loadAccountData = useCallback(async (accountId: string) => {
 
     if (!accountId || isQuotaExceeded) {
 
@@ -205,87 +210,12 @@ export default function GoogleAnalyticsPage() {
     setLoading(true);
     setMissingAudience(false); // Reset the warning
 
-    // Check cache first
-    const cacheKey = `ga-account-data-${accountId}`;
-    const cachedData = sessionStorage.getItem(cacheKey);
-
-
-    if (cachedData) {
-      try {
-        const parsed = JSON.parse(cachedData);
-        const cacheAge = Date.now() - parsed.timestamp;
-        const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours (effectively session-only)
-
-
-        if (cacheAge < CACHE_DURATION) {
-          // Use cached data
-          setChartData(parsed.chartData || []);
-          setKeyMetrics(
-            parsed.keyMetrics || {
-              activeUsers: 0,
-              engagedSessions: 0,
-              keyEvents: 0,
-            }
-          );
-          setAiModelsData(parsed.aiModelsData || []);
-          setFirstTouchData(parsed.firstTouchData || []);
-          setZeroTouchData(parsed.zeroTouchData || []);
-          setAiLandingPageData(parsed.aiLandingPageData || []);
-          setConversionRateData(parsed.conversionRateData || []);
-          setAiGrowthData(parsed.aiGrowthData || []);
-          setAiDeviceData(parsed.aiDeviceData || []);
-          setTopicClusterData(parsed.topicClusterData || []);
-          setDemographicsData(parsed.demographicsData || []);
-          setLoading(false);
-
-          return;
-        }
-      } catch (e) {
-        console.warn("Failed to parse cached data:", e);
-      }
-    }
-
     try {
-      // Fetch main analytics (traffic & metrics)
-      const analyticsRes = await api.get(
-        `/api/analytics-by-account?accountId=${accountId}`
-      );
-      const mainData = analyticsRes.data.chartData || [];
-      const metrics = analyticsRes.data.metrics || {
-        activeUsers: 0,
-        engagedSessions: 0,
-        keyEvents: 0,
-      };
-
-      // Fetch AI models traffic
-      const aiModelsRes = await api.get(
-        `/api/ai-models-by-account?accountId=${accountId}`
-      );
-
-      // Ensure specific models are included, even if they have 0 data
-      const allowedModels = [
-        "ChatGPT",
-        "Copilot",
-        "Perplexity",
-        "Gemini",
-        "Claude",
-      ];
-      const formattedAIModels = allowedModels.map((modelName) => {
-        const existingData = aiModelsRes.data.find(
-          (item: any) => item.model === modelName
-        );
-        if (existingData) return existingData;
-        return {
-          model: modelName,
-          users: 0,
-          sessions: 0,
-          conversionRate: "0%",
-        };
-      });
-
-      // Fetch First Touch, Zero Touch & AI Landing Pages data in parallel
-
+      // OPTIMIZATION: Fetch ALL data in parallel instead of sequentially
       const results = await Promise.allSettled([
+        api.get(`/api/analytics-by-account?accountId=${accountId}`),
+        api.get(`/api/ai-models-by-account?accountId=${accountId}`),
+        api.get(`/api/analytics/ai-overview-stats?accountId=${accountId}`),
         api.get(`/api/analytics/first-touch?accountId=${accountId}`),
         api.get(`/api/analytics/zero-touch?accountId=${accountId}`),
         api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}`),
@@ -293,19 +223,27 @@ export default function GoogleAnalyticsPage() {
         api.get(`/api/analytics/ai-growth-mom?accountId=${accountId}`),
         api.get(`/api/analytics/ai-device-split?accountId=${accountId}`),
         api.get(`/api/analytics/demographics?accountId=${accountId}`),
-      ]);
+        api.get(`/api/analytics/topic-clusters?accountId=${accountId}`),
+      ])
       // Extract data from settled promises, using empty arrays as fallbacks
       const endpoints = [
+        'analytics-by-account',
+        'ai-models-by-account',
+        'ai-overview-stats',
         'first-touch',
         'zero-touch',
         'ai-landing-pages',
         'ai-conversions',
         'ai-growth-mom',
         'ai-device-split',
-        'demographics'
+        'demographics',
+        'topic-clusters'
       ];
 
       const [
+        analyticsRes,
+        aiModelsRes,
+        aiStatsRes,
         firstTouchRes,
         zeroTouchRes,
         landingPagesRes,
@@ -313,6 +251,7 @@ export default function GoogleAnalyticsPage() {
         growthRes,
         deviceRes,
         demoRes,
+        topicRes,
       ] = results.map((result, index) => {
         if (result.status === 'fulfilled') {
 
@@ -333,60 +272,63 @@ export default function GoogleAnalyticsPage() {
           }
 
           console.warn(`Failed to load ${endpoints[index]}:`, errorMsg);
-          return { data: [] };
+          return { data: endpoints[index] === 'analytics-by-account' ? { chartData: [], metrics: { activeUsers: 0, engagedSessions: 0, keyEvents: 0 } } : [] };
         }
       });
 
-      // Fetch topic clusters separately (optional, may not exist yet)
-      let topicRes = { data: [] };
-      try {
-        topicRes = await api.get(
-          `/api/analytics/topic-clusters?accountId=${accountId}`
+      // Process analytics data
+      const mainData = analyticsRes.data?.chartData || [];
+      const metrics = analyticsRes.data?.metrics || {
+        activeUsers: 0,
+        engagedSessions: 0,
+        keyEvents: 0,
+      };
+
+      // Process AI models data
+      const allowedModels = [
+        "ChatGPT",
+        "Copilot",
+        "Perplexity",
+        "Gemini",
+        "Claude",
+      ];
+      const formattedAIModels = allowedModels.map((modelName) => {
+        const existingData = aiModelsRes.data?.find(
+          (item: any) => item.model === modelName
         );
-      } catch (error) {
-        console.log("Topic clusters endpoint not available yet");
-      }
+        if (existingData) return existingData;
+        return {
+          model: modelName,
+          users: 0,
+          sessions: 0,
+          conversionRate: "0%",
+        };
+      });
 
       const fTouch = firstTouchRes.data || [];
       const zTouch = zeroTouchRes.data || [];
       const landingPages = landingPagesRes.data?.landingPageData || [];
 
-
+      // OPTIMIZATION: Batch state updates to reduce re-renders
       setChartData(mainData);
       setKeyMetrics(metrics);
       setAiModelsData(formattedAIModels);
+      setAiOverviewStats(aiStatsRes.data || { pages: [], devices: [] });
       setFirstTouchData(fTouch);
       setZeroTouchData(zTouch);
       setAiLandingPageData(landingPages);
-      setConversionRateData(convRes.data);
-      setAiGrowthData(growthRes.data);
-      setAiDeviceData(deviceRes.data);
-      setTopicClusterData(topicRes.data);
-      setDemographicsData(demoRes.data);
+      setConversionRateData(convRes.data || []);
+      setAiGrowthData(growthRes.data || []);
+      setAiDeviceData(deviceRes.data || []);
+      setTopicClusterData(topicRes.data || []);
+      setDemographicsData(demoRes.data || []);
 
 
 
-      // Save to cache
-      sessionStorage.setItem(
-        cacheKey,
-        JSON.stringify({
-          chartData: mainData,
-          keyMetrics: metrics,
-          aiModelsData: formattedAIModels,
-          firstTouchData: fTouch,
-          zeroTouchData: zTouch,
-          aiLandingPageData: landingPages,
-          conversionRateData: convRes.data,
-          aiGrowthData: growthRes.data,
-          aiDeviceData: deviceRes.data,
-          topicClusterData: topicRes.data,
-          demographicsData: demoRes.data,
-          timestamp: Date.now(),
-        })
-      );
-
-      // Load Search Console data
-      loadSearchConsoleData(accountId);
+      // OPTIMIZATION: Lazy load Search Console data after initial render (lower priority)
+      setTimeout(() => {
+        loadSearchConsoleData(accountId);
+      }, 100);
 
       setIsQuotaExceeded(false);
     } catch (error: any) {
@@ -408,9 +350,9 @@ export default function GoogleAnalyticsPage() {
       setLoading(false);
 
     }
-  };
+  }, [isQuotaExceeded]);
 
-  const loadSearchConsoleSites = async (accountId: string) => {
+  const loadSearchConsoleSites = useCallback(async (accountId: string) => {
     try {
       const response = await api.get(`/api/search-console/sites?accountId=${accountId}`);
       setScSites(response.data.sites || []);
@@ -418,7 +360,7 @@ export default function GoogleAnalyticsPage() {
       console.error("Failed to load Search Console sites:", error);
       toast.error("Failed to load Search Console sites");
     }
-  };
+  }, []);
 
   const linkSearchConsoleSite = async (accountId: string, siteUrl: string) => {
     try {
@@ -431,7 +373,7 @@ export default function GoogleAnalyticsPage() {
     }
   };
 
-  const loadSearchConsoleData = async (accountId: string) => {
+  const loadSearchConsoleData = useCallback(async (accountId: string) => {
     setScLoading(true);
     try {
       // Only fetch chart data
@@ -449,7 +391,7 @@ export default function GoogleAnalyticsPage() {
     } finally {
       setScLoading(false);
     }
-  };
+  }, []);
 
   const handleConnectAccount = () => {
     const client_id = process.env.NEXT_PUBLIC_GA_CLIENT_ID;
@@ -458,12 +400,55 @@ export default function GoogleAnalyticsPage() {
       "https://www.googleapis.com/auth/analytics.readonly",
       "https://www.googleapis.com/auth/analytics.edit",
       "https://www.googleapis.com/auth/webmasters.readonly",
+      "https://www.googleapis.com/auth/tagmanager.edit.containers",
+      "https://www.googleapis.com/auth/tagmanager.readonly"
     ].join(" ");
     const state = activeWorkspace?._id || "";
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
 
     toast.info("Redirecting to Google sign-in...");
     window.location.href = authUrl;
+  };
+  const fetchGtmContainers = async (accountId: string) => {
+    setGtmLoading(true);
+    try {
+      const res = await api.get(`/api/gtm/containers?accountId=${accountId}`);
+      setGtmContainers(res.data);
+      setIsGtmDialogOpen(true);
+    } catch (error) {
+      toast.error("Failed to load GTM containers. Please reconnect account with permissions.");
+    } finally {
+      setGtmLoading(false);
+    }
+  };
+
+  const handleGtmSetup = async (dbAccountId: string, measurementId: string) => {
+    if (!selectedGtmContainer) return;
+
+    // Find the full container object to get the internal gtmAccountId
+    const container = gtmContainers.find(c => c.publicId === selectedGtmContainer);
+    if (!container) return;
+
+    try {
+      setGtmLoading(true);
+      toast.info("Configuring GTM...");
+
+      await api.post('/api/gtm/setup', {
+        dbAccountId,
+        gtmAccountId: container.gtmAccountId,
+        // gtmContainerId: container.publicId,  
+        gtmContainerId: container.containerId,
+        measurementId // This will be your GA4 Property ID/Measurement ID
+      });
+
+      toast.success("Success! GTM Tags & Triggers created.");
+      setIsGtmDialogOpen(false);
+    } catch (e) {
+      console.error(e);
+      toast.error("Setup failed. Check console for details.");
+    } finally {
+      setGtmLoading(false);
+    }
   };
 
   const handleDeleteAccount = async (accountId: string) => {
@@ -472,7 +457,11 @@ export default function GoogleAnalyticsPage() {
     try {
       await api.delete(`/api/ga-accounts?id=${accountId}`);
       toast.success("Account removed successfully");
-      loadGAAccounts();
+
+      // Reload accounts
+      await loadGAAccounts();
+
+      // If the deleted account was selected, clear the selection
       if (selectedAccountId === accountId) {
         setSelectedAccountId("");
         setChartData([]);
@@ -518,10 +507,6 @@ export default function GoogleAnalyticsPage() {
         return acc;
       }));
 
-      // Clear cache and reload
-      const cacheKey = `ga-account-data-${accountId}`;
-      sessionStorage.removeItem(cacheKey);
-
       // If this is the currently selected account, reload data
       if (selectedAccountId === accountId) {
         loadAccountData(accountId);
@@ -533,7 +518,8 @@ export default function GoogleAnalyticsPage() {
     }
   };
 
-  const formatDate = (dateValue: any) => {
+  // OPTIMIZATION: Memoize formatDate to prevent recreation
+  const formatDate = useCallback((dateValue: any) => {
     if (!dateValue) return "";
     const dateStr = String(dateValue);
     if (dateStr.length !== 8) return dateStr;
@@ -542,7 +528,7 @@ export default function GoogleAnalyticsPage() {
     const day = parseInt(dateStr.substring(6, 8));
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
+  }, []);
 
   return (
     <div className="min-h-screen p-6 space-y-8 max-w-[1700px] mx-auto">
@@ -646,7 +632,48 @@ export default function GoogleAnalyticsPage() {
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
-
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setActiveSetupAccount(account);
+                                fetchGtmContainers(account._id);
+                              }}
+                              disabled={gtmLoading}
+                            >
+                              <Tag className="w-3 h-3 mr-2" />
+                              Setup AI Tracking
+                            </Button>
+                            <Dialog open={isGtmDialogOpen} onOpenChange={setIsGtmDialogOpen}>
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>Select GTM Container</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 pt-4">
+                                  <Select onValueChange={setSelectedGtmContainer}>
+                                    <SelectTrigger><SelectValue placeholder="Choose Container" /></SelectTrigger>
+                                    <SelectContent>
+                                      {gtmContainers.map(c => (
+                                        <SelectItem key={c.publicId} value={c.publicId}>
+                                          {c.name} ({c.publicId})
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Button
+                                    className="w-full"
+                                    disabled={!selectedGtmContainer || gtmLoading}
+                                    onClick={() => {
+                                      if (activeSetupAccount && selectedGtmContainer) {
+                                        // We use the account ID and Property ID (as a fallback for Measurement ID)
+                                        handleGtmSetup(activeSetupAccount._id, activeSetupAccount.propertyId);
+                                      }
+                                    }}
+                                  >
+                                    {gtmLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Install Tags"}
+                                  </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
                             {/* Property Selector */}
                             <div className="pt-2">
                               <Select
@@ -915,8 +942,26 @@ export default function GoogleAnalyticsPage() {
                   </CardContent>
                 </Card>
               </div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold text-foreground">
+                    AI Overview Performance
+                  </h3>
+                  <span className="text-sm text-muted-foreground hidden sm:inline-block">
+                    • GTM tracked citations & features
+                  </span>
+                </div>
 
-              {/* 2. User Journey and Conversion */}
+                <AiOverviewStats
+                  pages={aiOverviewStats.pages}
+                  devices={aiOverviewStats.devices}
+                  loading={loading}
+                />
+              </div>
+             
+                
+                {/* 2. User Journey and Conversion */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <MousePointerClick className="h-5 w-5 text-muted-foreground" />
@@ -1148,6 +1193,7 @@ export default function GoogleAnalyticsPage() {
                     </CardContent>
                   </Card>
                 </div>
+                
 
                 {/* Traffic by AI Model Bar */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -1646,3 +1692,69 @@ export default function GoogleAnalyticsPage() {
     </div>
   );
 }
+
+
+
+
+//  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+//                    <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+//                     <CardHeader className="border-b border-slate-100 px-5">
+//                       <div className="flex items-center justify-between">
+//                        <div>
+//                           <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+//                             AI Overview Trends
+//                           </CardTitle>
+//                           <CardDescription className="text-[10px] text-slate-500 font-medium">
+//                             Daily clicks from Google AI Overviews
+//                           </CardDescription>
+//                         </div>
+//                         <InfoTooltip>
+//                           <TooltipTrigger>
+//                             <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
+//                           </TooltipTrigger>
+//                           <TooltipContent>
+//                             Tracks the daily volume of users landing on your site specifically via Google's "AI Overview" text fragments.
+//                           </TooltipContent>
+//                         </InfoTooltip>
+//                       </div>
+//                     </CardHeader>
+
+//                     <CardContent className="pt-6">
+//                       {loading ? (
+//                         <div className="flex items-center justify-center h-[300px]">
+//                           <Loader className="h-8 w-8 animate-spin text-slate-400" />
+//                         </div>
+//                       ) : (
+//                         <ResponsiveContainer width="100%" height={300}>
+//                           <LineChart data={chartData}>
+//                             <CartesianGrid strokeDasharray="3 3" stroke="#f3e8ff" />
+//                             <XAxis
+//                               dataKey="name"
+//                               stroke="#9ca3af"
+//                               tick={{ fontSize: 12 }}
+//                               tickFormatter={formatDate}
+//                             />
+//                             <YAxis stroke="#9ca3af" tick={{ fontSize: 12 }} allowDecimals={false} />
+//                             <Tooltip
+//                               contentStyle={{
+//                                 backgroundColor: "white",
+//                                 border: "1px solid #e9d5ff",
+//                                 borderRadius: "8px",
+//                               }}
+//                             />
+//                             <Legend />
+//                             <Line
+//                               type="monotone"
+//                               dataKey="aiOverview"
+//                               stroke="#9333ea" /* Purple Color */
+//                               strokeWidth={3}
+//                               name="AI Overview Clicks"
+//                               dot={{ fill: "#9333ea", r: 2 }}
+//                               activeDot={{ r: 5 }}
+//                             />
+//                           </LineChart>
+//                         </ResponsiveContainer>
+//                       )}
+//                     </CardContent>
+//                   </Card>
+//                 </div>

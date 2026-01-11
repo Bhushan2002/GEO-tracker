@@ -70,71 +70,25 @@ export async function GET(request: NextRequest) {
       auth: oauth2Client,
     });
 
-    // Try with sessionSource filter (more common for AI traffic tracking)
+    // Use sessionSourceMedium with regex filter to match GA4 Traffic Acquisition setup
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
         dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
         dimensions: [
-          { name: "landingPage" },
-          { name: "sessionSource" }
+          { name: "landingPagePlusQueryString" },
+          { name: "sessionSourceMedium" }
         ],
         metrics: [{ name: "activeUsers" }],
         dimensionFilter: {
-          orGroup: {
-            expressions: [
-              {
-                filter: {
-                  fieldName: "sessionSource",
-                  stringFilter: {
-                    matchType: "CONTAINS",
-                    value: "chatgpt",
-                    caseSensitive: false,
-                  },
-                },
-              },
-              {
-                filter: {
-                  fieldName: "sessionSource",
-                  stringFilter: {
-                    matchType: "CONTAINS",
-                    value: "perplexity",
-                    caseSensitive: false,
-                  },
-                },
-              },
-              {
-                filter: {
-                  fieldName: "sessionSource",
-                  stringFilter: {
-                    matchType: "CONTAINS",
-                    value: "copilot",
-                    caseSensitive: false,
-                  },
-                },
-              },
-              {
-                filter: {
-                  fieldName: "sessionSource",
-                  stringFilter: {
-                    matchType: "CONTAINS",
-                    value: "claude",
-                    caseSensitive: false,
-                  },
-                },
-              },
-              {
-                filter: {
-                  fieldName: "sessionSource",
-                  stringFilter: {
-                    matchType: "CONTAINS",
-                    value: "gemini",
-                    caseSensitive: false,
-                  },
-                },
-              },
-            ],
-          },
+          filter: {
+            fieldName: "sessionSourceMedium",
+            stringFilter: {
+              matchType: "FULL_REGEXP",
+              value: "(.*gpt.*|.*chatgpt.*|.*x\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\.google.*)",
+              caseSensitive: false,
+            }
+          }
         },
         orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
         limit: "10",
@@ -155,8 +109,8 @@ export async function GET(request: NextRequest) {
     if (landingPageData.length === 0) {
       console.log("⚠️ No AI landing page data found. Possible reasons:");
       console.log("   1. No traffic from AI sources (chatgpt, perplexity, copilot, claude, gemini)");
-      console.log("   2. Traffic exists but sessionSource doesn't match the filter");
-      console.log("   3. Data might be tracked under different dimension (firstUserSource, etc)");
+      console.log("   2. Traffic exists but sessionSourceMedium doesn't match the filter");
+      console.log("   3. Ensure GTM is properly configured and events are being tracked");
     }
 
     return NextResponse.json({ landingPageData });
