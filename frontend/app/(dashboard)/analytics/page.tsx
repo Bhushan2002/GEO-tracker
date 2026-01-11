@@ -122,6 +122,7 @@ export default function GoogleAnalyticsPage() {
   const [scSites, setScSites] = useState<any[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>("");
   const [scChartData, setScChartData] = useState<any[]>([]);
+  const [scLimit, setScLimit] = useState<string>("50");
   const [scTopQueries, setScTopQueries] = useState<any[]>([]);
 
   useEffect(() => {
@@ -146,6 +147,7 @@ export default function GoogleAnalyticsPage() {
         aiOverviewClicks: 0,
       });
       setIsQuotaExceeded(false);
+      setScLimit("50"); // Reset limit
 
       setInitialLoading(true);
       loadGAAccounts();
@@ -432,13 +434,19 @@ export default function GoogleAnalyticsPage() {
     }
   };
 
+  useEffect(() => {
+    if (selectedAccountId && !isQuotaExceeded) {
+      loadSearchConsoleData(selectedAccountId);
+    }
+  }, [scLimit]); // Re-fetch when limit changes
+
   const loadSearchConsoleData = async (accountId: string) => {
     setScLoading(true);
     try {
       // Fetch BOTH chart data and top queries
       const [chartResponse, queriesResponse] = await Promise.all([
         api.get(`/api/search-console/queries?accountId=${accountId}`),
-        api.get(`/api/search-console/top-queries?accountId=${accountId}`),
+        api.get(`/api/search-console/top-queries?accountId=${accountId}&limit=${scLimit}`),
       ]);
 
       setScChartData(chartResponse.data.chartData || []);
@@ -1636,9 +1644,9 @@ export default function GoogleAnalyticsPage() {
                     {/* Top Queries Table */}
                     {scTopQueries.length > 0 && (
                       <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <CardHeader className="border-b border-slate-100 px-5">
+                        <CardHeader className="border-b border-slate-100 px-5 bg-white">
                           <div className="flex items-center justify-between">
-                            <div>
+                            <div className="flex flex-col gap-1">
                               <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
                                 Top Long-Tail Queries
                               </CardTitle>
@@ -1646,17 +1654,42 @@ export default function GoogleAnalyticsPage() {
                                 Search queries with 4+ words driving traffic
                               </CardDescription>
                             </div>
-                            <InfoTooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Shows the most common long-tail search queries (4+ words) that bring users to your site
-                              </TooltipContent>
-                            </InfoTooltip>
+
+                            <div className="flex items-center gap-3">
+                              {/* Limit Selector */}
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] uppercase font-bold text-slate-400">Rows:</span>
+                                <Select value={scLimit} onValueChange={setScLimit}>
+                                  <SelectTrigger className="h-7 w-[70px] text-xs font-semibold bg-slate-50 border-slate-200">
+                                    <SelectValue placeholder="50" />
+                                  </SelectTrigger>
+                                  <SelectContent align="end">
+                                    <SelectItem value="25" className="text-xs">25</SelectItem>
+                                    <SelectItem value="50" className="text-xs">50</SelectItem>
+                                    <SelectItem value="100" className="text-xs">100</SelectItem>
+                                    <SelectItem value="250" className="text-xs">250</SelectItem>
+                                    <SelectItem value="500" className="text-xs">500</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <InfoTooltip>
+                                <TooltipTrigger>
+                                  <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  Shows the most common long-tail search queries (4+ words) that bring users to your site
+                                </TooltipContent>
+                              </InfoTooltip>
+                            </div>
                           </div>
                         </CardHeader>
                         <CardContent className="pt-6">
+                          {scLoading && (
+                            <div className="absolute inset-0 bg-white/50 z-10 flex items-center justify-center">
+                              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                            </div>
+                          )}
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -1669,7 +1702,7 @@ export default function GoogleAnalyticsPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {scTopQueries.slice(0, 50).map((query: any, index: number) => (
+                              {scTopQueries.map((query: any, index: number) => (
                                 <TableRow key={index} className="hover:bg-slate-50/50 transition-colors">
                                   <TableCell className="font-medium text-gray-600">
                                     {index + 1}
