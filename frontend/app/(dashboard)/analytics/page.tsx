@@ -114,6 +114,11 @@ export default function GoogleAnalyticsPage() {
   const [aiDeviceData, setAiDeviceData] = useState<any[]>([]);
   const [demographicsData, setDemographicsData] = useState<any[]>([]);
   const [missingAudience, setMissingAudience] = useState(false);
+  const [searchConsoleData, setSearchConsoleData] = useState<any>(null);
+  const [scLoading, setScLoading] = useState(false);
+  const [scSites, setScSites] = useState<any[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string>("");
+  const [scChartData, setScChartData] = useState<any[]>([]);
 
   useEffect(() => {
     if (activeWorkspace?._id) {
@@ -377,6 +382,8 @@ export default function GoogleAnalyticsPage() {
         })
       );
 
+      // Load Search Console data
+      loadSearchConsoleData(accountId);
 
       setIsQuotaExceeded(false);
     } catch (error: any) {
@@ -396,6 +403,48 @@ export default function GoogleAnalyticsPage() {
       }
     } finally {
       setLoading(false);
+
+    }
+  };
+
+  const loadSearchConsoleSites = async (accountId: string) => {
+    try {
+      const response = await api.get(`/api/search-console/sites?accountId=${accountId}`);
+      setScSites(response.data.sites || []);
+    } catch (error: any) {
+      console.error("Failed to load Search Console sites:", error);
+      toast.error("Failed to load Search Console sites");
+    }
+  };
+
+  const linkSearchConsoleSite = async (accountId: string, siteUrl: string) => {
+    try {
+      await api.post('/api/search-console/link', { accountId, siteUrl });
+      toast.success("Search Console linked successfully!");
+      loadSearchConsoleData(accountId);
+    } catch (error: any) {
+      console.error("Failed to link site:", error);
+      toast.error("Failed to link Search Console");
+    }
+  };
+
+  const loadSearchConsoleData = async (accountId: string) => {
+    setScLoading(true);
+    try {
+      // Only fetch chart data
+      const response = await api.get(`/api/search-console/queries?accountId=${accountId}`);
+
+      setScChartData(response.data.chartData || []);
+      setSearchConsoleData({ totals: response.data.totals }); // For metrics cards
+    } catch (error: any) {
+      console.error("Search Console data error:", error);
+      if (error.response?.data?.error?.includes("not configured")) {
+        loadSearchConsoleSites(accountId);
+      } else {
+        toast.error("Failed to load Search Console data");
+      }
+    } finally {
+      setScLoading(false);
     }
   };
 
@@ -405,6 +454,7 @@ export default function GoogleAnalyticsPage() {
     const scope = [
       "https://www.googleapis.com/auth/analytics.readonly",
       "https://www.googleapis.com/auth/analytics.edit",
+      "https://www.googleapis.com/auth/webmasters.readonly",
     ].join(" ");
     const state = activeWorkspace?._id || "";
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
@@ -1377,6 +1427,218 @@ export default function GoogleAnalyticsPage() {
                   />
                   <AiDemographicsChart data={demographicsData} />
                 </div>
+              </div>
+
+              {/* 5. Search Console Performance */}
+              {/* 5. Search Console Performance */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe className="h-5 w-5 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold text-foreground">
+                    Search Console Performance
+                  </h3>
+                  <span className="text-sm text-muted-foreground hidden sm:inline-block">
+                    • Long-tail queries (4+ words)
+                  </span>
+                </div>
+
+                {/* Search Console Setup or Data */}
+                {scLoading ? (
+                  <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-center h-64">
+                        <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : !scChartData.length && scSites.length > 0 ? (
+                  // Setup card if not linked
+                  <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <CardHeader className="border-b border-slate-100 px-5">
+                      <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                        Link Search Console
+                      </CardTitle>
+                      <CardDescription className="text-[10px] text-slate-500 font-medium">
+                        Select a Search Console property to view organic search performance
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                      <Select value={selectedSite} onValueChange={setSelectedSite}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a Search Console property" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {scSites.map((site: any) => (
+                            <SelectItem key={site.siteUrl} value={site.siteUrl}>
+                              {site.siteUrl}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        onClick={() => {
+                          if (selectedSite && selectedAccountId) {
+                            linkSearchConsoleSite(selectedAccountId, selectedSite);
+                          }
+                        }}
+                        disabled={!selectedSite}
+                        className="w-full"
+                      >
+                        Link Selected Property
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : scChartData.length > 0 ? (
+                  <>
+                    {/* Metrics Cards */}
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                          <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                            Total Clicks
+                          </h3>
+                          <MousePointerClick className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <CardContent className="pt-6">
+                          <div className="text-2xl font-bold text-foreground">
+                            {searchConsoleData?.totals?.totalClicks?.toLocaleString() || 0}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            From long-tail queries
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                          <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                            Total Impressions
+                          </h3>
+                          <Users className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <CardContent className="pt-6">
+                          <div className="text-2xl font-bold text-foreground">
+                            {searchConsoleData?.totals?.totalImpressions?.toLocaleString() || 0}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Times shown in search
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                          <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                            Average CTR
+                          </h3>
+                          <Zap className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <CardContent className="pt-6">
+                          <div className="text-2xl font-bold text-foreground">
+                            {((searchConsoleData?.totals?.avgCtr || 0) * 100).toFixed(2)}%
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Click-through rate
+                          </p>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
+                          <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                            Average Position
+                          </h3>
+                          <ChartBar className="h-4 w-4 text-slate-400" />
+                        </div>
+                        <CardContent className="pt-6">
+                          <div className="text-2xl font-bold text-foreground">
+                            {(searchConsoleData?.totals?.avgPosition || 0).toFixed(1)}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            In search results
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Long-Tail Queries Chart */}
+                    <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                      <CardHeader className="border-b border-slate-100 px-5">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
+                              Long-Tail Query Performance Over Time
+                            </CardTitle>
+                            <CardDescription className="text-[10px] text-slate-500 font-medium">
+                              Clicks and impressions for detailed search queries (4+ words)
+                            </CardDescription>
+                          </div>
+                          <InfoTooltip>
+                            <TooltipTrigger>
+                              <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Shows search performance trends for queries with 4 or more words - typically more specific, high-intent searches
+                            </TooltipContent>
+                          </InfoTooltip>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-6">
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={scChartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis
+                              dataKey="date"
+                              stroke="#6b7280"
+                              tick={{ fontSize: 12 }}
+                              tickFormatter={(date) => {
+                                const d = new Date(date);
+                                return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                              }}
+                            />
+                            <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: "white",
+                                border: "1px solid #e5e7eb",
+                                borderRadius: "6px",
+                              }}
+                            />
+                            <Legend />
+                            <Line
+                              type="monotone"
+                              dataKey="clicks"
+                              stroke="#3b82f6"
+                              strokeWidth={3}
+                              name="Clicks"
+                              dot={{ fill: "#3b82f6", r: 1 }}
+                              activeDot={{ r: 3 }}
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="impressions"
+                              stroke="#8b5cf6"
+                              strokeWidth={3}
+                              name="Impressions"
+                              dot={{ fill: "#8b5cf6", r: 1 }}
+                              activeDot={{ r: 3 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  </>
+                ) : (
+                  <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <CardContent className="pt-6">
+                      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                        <Globe className="h-12 w-12 mb-3 opacity-20" />
+                        <p className="font-medium">Search Console not available</p>
+                        <p className="text-sm mt-2">Re-authenticate to grant Search Console permissions</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </div>
           ))}

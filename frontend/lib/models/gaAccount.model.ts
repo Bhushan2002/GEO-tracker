@@ -24,6 +24,10 @@ const gaAccountSchema = new mongoose.Schema(
         // GA4 Audiences for AI Traffic Tracking
         aiAudienceId: { type: String, required: false },
         aiAudienceName: { type: String, required: false },
+
+        // Search Console Integration - ADD THESE TWO LINES ↓
+        searchConsoleSiteUrl: { type: String, required: false },
+        searchConsoleVerified: { type: Boolean, default: false },
     },
     { timestamps: true }
 );
