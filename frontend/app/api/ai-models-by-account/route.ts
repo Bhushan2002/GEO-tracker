@@ -66,22 +66,45 @@ export async function GET(request: NextRequest) {
       auth: oauth2Client,
     });
 
+    // const response = await analyticsData.properties.runReport({
+    //   property: `properties/${account.propertyId}`,
+    //   requestBody: {
+    //     dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+    //     dimensions: [{ name: "firstUserSource" }],
+    //     metrics: [
+    //       { name: "activeUsers" },
+    //       { name: "sessions" },
+    //       { name: "sessionConversionRate" },
+    //     ],
+    //     orderBys: [
+    //       {
+    //         metric: { metricName: "activeUsers" },
+    //         desc: true,
+    //       },
+    //     ],
+    //   },
+    // });
+
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
         dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-        dimensions: [{ name: "firstUserSource" }],
+        dimensions: [{ name: "sessionSource" }],
         metrics: [
           { name: "activeUsers" },
           { name: "sessions" },
           { name: "sessionConversionRate" },
         ],
-        orderBys: [
-          {
-            metric: { metricName: "activeUsers" },
-            desc: true,
-          },
-        ],
+        dimensionFilter: {
+          filter: {
+            fieldName: "sessionSource",
+            stringFilter: {
+              matchType: "FULL_REGEXP",
+              value: "(.*gpt.*|.*chatgpt.*|.*x\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\.google.*)",
+              caseSensitive: false,
+            }
+          }
+        }
       },
     });
 
@@ -98,6 +121,11 @@ export async function GET(request: NextRequest) {
       'copilot': 'Copilot',
       'bing': 'Copilot',
       'edgeservices': 'Copilot',
+      'neeva': 'Neeva',
+      'writesonic': 'Writesonic',
+      'outrider': 'Outrider',
+      'nimble': 'Nimble',
+      'x.ai': 'Grok',
     };
 
     const modelData: { [key: string]: any } = {};

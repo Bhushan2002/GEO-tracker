@@ -100,6 +100,7 @@ export default function GoogleAnalyticsPage() {
     activeUsers: 0,
     engagedSessions: 0,
     keyEvents: 0,
+    aiOverviewClicks: 0,
   });
   const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
 
@@ -133,6 +134,7 @@ export default function GoogleAnalyticsPage() {
         activeUsers: 0,
         engagedSessions: 0,
         keyEvents: 0,
+        aiOverviewClicks: 0,
       });
       setIsQuotaExceeded(false);
 
@@ -186,9 +188,9 @@ export default function GoogleAnalyticsPage() {
   };
 
   const loadAccountData = async (accountId: string) => {
-    
+
     if (!accountId || isQuotaExceeded) {
-     
+
       return;
     }
 
@@ -206,7 +208,7 @@ export default function GoogleAnalyticsPage() {
         const cacheAge = Date.now() - parsed.timestamp;
         const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours (effectively session-only)
 
-        
+
         if (cacheAge < CACHE_DURATION) {
           // Use cached data
           setChartData(parsed.chartData || []);
@@ -274,7 +276,7 @@ export default function GoogleAnalyticsPage() {
       });
 
       // Fetch First Touch, Zero Touch & AI Landing Pages data in parallel
-    
+
       const results = await Promise.allSettled([
         api.get(`/api/analytics/first-touch?accountId=${accountId}`),
         api.get(`/api/analytics/zero-touch?accountId=${accountId}`),
@@ -294,7 +296,7 @@ export default function GoogleAnalyticsPage() {
         'ai-device-split',
         'demographics'
       ];
-      
+
       const [
         firstTouchRes,
         zeroTouchRes,
@@ -305,23 +307,23 @@ export default function GoogleAnalyticsPage() {
         demoRes,
       ] = results.map((result, index) => {
         if (result.status === 'fulfilled') {
-         
+
           return result.value;
         } else {
           // Check if the error is about missing AI audience
           const errorMsg = result.reason?.response?.data?.error || result.reason?.message || '';
           const errorStatus = result.reason?.response?.status;
-          
+
           console.error(` ${endpoints[index]} failed:`, {
             status: errorStatus,
             error: errorMsg,
             fullError: result.reason
           });
-          
+
           if (errorMsg.includes('AI Traffic audience not found') || errorMsg.includes('audience')) {
             setMissingAudience(true);
           }
-          
+
           console.warn(`Failed to load ${endpoints[index]}:`, errorMsg);
           return { data: [] };
         }
@@ -466,7 +468,7 @@ export default function GoogleAnalyticsPage() {
       // Clear cache and reload
       const cacheKey = `ga-account-data-${accountId}`;
       sessionStorage.removeItem(cacheKey);
-      
+
       // If this is the currently selected account, reload data
       if (selectedAccountId === accountId) {
         loadAccountData(accountId);
@@ -718,7 +720,26 @@ export default function GoogleAnalyticsPage() {
                 </div>
 
                 {/* Key Metrics Cards */}
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-4">
+                  <Card className="bg-purple-50 rounded-xl border border-purple-100 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-purple-100 flex flex-row justify-between items-center shrink-0 bg-white/50">
+                      <h3 className="font-bold text-[11px] uppercase tracking-wider text-purple-900">
+                        AI Overview Clicks
+                      </h3>
+                      <div className="h-4 w-4 text-purple-400">
+                        {/* You can use a specific icon here */}
+                        <span className="text-xs">✨</span>
+                      </div>
+                    </div>
+                    <CardContent className="pt-6">
+                      <div className="text-2xl font-bold text-purple-900">
+                        {(keyMetrics.aiOverviewClicks ?? 0).toLocaleString()}
+                      </div>
+                      <p className="text-xs text-purple-600/80 mt-1">
+                        Visits via "AI Overview" highlights
+                      </p>
+                    </CardContent>
+                  </Card>
                   <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="px-5 py-3 border-b border-slate-100 flex flex-row justify-between items-center shrink-0 bg-slate-50/50">
                       <h3 className="font-bold text-[11px] uppercase tracking-wider text-slate-900">

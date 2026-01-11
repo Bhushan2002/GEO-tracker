@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
   if (!code) {
     return NextResponse.redirect(
-      new URL("/google-analytics?error=no_code", request.url)
+      new URL("/analytics?error=no_code", request.url)
     );
   }
 
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       version: "v1alpha",
       auth: oauth2Client,
     });
-    
+
     const searchConsole = google.searchconsole({
       version: "v1",
       auth: oauth2Client,
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 
     if (accounts.length === 0) {
       return NextResponse.redirect(
-        new URL("/google-analytics?error=no_accounts", request.url)
+        new URL("/analytics?error=no_accounts", request.url)
       );
     }
 
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 
     if (properties.length === 0) {
       return NextResponse.redirect(
-        new URL("/google-analytics?error=no_properties", request.url)
+        new URL("/analytics?error=no_properties", request.url)
       );
     }
 
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
     if (!firstProperty.name || !tokens.access_token || !tokens.refresh_token) {
       return NextResponse.redirect(
-        new URL("/google-analytics?error=invalid_property", request.url)
+        new URL("/analytics?error=invalid_property", request.url)
       );
     }
 
@@ -187,12 +187,12 @@ export async function GET(request: Request) {
 
     // Redirect back to dashboard with success flag
     return NextResponse.redirect(
-      new URL("/google-analytics?connected=true", request.url)
+      new URL("/analytics?connected=true", request.url)
     );
   } catch (error: any) {
     console.error("Auth callback fatal error:", error);
     return NextResponse.redirect(
-      new URL("/google-analytics?error=setup_failed", request.url)
+      new URL("/analytics?error=setup_failed", request.url)
     );
   }
 }
