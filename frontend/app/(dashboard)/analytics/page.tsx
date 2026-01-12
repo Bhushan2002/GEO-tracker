@@ -140,11 +140,47 @@ export default function GoogleAnalyticsPage() {
 
 
   // GSC Manual Linkage State
+  const [gscAccount, setGscAccount] = useState<any>(null); // Separate GSC account
   const [gscSites, setGscSites] = useState<any[]>([]);
   const [isGscDialogOpen, setIsGscDialogOpen] = useState(false);
   const [targetSetupAccountId, setTargetSetupAccountId] = useState<string>("");
   const [gscLoading, setGscLoading] = useState(false);
   const [selectedGscSite, setSelectedGscSite] = useState<string>("");
+
+  // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
+  const loadGAAccounts = useCallback(async () => {
+    if (!activeWorkspace?._id) return;
+
+    try {
+      const response = await api.get("/api/ga-accounts");
+      setGaAccounts(response.data);
+
+      if (response.data.length > 0) {
+        setSelectedAccountId((prev) => {
+          if (!prev) return response.data[0]._id;
+          const exists = response.data.find((a: any) => a._id === prev);
+          return exists ? prev : response.data[0]._id;
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load GA accounts:", error);
+    } finally {
+      setInitialLoading(false);
+    }
+  }, [activeWorkspace?._id]);
+
+  // Load Search Console Account (separate from GA)
+  const loadGscAccount = useCallback(async () => {
+    if (!activeWorkspace?._id) return;
+
+    try {
+      const response = await api.get("/api/search-console-accounts");
+      setGscAccount(response.data);
+    } catch (error) {
+      console.error("Failed to load GSC account:", error);
+      setGscAccount(null);
+    }
+  }, [activeWorkspace?._id]);
 
   useEffect(() => {
     if (activeWorkspace?._id) {
@@ -172,8 +208,9 @@ export default function GoogleAnalyticsPage() {
 
       setInitialLoading(true);
       loadGAAccounts();
+      loadGscAccount(); // Load GSC separately
     }
-  }, [activeWorkspace?._id]);
+  }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
 
   // Handle OAuth callback - force refresh when account is connected
   useEffect(() => {
@@ -186,37 +223,16 @@ export default function GoogleAnalyticsPage() {
 
       // Force reload accounts
       loadGAAccounts();
+      loadGscAccount();
       toast.success("Google Analytics connected successfully!");
     }
-  }, [activeWorkspace?._id]);
+  }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
 
   useEffect(() => {
     if (selectedAccountId) {
       loadAccountData(selectedAccountId);
     }
   }, [selectedAccountId]);
-
-  // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
-  const loadGAAccounts = useCallback(async () => {
-    if (!activeWorkspace?._id) return;
-
-    try {
-      const response = await api.get("/api/ga-accounts");
-      setGaAccounts(response.data);
-
-      if (response.data.length > 0) {
-        setSelectedAccountId((prev) => {
-          if (!prev) return response.data[0]._id;
-          const exists = response.data.find((a: any) => a._id === prev);
-          return exists ? prev : response.data[0]._id;
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load GA accounts:", error);
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [activeWorkspace?._id, selectedAccountId]);
 
   const loadAccountData = useCallback(async (accountId: string) => {
 
@@ -566,8 +582,8 @@ export default function GoogleAnalyticsPage() {
       if (sites.length === 1) {
         const singleSite = sites[0].siteUrl;
         await linkSearchConsoleSite(accountId, singleSite);
-        // Reload accounts to update UI
-        loadGAAccounts();
+        // Reload GSC account to update UI
+        loadGscAccount();
         return; // Skip opening dialog
       }
 
@@ -586,7 +602,7 @@ export default function GoogleAnalyticsPage() {
 
     await linkSearchConsoleSite(targetSetupAccountId, selectedGscSite);
     setIsGscDialogOpen(false);
-    loadGAAccounts(); // Refresh UI
+    loadGscAccount(); // Reload GSC account data
   };
 
   // OPTIMIZATION: Memoize formatDate to prevent recreation
@@ -629,9 +645,9 @@ export default function GoogleAnalyticsPage() {
               </SheetTrigger>
               <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
                 <SheetHeader>
-                  <SheetTitle>Manage GA4 Accounts</SheetTitle>
+                  <SheetTitle>Manage Analytics & Search Console</SheetTitle>
                   <SheetDescription>
-                    Connect and manage your Google Analytics properties.
+                    Connect and manage your Google Analytics and Search Console properties.
                   </SheetDescription>
                 </SheetHeader>
 
@@ -644,9 +660,11 @@ export default function GoogleAnalyticsPage() {
                   </Button>
 
                   <div className="space-y-4">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
-                      Connected Accounts
-                    </h3>
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Google Analytics Properties
+                      </h3>
+                    </div>
                     {gaAccounts.length === 0 ? (
                       <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
                         <p className="font-medium text-[13px]">No accounts connected</p>
@@ -660,11 +678,11 @@ export default function GoogleAnalyticsPage() {
                           >
                             <div className="flex items-center justify-between">
                               <div className="space-y-1">
-                                <p className="font-bold text-slate-900 text-sm">
+                                <p className="font-bold text-slate-900 text-base">
                                   {account.accountName}
                                 </p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                  Current Property: {account.propertyName}
+                                <p className="text-[10px] font-semibold text-slate-500 tracking-tight">
+                                  Active Property • {account.propertyName}
                                 </p>
                               </div>
                               <Button
@@ -756,32 +774,49 @@ export default function GoogleAnalyticsPage() {
 
                   {/* SEARCH CONSOLE SECTION - Completely Separate */}
                   <div className="space-y-4 mt-8">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
-                      Search Console
-                    </h3>
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Search Console Integration
+                      </h3>
+                    </div>
 
-                    {gaAccounts.length > 0 && gaAccounts[0].searchConsoleSiteUrl ? (
-                      // CONNECTED STATE - Show as a card similar to GA accounts
-                      <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+                    {gscAccount?.siteUrl ? (
+                      // CONNECTED STATE - Styled card matching GA accounts
+                      <div className="border border-slate-100 rounded-2xl divide-y divide-slate-50 overflow-hidden shadow-sm">
                         <div className="p-4 bg-white hover:bg-slate-50 transition-colors space-y-3">
                           <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                              <p className="font-bold text-slate-900 text-sm flex items-center gap-2">
-                                <Globe className="w-4 h-4 text-emerald-600" />
-                                {gaAccounts[0].searchConsoleSiteUrl}
+                              <p className="font-bold text-slate-900 text-base">
+                                {gscAccount.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '')}
                               </p>
-                              <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">
-                                ✓ Connected
+                              <p className="text-[10px] font-semibold text-slate-500 tracking-tight">
+                                Verified • Owner Access
                               </p>
                             </div>
                             <Button
                               variant="ghost"
-                              size="sm"
-                              onClick={() => handleGscSelection(gaAccounts[0]._id)}
-                              className="text-slate-500 hover:text-slate-900"
+                              size="icon"
+                              onClick={async () => {
+                                if (confirm('Are you sure you want to disconnect Search Console?')) {
+                                  try {
+                                    await api.delete(`/api/search-console-accounts?id=${gscAccount._id}`);
+                                    toast.success('Search Console disconnected');
+                                    loadGscAccount();
+                                  } catch (error) {
+                                    toast.error('Failed to disconnect');
+                                  }
+                                }
+                              }}
+                              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                             >
-                              Change
+                              <Trash2 className="h-4 w-4" />
                             </Button>
+                          </div>
+
+                          <div className="pt-2">
+                            <p className="text-[10px] text-slate-400 font-medium">
+                              Pulling long-tail search queries and performance metrics
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -794,7 +829,7 @@ export default function GoogleAnalyticsPage() {
                         </p>
                         <Button
                           variant="outline"
-                          onClick={() => handleGscSelection(gaAccounts[0]._id)}
+                          onClick={() => handleGscSelection(gaAccounts[0]?._id || "")}
                           disabled={gscLoading}
                           className="bg-white"
                         >

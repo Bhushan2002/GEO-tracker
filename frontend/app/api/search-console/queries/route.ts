@@ -1,7 +1,7 @@
 import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
-import { GAAccount } from "@/lib/models/gaAccount.model";
+import { SearchConsoleAccount } from "@/lib/models/searchConsoleAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 /**
@@ -32,32 +32,28 @@ async function refreshTokenIfNeeded(account: any) {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const accountId = searchParams.get('accountId');
     const startDate = searchParams.get('startDate') || '30daysAgo';
     const endDate = searchParams.get('endDate') || 'today';
-
-    if (!accountId) {
-      return NextResponse.json({ error: "Account ID required" }, { status: 400 });
-    }
 
     await connectDatabase();
     const workspaceId = await getWorkspaceId(request);
     if (!workspaceId) return workspaceError();
 
-    const account = await GAAccount.findOne({ _id: accountId, workspaceId });
+    // Fetch SearchConsoleAccount for this workspace
+    const account = await SearchConsoleAccount.findOne({ workspaceId, isActive: true });
     if (!account) {
-      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+      return NextResponse.json({
+        error: "Search Console not connected. Please link a property first."
+      }, { status: 404 });
     }
 
-
-
-    if (!account.searchConsoleSiteUrl) {
+    if (!account.siteUrl) {
       return NextResponse.json({
-        error: "Search Console not linked. Please reconnect your account."
+        error: "Search Console not configured properly."
       }, { status: 400 });
     }
 
-    const siteUrl = account.searchConsoleSiteUrl;
+    const siteUrl = account.siteUrl;
     console.log("Fetching Search Console data for:", siteUrl);
 
     const accessToken = await refreshTokenIfNeeded(account);
@@ -88,7 +84,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch data with date dimension for time series chart
     const response = await searchconsole.searchanalytics.query({
-      siteUrl: account.searchConsoleSiteUrl,
+      siteUrl: account.siteUrl,
       requestBody: {
         startDate: formattedStartDate,
         endDate: formattedEndDate,

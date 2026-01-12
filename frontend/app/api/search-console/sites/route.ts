@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
+import { SearchConsoleAccount } from "@/lib/models/searchConsoleAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 import { secretmanager } from "googleapis/build/src/apis/secretmanager";
 
@@ -42,9 +43,16 @@ export async function GET(request: NextRequest) {
     const workspaceId = await getWorkspaceId(request);
     if (!workspaceId) return workspaceError();
 
-    const account = await GAAccount.findOne({ _id: accountId, workspaceId });
+    // Try to get tokens from SearchConsoleAccount first, fallback to GAAccount
+    let account = await SearchConsoleAccount.findOne({ workspaceId, isActive: true });
+
     if (!account) {
-      return NextResponse.json({ error: "Account not found" }, { status: 404 });
+      // If no SearchConsoleAccount exists, get tokens from GA account
+      const gaAccount = await GAAccount.findOne({ _id: accountId, workspaceId });
+      if (!gaAccount) {
+        return NextResponse.json({ error: "No account found" }, { status: 404 });
+      }
+      account = gaAccount;
     }
 
     const accessToken = await refreshTokenIfNeeded(account);
@@ -58,29 +66,21 @@ export async function GET(request: NextRequest) {
 
     const response = await searchconsole.sites.list();
 
-    // Extract domain from GA property name for filtering
-    const propertyDomain = account.propertyName
-      .toLowerCase()
-      .replace(/ga4/gi, '')
-      .replace(/google analytics/gi, '')
-      .replace(/-/g, '')
-      .trim();
-
     console.log('=== Search Console Sites Debug ===');
-    console.log('GA Property Name:', account.propertyName);
-    console.log('Extracted Domain:', propertyDomain);
     console.log('All sites from Google API:', JSON.stringify(response.data.siteEntry, null, 2));
 
-    // Filter sites to only include those matching the current domain
+    // Filter to only show sites with full permissions (owner level)
+    // This excludes sites with limited access like 'siteUnverifiedUser'
     const allSites = response.data.siteEntry || [];
     const filteredSites = allSites.filter((site: any) => {
-      const siteUrl = site.siteUrl.toLowerCase();
-      const matches = siteUrl.includes(propertyDomain);
-      console.log(`Site: ${site.siteUrl} | Domain: ${propertyDomain} | Matches: ${matches}`);
-      return matches;
+      const permissionLevel = site.permissionLevel || '';
+      const hasFullAccess = permissionLevel === 'siteOwner' || permissionLevel === 'siteFullUser';
+      console.log(`Site: ${site.siteUrl} | Permission: ${permissionLevel} | Include: ${hasFullAccess}`);
+      return hasFullAccess;
     });
 
-    console.log('Filtered sites:', filteredSites.length);
+    console.log('Total sites:', allSites.length);
+    console.log('Filtered sites (owner/full access only):', filteredSites.length);
     console.log('===================================');
 
     return NextResponse.json({
