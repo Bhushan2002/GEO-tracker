@@ -383,7 +383,12 @@ export default function GoogleAnalyticsPage() {
   }, [scLimit, selectedAccountId, isQuotaExceeded]); // Re-fetch when limit changes
 
   const loadSearchConsoleData = useCallback(async (accountId: string) => {
+    // Reset state immediately to prevent stale data from previous workspace
+    setScChartData([]);
+    setSearchConsoleData(null);
+    setScTopQueries([]);
     setScLoading(true);
+
     try {
       // Fetch BOTH chart data and top queries
       const [chartResponse, queriesResponse] = await Promise.all([
@@ -399,7 +404,8 @@ export default function GoogleAnalyticsPage() {
       if (error.response?.data?.error?.includes("not configured")) {
         loadSearchConsoleSites(accountId);
       } else {
-        toast.error("Failed to load Search Console data");
+        // Suppress toast, just log error. UI will show empty state.
+        console.warn("Search Console load failed (likely not linked)", error);
       }
     } finally {
       setScLoading(false);
@@ -972,9 +978,9 @@ export default function GoogleAnalyticsPage() {
                   loading={loading}
                 />
               </div>
-             
-                
-                {/* 2. User Journey and Conversion */}
+
+
+              {/* 2. User Journey and Conversion */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <MousePointerClick className="h-5 w-5 text-muted-foreground" />
@@ -1206,7 +1212,7 @@ export default function GoogleAnalyticsPage() {
                     </CardContent>
                   </Card>
                 </div>
-                
+
 
                 {/* Traffic by AI Model Bar */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
