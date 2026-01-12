@@ -150,19 +150,20 @@ export async function GET(request: Request) {
           );
         }
 
-        // If still not found, just use the first site
-        if (!selectedSite) {
-          selectedSite = sites[0];
+
+
+        if (selectedSite) {
+          console.log("Selected Search Console site:", selectedSite.siteUrl);
+
+          // Save to database
+          gaAccount.searchConsoleSiteUrl = selectedSite.siteUrl;
+          gaAccount.searchConsoleVerified = true;
+          await gaAccount.save();
+
+          console.log("Search Console auto-linked successfully!");
+        } else {
+          console.log("No matching Search Console site found for property domain:", propertyDomain);
         }
-
-        console.log("Selected Search Console site:", selectedSite.siteUrl);
-
-        // Save to database
-        gaAccount.searchConsoleSiteUrl = selectedSite.siteUrl;
-        gaAccount.searchConsoleVerified = true;
-        await gaAccount.save();
-
-        console.log("Search Console auto-linked successfully!");
       } else {
         console.log("No Search Console sites found for this account");
       }
