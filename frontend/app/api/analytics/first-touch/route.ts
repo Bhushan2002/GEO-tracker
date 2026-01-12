@@ -125,10 +125,10 @@ export async function GET(request: NextRequest) {
               ],
             },
           });
-          
+
           aiAudience = createResponse.data;
           console.log("AI Traffic audience created successfully:", aiAudience?.name);
-          
+
           if (aiAudience?.name) {
             account.aiAudienceId = aiAudience.name;
             account.aiAudienceName = aiAudience.displayName || "AI Traffic";
