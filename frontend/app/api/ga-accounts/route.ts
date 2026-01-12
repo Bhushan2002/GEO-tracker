@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     if (!workspaceId) return workspaceError();
 
     const accounts = await GAAccount.find({ workspaceId, isActive: true })
-      .select('accountName accountId propertyId propertyName createdAt')
+      .select('accountName accountId propertyId propertyName searchConsoleSiteUrl searchConsoleVerified createdAt')
       .sort({ createdAt: -1 });
 
     return NextResponse.json(accounts);

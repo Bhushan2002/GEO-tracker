@@ -58,9 +58,33 @@ export async function GET(request: NextRequest) {
 
     const response = await searchconsole.sites.list();
 
+    // Extract domain from GA property name for filtering
+    const propertyDomain = account.propertyName
+      .toLowerCase()
+      .replace(/ga4/gi, '')
+      .replace(/google analytics/gi, '')
+      .replace(/-/g, '')
+      .trim();
+
+    console.log('=== Search Console Sites Debug ===');
+    console.log('GA Property Name:', account.propertyName);
+    console.log('Extracted Domain:', propertyDomain);
+    console.log('All sites from Google API:', JSON.stringify(response.data.siteEntry, null, 2));
+
+    // Filter sites to only include those matching the current domain
+    const allSites = response.data.siteEntry || [];
+    const filteredSites = allSites.filter((site: any) => {
+      const siteUrl = site.siteUrl.toLowerCase();
+      const matches = siteUrl.includes(propertyDomain);
+      console.log(`Site: ${site.siteUrl} | Domain: ${propertyDomain} | Matches: ${matches}`);
+      return matches;
+    });
+
+    console.log('Filtered sites:', filteredSites.length);
+    console.log('===================================');
 
     return NextResponse.json({
-      sites: response.data.siteEntry || [],
+      sites: filteredSites,
     });
 
   } catch (error: any) {
