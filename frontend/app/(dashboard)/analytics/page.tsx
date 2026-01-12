@@ -812,12 +812,6 @@ export default function GoogleAnalyticsPage() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
-
-                          <div className="pt-2">
-                            <p className="text-[10px] text-slate-400 font-medium">
-                              Pulling long-tail search queries and performance metrics
-                            </p>
-                          </div>
                         </div>
                       </div>
                     ) : gaAccounts.length > 0 ? (
