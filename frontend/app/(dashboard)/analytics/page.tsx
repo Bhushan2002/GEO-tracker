@@ -797,7 +797,7 @@ export default function GoogleAnalyticsPage() {
                   </Button>
                   <Button
                     variant={activeView === "search-console" ? "default" : "outline"}
-                    className="rounded-full px-5 py-2 h-9 text-sm font-medium"
+                    className="rounded-full px-5 py-2 h-9 text-sm font-medium "
                     onClick={() => setActiveView("search-console")}
                   >
                     Search Console

@@ -150,19 +150,26 @@ export async function GET(request: Request) {
           );
         }
 
-        // If still not found, just use the first site
-        if (!selectedSite) {
-          selectedSite = sites[0];
+
+
+        if (selectedSite) {
+          console.log("Selected Search Console site:", selectedSite.siteUrl);
+
+          // Save to database
+          gaAccount.searchConsoleSiteUrl = selectedSite.siteUrl;
+          gaAccount.searchConsoleVerified = true;
+          await gaAccount.save();
+
+          console.log("Search Console auto-linked successfully!");
+        } else {
+          console.log("No matching Search Console site found for property domain:", propertyDomain);
+
+          // CRITICAL FIX: Explicitly clear any previously linked value to prevent stale incorrect data
+          // This ensures that if a workspace was wrongly linked to 'creatosaurus.io', re-authing will wipe that link.
+          gaAccount.searchConsoleSiteUrl = undefined;
+          gaAccount.searchConsoleVerified = false;
+          await gaAccount.save();
         }
-
-        console.log("Selected Search Console site:", selectedSite.siteUrl);
-
-        // Save to database
-        gaAccount.searchConsoleSiteUrl = selectedSite.siteUrl;
-        gaAccount.searchConsoleVerified = true;
-        await gaAccount.save();
-
-        console.log("Search Console auto-linked successfully!");
       } else {
         console.log("No Search Console sites found for this account");
       }
