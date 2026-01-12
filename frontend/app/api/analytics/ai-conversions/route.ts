@@ -71,35 +71,25 @@ export async function GET(request: NextRequest) {
       auth: oauth2Client,
     });
 
-    // Fetch conversion metrics filtered by common AI sources
+    // Fetch conversion metrics filtered by AI sources using sessionSourceMedium
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
         dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-        dimensions: [{ name: "firstUserSource" }],
+        dimensions: [{ name: "sessionSourceMedium" }],
         metrics: [
           { name: "sessions" },
           { name: "keyEvents" }, // This represents conversions in GA4
         ],
         dimensionFilter: {
-          orGroup: {
-            expressions: [
-              "chatgpt",
-              "perplexity",
-              "copilot",
-              "claude",
-              "gemini",
-            ].map((model) => ({
-              filter: {
-                fieldName: "firstUserSource",
-                stringFilter: {
-                  matchType: "CONTAINS",
-                  value: model,
-                  caseSensitive: false,
-                },
-              },
-            })),
-          },
+          filter: {
+            fieldName: "sessionSourceMedium",
+            stringFilter: {
+              matchType: "FULL_REGEXP",
+              value: "(.*gpt.*|.*chatgpt.*|.*x\\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\\.google.*)",
+              caseSensitive: false,
+            }
+          }
         },
       },
     });

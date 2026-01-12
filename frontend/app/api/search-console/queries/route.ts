@@ -49,6 +49,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Account not found" }, { status: 404 });
     }
 
+
+
     if (!account.searchConsoleSiteUrl) {
       return NextResponse.json({
         error: "Search Console not linked. Please reconnect your account."
