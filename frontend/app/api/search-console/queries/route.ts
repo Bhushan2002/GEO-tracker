@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
       }, { status: 404 });
     }
 
+
     if (!account.siteUrl) {
       return NextResponse.json({
         error: "Search Console not configured properly."

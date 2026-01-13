@@ -42,7 +42,7 @@ export default function FirstZeroTouchChart({
               How user first discover your brand
             </CardDescription>
           </div>
-          <InfoButton content="Shows new users and conversions tracking the first touchpoint where users discover your brand"/>
+          <InfoButton content="Shows new users and conversions tracking the first touchpoint where users discover your brand" />
         </div>
       </CardHeader>
 
@@ -97,6 +97,7 @@ export default function FirstZeroTouchChart({
                   strokeWidth: 1,
                   strokeDasharray: "4 4",
                 }}
+                labelFormatter={formatDate}
               />
               <Legend wrapperStyle={{ paddingTop: "20px" }} />
               <Line

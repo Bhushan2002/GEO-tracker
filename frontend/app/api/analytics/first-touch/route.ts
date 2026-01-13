@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
     const workspaceId = await getWorkspaceId(request);
     if (!workspaceId) return workspaceError();
 
+    const startDate = searchParams.get('startDate') || '30daysAgo';
+    const endDate = searchParams.get('endDate') || 'today';
+
     const account = await GAAccount.findOne({ _id: accountId, workspaceId });
 
     if (!account || !account.isActive) {
@@ -156,7 +159,7 @@ export async function GET(request: NextRequest) {
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate, endDate }],
         dimensions: [{ name: "date" }],
         metrics: [
           { name: "newUsers" },
@@ -182,6 +185,9 @@ export async function GET(request: NextRequest) {
       conversions: parseInt(row.metricValues?.[1]?.value || "0"),
       sessions: parseInt(row.metricValues?.[2]?.value || "0"),
     })) || [];
+
+    // Sort data by date ascending
+    firstTouchData.sort((a, b) => a.date.localeCompare(b.date));
 
     return NextResponse.json(firstTouchData);
 

@@ -9,6 +9,12 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const accountId = searchParams.get("accountId");
 
+
+        const startDate = searchParams.get('startDate') || '30daysAgo';
+        const endDate = searchParams.get('endDate') || 'today';
+
+
+
         if (!accountId) {
             return NextResponse.json({ error: "Account ID is required" }, { status: 400 });
         }
@@ -34,13 +40,13 @@ export async function GET(request: NextRequest) {
         });
 
         const property = `properties/${account.propertyId}`;
-        const dateRanges = [{ startDate: "30daysAgo", endDate: "today" }];
+        const dateRanges = [{ startDate: startDate, endDate: endDate }];
         const dimensionFilter = {
             filter: {
                 fieldName: "eventName",
                 stringFilter: {
                     matchType: "EXACT",
-                    value: "ai_overview_click", 
+                    value: "ai_overview_click",
                 },
             },
         };

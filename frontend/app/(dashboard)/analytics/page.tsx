@@ -89,7 +89,9 @@ import CitationsPieChart from "@/components/Charts/CitationsPieChart";
 import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
 import { DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { AiOverviewStats } from "@/components/Charts/AiOverviewStats";
-import { RangeCalandar } from "@/components/RangeCalandar";
+import { RangeCalendar } from "@/components/RangeCalendar";
+import { subDays, format } from 'date-fns'
+import { DateRange } from "react-day-picker";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
 
@@ -141,6 +143,7 @@ export default function GoogleAnalyticsPage() {
   const [activeSetupAccount, setActiveSetupAccount] = useState<any>(null);
   const [aiOverviewStats, setAiOverviewStats] = useState<{ pages: any[], devices: any[] }>({ pages: [], devices: [] });
   const [activeView, setActiveView] = useState<"ai-analytics" | "search-console">("ai-analytics");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: subDays(new Date(), 30), to: new Date() });
 
 
   // GSC Manual Linkage State
@@ -281,10 +284,10 @@ export default function GoogleAnalyticsPage() {
   }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
 
   useEffect(() => {
-    if (selectedAccountId) {
+    if (selectedAccountId && dateRange?.from && dateRange?.to) {
       loadAccountData(selectedAccountId);
     }
-  }, [selectedAccountId]);
+  }, [selectedAccountId, dateRange]);
 
   const loadAccountData = useCallback(async (accountId: string) => {
 
@@ -296,20 +299,23 @@ export default function GoogleAnalyticsPage() {
     setLoading(true);
     setMissingAudience(false); // Reset the warning
 
+    const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '30daysAgo';
+    const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : 'today';
+    const dateParams = `&startDate=${startDate}&endDate=${endDate}`
     try {
       // OPTIMIZATION: Fetch ALL data in parallel instead of sequentially
       const results = await Promise.allSettled([
-        api.get(`/api/analytics-by-account?accountId=${accountId}`),
-        api.get(`/api/ai-models-by-account?accountId=${accountId}`),
-        api.get(`/api/analytics/ai-overview-stats?accountId=${accountId}`),
+        api.get(`/api/analytics-by-account?accountId=${accountId}${dateParams}`),
+        api.get(`/api/ai-models-by-account?accountId=${accountId}${dateParams}`),
+        api.get(`/api/analytics/ai-overview-stats?accountId=${accountId}${dateParams}`),
         api.get(`/api/analytics/first-touch?accountId=${accountId}`),
-        api.get(`/api/analytics/zero-touch?accountId=${accountId}`),
-        api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}`),
-        api.get(`/api/analytics/ai-conversions?accountId=${accountId}`),
+        api.get(`/api/analytics/zero-touch?accountId=${accountId}${dateParams}`),
+        api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}${dateParams}`),
+        api.get(`/api/analytics/ai-conversions?accountId=${accountId}${dateParams}`),
         api.get(`/api/analytics/ai-growth-mom?accountId=${accountId}`),
-        api.get(`/api/analytics/ai-device-split?accountId=${accountId}`),
-        api.get(`/api/analytics/demographics?accountId=${accountId}`),
-        api.get(`/api/analytics/topic-clusters?accountId=${accountId}`),
+        api.get(`/api/analytics/ai-device-split?accountId=${accountId}${dateParams}`),
+        api.get(`/api/analytics/demographics?accountId=${accountId}${dateParams}`),
+        api.get(`/api/analytics/topic-clusters?accountId=${accountId}${dateParams}`),
       ])
       // Extract data from settled promises, using empty arrays as fallbacks
       const endpoints = [
@@ -440,7 +446,7 @@ export default function GoogleAnalyticsPage() {
       setLoading(false);
 
     }
-  }, [isQuotaExceeded]);
+  }, [isQuotaExceeded, dateRange]);
 
   const loadSearchConsoleSites = useCallback(async (accountId: string) => {
     try {
@@ -471,11 +477,16 @@ export default function GoogleAnalyticsPage() {
 
   const loadSearchConsoleData = useCallback(async (accountId: string) => {
     setScLoading(true);
+
+    const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '30daysAgo';
+    const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : 'today';
+    const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
+
     try {
       // Fetch BOTH chart data and top queries
       const [chartResponse, queriesResponse] = await Promise.all([
-        api.get(`/api/search-console/queries?accountId=${accountId}`),
-        api.get(`/api/search-console/top-queries?accountId=${accountId}&limit=${scLimit}`),
+        api.get(`/api/search-console/queries?accountId=${accountId}${dateParams}`),
+        api.get(`/api/search-console/top-queries?accountId=${accountId}&limit=${scLimit}${dateParams}`),
       ]);
 
       setScChartData(chartResponse.data.chartData || []);
@@ -490,7 +501,7 @@ export default function GoogleAnalyticsPage() {
     } finally {
       setScLoading(false);
     }
-  }, [scLimit]);
+  }, [scLimit, dateRange]);
 
   const handleConnectAccount = () => {
     const client_id = process.env.NEXT_PUBLIC_GA_CLIENT_ID;
@@ -1090,7 +1101,7 @@ export default function GoogleAnalyticsPage() {
                   </Button>
                 </div>
                 <div className="mr-3">
-                  <RangeCalandar />
+                  <RangeCalendar dateRange={dateRange} setDateRange={setDateRange} />
                 </div>
               </div>
 
@@ -1225,6 +1236,7 @@ export default function GoogleAnalyticsPage() {
                                   border: "1px solid #e5e7eb",
                                   borderRadius: "6px",
                                 }}
+                                labelFormatter={formatDate}
                               />
                               <Legend />
                               <Line
@@ -1394,6 +1406,7 @@ export default function GoogleAnalyticsPage() {
                                     strokeWidth: 1,
                                     strokeDasharray: "4 4",
                                   }}
+                                  labelFormatter={formatDate}
                                 />
                                 <Legend wrapperStyle={{ paddingTop: "20px" }} />
                                 <Line
@@ -1532,7 +1545,7 @@ export default function GoogleAnalyticsPage() {
                                 Traffic by AI model
                               </CardTitle>
                               <CardDescription className="text-[10px] text-slate-500 font-medium">
-                                Users from AI sources (Last 30 Days)
+                                Users from AI sources
                               </CardDescription>
                             </div>
                             <InfoTooltip>

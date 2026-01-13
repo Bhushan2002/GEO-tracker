@@ -35,6 +35,9 @@ export async function GET(request: NextRequest) {
     const accountId = searchParams.get('accountId');
     if (!accountId) return NextResponse.json({ error: "Account ID required" }, { status: 400 });
 
+    const startDate = searchParams.get('startDate') || '365daysAgo';
+    const endDate = searchParams.get('endDate') || 'today';
+
     await connectDatabase();
     const workspaceId = await getWorkspaceId(request);
     if (!workspaceId) return workspaceError();
@@ -52,7 +55,7 @@ export async function GET(request: NextRequest) {
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: "365daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate: startDate, endDate: endDate }],
         dimensions: [{ name: "yearMonth" }],
         metrics: [{ name: "sessions" }],
         dimensionFilter: {
