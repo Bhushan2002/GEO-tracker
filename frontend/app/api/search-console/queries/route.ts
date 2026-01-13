@@ -50,7 +50,6 @@ export async function GET(request: NextRequest) {
     }
 
 
-
     if (!account.searchConsoleSiteUrl) {
       return NextResponse.json({
         error: "Search Console not linked. Please reconnect your account."

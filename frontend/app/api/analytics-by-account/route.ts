@@ -39,6 +39,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const accountId = searchParams.get('accountId');
 
+    const startDate = searchParams.get('startDate') || '30daysAgo';
+    const endDate = searchParams.get('endDate') || 'today';
+
+
+
     if (!accountId) {
       return NextResponse.json(
         { error: "Account ID is required" },
@@ -73,7 +78,7 @@ export async function GET(request: NextRequest) {
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate: startDate, endDate: endDate }],
         dimensions: [{ name: "date" }],
         metrics: [
           { name: "activeUsers" },
@@ -112,7 +117,7 @@ export async function GET(request: NextRequest) {
     const aiOverviewTrafficResponse = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+        dateRanges: [{ startDate: startDate, endDate: endDate }],
         dimensions: [{ name: 'date' }],
         metrics: [{ name: 'activeUsers' }],
         dimensionFilter: {
@@ -132,7 +137,7 @@ export async function GET(request: NextRequest) {
     const aiOverviewReport = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate: startDate, endDate: endDate }],
         dimensions: [{ name: "date" }], // Now grouping by date
         metrics: [{ name: "eventCount" }],
         dimensionFilter: {
@@ -150,7 +155,7 @@ export async function GET(request: NextRequest) {
     const aiTrafficResponse = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate: startDate, endDate: endDate }],
         dimensions: [{ name: "date" }],
         metrics: [
           { name: "activeUsers" },
@@ -261,7 +266,7 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json({
-      chartData, 
+      chartData,
       metrics
     });
   } catch (error: any) {

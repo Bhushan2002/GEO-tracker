@@ -48,6 +48,9 @@ export async function GET(request: NextRequest) {
     const workspaceId = await getWorkspaceId(request);
     if (!workspaceId) return workspaceError();
 
+    const startDate = searchParams.get('startDate') || '30daysAgo';
+    const endDate = searchParams.get('endDate') || 'today';
+
     const account = await GAAccount.findOne({ _id: accountId, workspaceId });
 
     if (!account || !account.isActive) {
@@ -66,29 +69,10 @@ export async function GET(request: NextRequest) {
       auth: oauth2Client,
     });
 
-    // const response = await analyticsData.properties.runReport({
-    //   property: `properties/${account.propertyId}`,
-    //   requestBody: {
-    //     dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-    //     dimensions: [{ name: "firstUserSource" }],
-    //     metrics: [
-    //       { name: "activeUsers" },
-    //       { name: "sessions" },
-    //       { name: "sessionConversionRate" },
-    //     ],
-    //     orderBys: [
-    //       {
-    //         metric: { metricName: "activeUsers" },
-    //         desc: true,
-    //       },
-    //     ],
-    //   },
-    // });
-
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate, endDate }],
         dimensions: [{ name: "sessionSourceMedium" }],
         metrics: [
           { name: "activeUsers" },

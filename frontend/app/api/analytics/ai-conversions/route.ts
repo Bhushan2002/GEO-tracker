@@ -40,6 +40,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const accountId = searchParams.get("accountId");
 
+    const startDate = searchParams.get('startDate') || '30daysAgo';
+    const endDate = searchParams.get('endDate') || 'today';
+
+
     if (!accountId) {
       return NextResponse.json(
         { error: "Account Id is required" },
@@ -75,7 +79,7 @@ export async function GET(request: NextRequest) {
     const response = await analyticsData.properties.runReport({
       property: `properties/${account.propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate: startDate, endDate: endDate }],
         dimensions: [{ name: "sessionSourceMedium" }],
         metrics: [
           { name: "sessions" },
