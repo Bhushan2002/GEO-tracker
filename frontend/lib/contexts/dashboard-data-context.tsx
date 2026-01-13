@@ -137,10 +137,9 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
                 const accountId = gaRes.data[0]._id;
 
                 // Prefetch all analytics data in parallel
-                const [metricsRes, chartRes, modelsRes, landingRes] = await Promise.all([
-                    api.get(`/api/analytics/metrics?accountId=${accountId}`),
-                    api.get(`/api/analytics/chart-data?accountId=${accountId}`),
-                    api.get(`/api/analytics/ai-models?accountId=${accountId}`),
+                const [analyticsRes, modelsRes, landingRes] = await Promise.all([
+                    api.get(`/api/analytics-by-account?accountId=${accountId}`),
+                    api.get(`/api/ai-models-by-account?accountId=${accountId}`),
                     api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}`),
                 ]);
 
@@ -148,10 +147,15 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
                 setAnalyticsCache({
                     accountId,
                     gaAccounts: gaRes.data,
-                    keyMetrics: metricsRes.data,
-                    chartData: chartRes.data,
-                    aiModelsData: modelsRes.data,
-                    aiLandingPageData: landingRes.data,
+                    keyMetrics: analyticsRes.data?.metrics || {
+                        activeUsers: 0,
+                        engagedSessions: 0,
+                        keyEvents: 0,
+                        aiOverviewClicks: 0,
+                    },
+                    chartData: analyticsRes.data?.chartData || [],
+                    aiModelsData: modelsRes.data || [],
+                    aiLandingPageData: landingRes.data?.landingPageData || [],
                     cachedAt: new Date().toISOString(),
                 });
 
