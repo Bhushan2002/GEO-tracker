@@ -285,17 +285,6 @@ function createTrafficTrendsSheet(workbook: ExcelJS.Workbook, data: ExportData) 
         ]);
     });
 
-    // Total row
-    const lastRow = sheet.lastRow?.number || 1;
-    const totalRow = sheet.addRow([
-        'TOTAL',
-        { formula: `SUM(B2:B${lastRow})` },
-        { formula: `SUM(C2:C${lastRow})` },
-        { formula: `AVERAGE(D2:D${lastRow})` },
-        { formula: `SUM(E2:E${lastRow})` },
-    ]);
-    totalRow.font = { bold: true };
-
     // Format columns
     sheet.getColumn('D').numFmt = '0.0"%"';
     sheet.getColumn('B').numFmt = '#,##0';
@@ -306,7 +295,8 @@ function createTrafficTrendsSheet(workbook: ExcelJS.Workbook, data: ExportData) 
     sheet.views = [{ state: 'frozen', ySplit: 1 }];
 
     // Apply styling
-    applyZebraStriping(sheet, 2, lastRow + 1);
+    const lastRow = sheet.lastRow?.number || 1;
+    applyZebraStriping(sheet, 2, lastRow);
     autoFitColumns(sheet);
 }
 
@@ -417,22 +407,13 @@ function createFirstTouchSheet(workbook: ExcelJS.Workbook, data: ExportData) {
         ]);
     });
 
-    // Summary row
-    const lastRow = sheet.lastRow?.number || 1;
-    const summaryRow = sheet.addRow([
-        'TOTAL/AVERAGE',
-        { formula: `SUM(B2:B${lastRow})` },
-        { formula: `SUM(C2:C${lastRow})` },
-        { formula: `AVERAGE(D2:D${lastRow})` },
-    ]);
-    summaryRow.font = { bold: true };
-
     sheet.getColumn('D').numFmt = '0.00"%"';
     sheet.getColumn('B').numFmt = '#,##0';
     sheet.getColumn('C').numFmt = '#,##0';
 
     sheet.views = [{ state: 'frozen', ySplit: 1 }];
-    applyZebraStriping(sheet, 2, lastRow + 1);
+    const lastRow = sheet.lastRow?.number || 1;
+    applyZebraStriping(sheet, 2, lastRow);
     autoFitColumns(sheet);
 }
 
@@ -454,20 +435,12 @@ function createZeroTouchSheet(workbook: ExcelJS.Workbook, data: ExportData) {
         ]);
     });
 
-    // Summary row
-    const lastRow = sheet.lastRow?.number || 1;
-    const summaryRow = sheet.addRow([
-        'TOTAL',
-        { formula: `SUM(B2:B${lastRow})` },
-        { formula: `SUM(C2:C${lastRow})` },
-    ]);
-    summaryRow.font = { bold: true };
-
     sheet.getColumn('B').numFmt = '#,##0';
     sheet.getColumn('C').numFmt = '#,##0';
 
     sheet.views = [{ state: 'frozen', ySplit: 1 }];
-    applyZebraStriping(sheet, 2, lastRow + 1);
+    const lastRow = sheet.lastRow?.number || 1;
+    applyZebraStriping(sheet, 2, lastRow);
     autoFitColumns(sheet);
 }
 
@@ -489,19 +462,11 @@ function createConversionRateSheet(workbook: ExcelJS.Workbook, data: ExportData)
         ]);
     });
 
-    // Summary row
-    const lastRow = sheet.lastRow?.number || 1;
-    const summaryRow = sheet.addRow([
-        'TOTAL/AVERAGE',
-        { formula: `SUM(B2:B${lastRow})` },
-        { formula: `AVERAGE(C2:C${lastRow})` },
-    ]);
-    summaryRow.font = { bold: true };
-
     sheet.getColumn('C').numFmt = '0.00"%"';
     sheet.getColumn('B').numFmt = '#,##0';
 
     // Conditional formatting for conversion rate
+    const lastRow = sheet.lastRow?.number || 1;
     sheet.addConditionalFormatting({
         ref: `C2:C${lastRow}`,
         rules: [
@@ -535,7 +500,7 @@ function createConversionRateSheet(workbook: ExcelJS.Workbook, data: ExportData)
     });
 
     sheet.views = [{ state: 'frozen', ySplit: 1 }];
-    applyZebraStriping(sheet, 2, lastRow + 1);
+    applyZebraStriping(sheet, 2, lastRow);
     autoFitColumns(sheet);
 }
 
@@ -693,24 +658,14 @@ function createAIModelsSheet(workbook: ExcelJS.Workbook, data: ExportData) {
         row.getCell(1).font = { color: { argb: 'FFFFFFFF' }, bold: true };
     });
 
-    // Summary row
-    const lastRow = sheet.lastRow?.number || 1;
-    const summaryRow = sheet.addRow([
-        'TOTAL',
-        { formula: `SUM(B2:B${lastRow})` },
-        { formula: `SUM(C2:C${lastRow})` },
-        { formula: `AVERAGE(D2:D${lastRow})` },
-        100,
-    ]);
-    summaryRow.font = { bold: true };
-
     sheet.getColumn('D').numFmt = '0.00"%"';
     sheet.getColumn('E').numFmt = '0.0"%"';
     sheet.getColumn('B').numFmt = '#,##0';
     sheet.getColumn('C').numFmt = '#,##0';
 
     sheet.views = [{ state: 'frozen', ySplit: 1 }];
-    applyZebraStriping(sheet, 2, lastRow + 1);
+    const lastRow = sheet.lastRow?.number || 1;
+    applyZebraStriping(sheet, 2, lastRow);
     autoFitColumns(sheet);
 }
 
@@ -780,19 +735,10 @@ function createDeviceBreakdownSheet(workbook: ExcelJS.Workbook, data: ExportData
         ]);
     });
 
-    // Summary row
-    const lastRow = sheet.lastRow?.number || 1;
-    const summaryRow = sheet.addRow([
-        'TOTAL',
-        { formula: `SUM(B2:B${lastRow})` },
-        { formula: `SUM(C2:C${lastRow})` },
-        100,
-    ]);
-    summaryRow.font = { bold: true };
-
     sheet.getColumn('D').numFmt = '0.0"%"';
     sheet.getColumn('B').numFmt = '#,##0';
     sheet.getColumn('C').numFmt = '#,##0';
+    const lastRow = sheet.lastRow?.number || 1;
 
     // Conditional formatting
     sheet.addConditionalFormatting({
@@ -855,19 +801,6 @@ function createDemographicsSheet(workbook: ExcelJS.Workbook, data: ExportData) {
         ]);
     });
 
-    // Total row
-    const lastRow = sheet.lastRow?.number || 1;
-    const totalRow = sheet.addRow([
-        'TOTAL',
-        { formula: `SUM(B2:B${lastRow})` },
-        { formula: `SUM(C2:C${lastRow})` },
-        { formula: `SUM(D2:D${lastRow})` },
-        { formula: `SUM(E2:E${lastRow})` },
-        { formula: `SUM(F2:F${lastRow})` },
-        { formula: `SUM(G2:G${lastRow})` },
-    ]);
-    totalRow.font = { bold: true };
-
     // Format all numeric columns
     sheet.getColumn('B').numFmt = '#,##0';
     sheet.getColumn('C').numFmt = '#,##0';
@@ -897,7 +830,8 @@ function createDemographicsSheet(workbook: ExcelJS.Workbook, data: ExportData) {
     });
 
     sheet.views = [{ state: 'frozen', ySplit: 1 }];
-    applyZebraStriping(sheet, 2, lastRow + 1);
+    const lastRow = sheet.lastRow?.number || 1;
+    applyZebraStriping(sheet, 2, lastRow);
     autoFitColumns(sheet);
 }
 
@@ -939,17 +873,7 @@ function createSearchConsoleSheet(workbook: ExcelJS.Workbook, data: ExportData) 
         currentRow++;
     });
 
-    // Average row for section 1
-    const chartEndRow = currentRow - 1;
-    const avgRow = sheet.addRow([
-        'TOTAL/AVERAGE',
-        { formula: `SUM(B${chartStartRow}:B${chartEndRow})` },
-        { formula: `SUM(C${chartStartRow}:C${chartEndRow})` },
-        { formula: `AVERAGE(D${chartStartRow}:D${chartEndRow})` },
-        { formula: `AVERAGE(E${chartStartRow}:E${chartEndRow})` },
-    ]);
-    avgRow.font = { bold: true };
-    currentRow += 2;
+
 
     // Section 2: Top Long-Tail Queries
     sheet.mergeCells(`A${currentRow}:E${currentRow}`);
@@ -981,16 +905,7 @@ function createSearchConsoleSheet(workbook: ExcelJS.Workbook, data: ExportData) 
         currentRow++;
     });
 
-    // Average row for section 2
-    const queryEndRow = currentRow - 1;
-    const queryAvgRow = sheet.addRow([
-        'TOTAL/AVERAGE',
-        { formula: `SUM(B${queryStartRow}:B${queryEndRow})` },
-        { formula: `SUM(C${queryStartRow}:C${queryEndRow})` },
-        { formula: `AVERAGE(D${queryStartRow}:D${queryEndRow})` },
-        { formula: `AVERAGE(E${queryStartRow}:E${queryEndRow})` },
-    ]);
-    queryAvgRow.font = { bold: true };
+
 
     // Format columns
     sheet.getColumn('D').numFmt = '0.00"%"';
@@ -998,6 +913,8 @@ function createSearchConsoleSheet(workbook: ExcelJS.Workbook, data: ExportData) 
     sheet.getColumn('B').numFmt = '#,##0';
     sheet.getColumn('C').numFmt = '#,##0';
     sheet.getColumn('A').width = 50; // Wider for queries
+
+    const queryEndRow = currentRow - 1;
 
     // Conditional formatting for position
     sheet.addConditionalFormatting({
