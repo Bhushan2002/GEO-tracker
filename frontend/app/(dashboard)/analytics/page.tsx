@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/api";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
+import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
 import {
   Table,
   TableHeader,
@@ -70,6 +71,7 @@ import {
   TrafficCone,
   LucideTrafficCone,
   Group,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   Tooltip as InfoTooltip,
@@ -89,6 +91,7 @@ import { DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { AiOverviewStats } from "@/components/Charts/AiOverviewStats";
 import { RangeCalandar } from "@/components/RangeCalandar";
 import { ButtonGroup } from "@/components/ui/button-group";
+import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
 
 /**
  * Analytics page integrating Google Analytics data.
@@ -96,6 +99,7 @@ import { ButtonGroup } from "@/components/ui/button-group";
  */
 export default function GoogleAnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
+  const { analyticsCache } = useDashboardData();
   const [gaAccounts, setGaAccounts] = useState<any[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -146,12 +150,37 @@ export default function GoogleAnalyticsPage() {
   const [targetSetupAccountId, setTargetSetupAccountId] = useState<string>("");
   const [gscLoading, setGscLoading] = useState(false);
   const [selectedGscSite, setSelectedGscSite] = useState<string>("");
+  const [exporting, setExporting] = useState(false);
 
   // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
   const loadGAAccounts = useCallback(async () => {
-    if (!activeWorkspace?._id) return;
+    if (!activeWorkspace?._id) {
+      setGaAccounts([]);
+      setInitialLoading(false);
+      return;
+    }
 
     try {
+      // ⚡ Check if we have cached data - USE IT IMMEDIATELY
+      if (analyticsCache && analyticsCache.gaAccounts) {
+        setGaAccounts(analyticsCache.gaAccounts);
+
+        // If there's a selected account in cache, use it
+        if (analyticsCache.accountId) {
+          setSelectedAccountId(analyticsCache.accountId);
+
+          // Set all cached data immediately for instant display
+          if (analyticsCache.keyMetrics) setKeyMetrics(analyticsCache.keyMetrics);
+          if (analyticsCache.chartData) setChartData(analyticsCache.chartData);
+          if (analyticsCache.aiModelsData) setAiModelsData(analyticsCache.aiModelsData);
+          if (analyticsCache.aiLandingPageData) setAiLandingPageData(analyticsCache.aiLandingPageData);
+
+          setInitialLoading(false);
+          return; // Exit early - data loaded from cache, no loading needed!
+        }
+      }
+
+      // No cache - fetch fresh data
       const response = await api.get("/api/ga-accounts");
       setGaAccounts(response.data);
 
@@ -162,12 +191,14 @@ export default function GoogleAnalyticsPage() {
           return exists ? prev : response.data[0]._id;
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load GA accounts:", error);
+      toast.error(error.response?.data?.message || "Failed to load accounts");
+      setGaAccounts([]);
     } finally {
       setInitialLoading(false);
     }
-  }, [activeWorkspace?._id]);
+  }, [activeWorkspace?._id, analyticsCache]);
 
   // Load Search Console Account (separate from GA)
   const loadGscAccount = useCallback(async () => {
@@ -433,9 +464,8 @@ export default function GoogleAnalyticsPage() {
       console.error("Search Console data error:", error);
       if (error.response?.data?.error?.includes("not configured")) {
         loadSearchConsoleSites(accountId);
-      } else {
-        toast.error("Failed to load Search Console data");
       }
+      // Silently handle error - no toast message
     } finally {
       setScLoading(false);
     }
@@ -605,6 +635,16 @@ export default function GoogleAnalyticsPage() {
     loadGscAccount(); // Reload GSC account data
   };
 
+  const handleGscSetup = () => {
+    if (!activeWorkspace?._id) {
+      toast.error("No workspace selected");
+      return;
+    }
+
+    // Redirect to OAuth for Search Console authentication
+    window.location.href = `/api/auth/google/search-console?workspaceId=${activeWorkspace._id}`;
+  };
+
   // OPTIMIZATION: Memoize formatDate to prevent recreation
   const formatDate = useCallback((dateValue: any) => {
     if (!dateValue) return "";
@@ -616,6 +656,42 @@ export default function GoogleAnalyticsPage() {
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }, []);
+
+  // Excel Export Handler
+  const handleExcelExport = async () => {
+    if (!activeWorkspace || !selectedAccountId) {
+      toast.error("Please select an account first");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      await exportAnalyticsToExcel({
+        workspaceName: activeWorkspace.name || 'Analytics',
+        keyMetrics,
+        chartData,
+        aiModelsData,
+        aiLandingPageData,
+        scTopQueries,
+        scChartData,
+        searchConsoleData,
+        aiOverviewStats,
+        firstTouchData,
+        zeroTouchData,
+        conversionRateData,
+        topicClusterData,
+        aiGrowthData,
+        aiDeviceData,
+        demographicsData,
+      });
+      toast.success('Excel report downloaded successfully!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export Excel report');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen p-6 space-y-8 max-w-[1700px] mx-auto">
@@ -636,6 +712,24 @@ export default function GoogleAnalyticsPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="default"
+              onClick={handleExcelExport}
+              disabled={exporting || !selectedAccountId}
+              className="h-10 px-4 rounded-xl bg-black hover:bg-slate-800 text-white shadow-lg shadow-slate-200"
+            >
+              {exporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export to Excel
+                </>
+              )}
+            </Button>
 
             <Sheet>
               <SheetTrigger asChild>
@@ -814,8 +908,8 @@ export default function GoogleAnalyticsPage() {
                           </div>
                         </div>
                       </div>
-                    ) : gaAccounts.length > 0 ? (
-                      // NOT CONNECTED STATE - Show connect button
+                    ) : (
+                      // NOT CONNECTED STATE - Show connect button (no GA dependency)
                       <div className="border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 p-6 text-center">
                         <Globe className="w-8 h-8 text-slate-300 mx-auto mb-3" />
                         <p className="text-sm font-medium text-slate-600 mb-4">
@@ -823,7 +917,7 @@ export default function GoogleAnalyticsPage() {
                         </p>
                         <Button
                           variant="outline"
-                          onClick={() => handleGscSelection(gaAccounts[0]?._id || "")}
+                          onClick={handleGscSetup}
                           disabled={gscLoading}
                           className="bg-white"
                         >
@@ -839,11 +933,6 @@ export default function GoogleAnalyticsPage() {
                             </>
                           )}
                         </Button>
-                      </div>
-                    ) : (
-                      // No GA account - show message
-                      <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
-                        <p className="font-medium text-[13px]">Connect Google Analytics first</p>
                       </div>
                     )}
                   </div>
