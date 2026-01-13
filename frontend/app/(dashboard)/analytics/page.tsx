@@ -215,9 +215,14 @@ export default function GoogleAnalyticsPage() {
 
   useEffect(() => {
     if (activeWorkspace?._id) {
-      // Reset local state to ensure clean transition before loading new data
+      // Reset ALL state to ensure clean transition and prevent stale data
+      // This ensures complete data isolation between workspaces
+
+      // GA Accounts & Selection
       setGaAccounts([]);
       setSelectedAccountId("");
+
+      // Chart & Analytics Data
       setChartData([]);
       setAiModelsData([]);
       setFirstTouchData([]);
@@ -228,14 +233,30 @@ export default function GoogleAnalyticsPage() {
       setAiDeviceData([]);
       setTopicClusterData([]);
       setDemographicsData([]);
+
+      // Key Metrics
       setKeyMetrics({
         activeUsers: 0,
         engagedSessions: 0,
         keyEvents: 0,
         aiOverviewClicks: 0,
       });
+
+      // Search Console Data - CRITICAL for workspace isolation
+      setSearchConsoleData(null);
+      setScChartData([]);
+      setScTopQueries([]);
+      setScSites([]);
+      setSelectedSite("");
+      setGscAccount(null);
+      setScLoading(false);
+
+      // AI Overview Stats
+      setAiOverviewStats({ pages: [], devices: [] });
+
+      // Other flags
       setIsQuotaExceeded(false);
-      setScLimit("50"); // Reset limit
+      setScLimit("50");
 
       setInitialLoading(true);
       loadGAAccounts();
