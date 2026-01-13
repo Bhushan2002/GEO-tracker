@@ -31,6 +31,10 @@ interface DashboardDataContextType {
     refreshAllBrands: () => Promise<void>;
     refreshBrandHistory: () => Promise<void>;
     refreshModelsAnalytics: () => Promise<void>;
+
+    // Analytics prefetch (for background loading)
+    prefetchAnalytics: () => Promise<void>;
+    analyticsCache: any;
 }
 
 
@@ -58,6 +62,9 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     // Loading state management
     const [isLoading, setIsLoading] = useState(true);
     const [hasLoaded, setHasLoaded] = useState(false);
+
+    // Analytics cache for prefetching
+    const [analyticsCache, setAnalyticsCache] = useState<any>(null);
 
 
     // --- Fetch Actions ---
@@ -116,6 +123,46 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         }
     }, []);
 
+    // Prefetch analytics data in background
+    const prefetchAnalytics = useCallback(async () => {
+        if (!activeWorkspace?._id) return;
+
+        try {
+            console.log('🚀 Prefetching analytics data in background...');
+            // Fetch GA accounts list
+            const gaRes = await api.get('/api/ga-accounts');
+
+            // If user has GA accounts, prefetch the first one's data
+            if (gaRes.data && gaRes.data.length > 0) {
+                const accountId = gaRes.data[0]._id;
+
+                // Prefetch all analytics data in parallel
+                const [metricsRes, chartRes, modelsRes, landingRes] = await Promise.all([
+                    api.get(`/api/analytics/metrics?accountId=${accountId}`),
+                    api.get(`/api/analytics/chart-data?accountId=${accountId}`),
+                    api.get(`/api/analytics/ai-models?accountId=${accountId}`),
+                    api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}`),
+                ]);
+
+                // Cache the results
+                setAnalyticsCache({
+                    accountId,
+                    gaAccounts: gaRes.data,
+                    keyMetrics: metricsRes.data,
+                    chartData: chartRes.data,
+                    aiModelsData: modelsRes.data,
+                    aiLandingPageData: landingRes.data,
+                    cachedAt: new Date().toISOString(),
+                });
+
+                console.log('✅ Analytics data prefetched successfully!');
+            }
+        } catch (error) {
+            console.log('⚠️ Analytics prefetch failed (non-critical):', error);
+            // Silent fail - prefetching is optional
+        }
+    }, [activeWorkspace?._id]);
+
 
     // --- Aggregated Actions ---
     /**
@@ -149,6 +196,17 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         }
     }, [fetchPrompts, fetchBrands, fetchResponses, fetchAllBrands, fetchBrandHistory, fetchModelsAnalytics]);
 
+    // Prefetch analytics in background after initial data load
+    useEffect(() => {
+        if (hasLoaded && activeWorkspace?._id) {
+            // Wait a bit to let main dashboard load first
+            const timer = setTimeout(() => {
+                prefetchAnalytics();
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [hasLoaded, activeWorkspace?._id, prefetchAnalytics]);
+
 
     // --- Effects ---
 
@@ -178,6 +236,8 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
                 refreshAllBrands: fetchAllBrands,
                 refreshBrandHistory: fetchBrandHistory,
                 refreshModelsAnalytics: fetchModelsAnalytics,
+                prefetchAnalytics,
+                analyticsCache,
             }}
         >
             {children}

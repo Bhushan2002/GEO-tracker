@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/api";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
+import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
 import {
   Table,
   TableHeader,
@@ -70,6 +71,7 @@ import {
   TrafficCone,
   LucideTrafficCone,
   Group,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   Tooltip as InfoTooltip,
@@ -87,15 +89,23 @@ import CitationsPieChart from "@/components/Charts/CitationsPieChart";
 import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
 import { DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { AiOverviewStats } from "@/components/Charts/AiOverviewStats";
+<<<<<<< HEAD
 import { RangeCalendar } from "@/components/RangeCalendar";
 import { subDays, format } from 'date-fns'
 import { DateRange } from "react-day-picker";
+=======
+import { RangeCalandar } from "@/components/RangeCalandar";
+import { ButtonGroup } from "@/components/ui/button-group";
+import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
+
+>>>>>>> d885c42ec5cac1bcfe70b3f97e21e94afd34dc03
 /**
  * Analytics page integrating Google Analytics data.
  * Visualizes user engagement, AI model traffic, and conversion metrics.
  */
 export default function GoogleAnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
+  const { analyticsCache } = useDashboardData();
   const [gaAccounts, setGaAccounts] = useState<any[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -140,6 +150,76 @@ export default function GoogleAnalyticsPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: subDays(new Date(), 30), to: new Date() });
 
 
+  // GSC Manual Linkage State
+  const [gscAccount, setGscAccount] = useState<any>(null); // Separate GSC account
+  const [gscSites, setGscSites] = useState<any[]>([]);
+  const [isGscDialogOpen, setIsGscDialogOpen] = useState(false);
+  const [targetSetupAccountId, setTargetSetupAccountId] = useState<string>("");
+  const [gscLoading, setGscLoading] = useState(false);
+  const [selectedGscSite, setSelectedGscSite] = useState<string>("");
+  const [exporting, setExporting] = useState(false);
+
+  // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
+  const loadGAAccounts = useCallback(async () => {
+    if (!activeWorkspace?._id) {
+      setGaAccounts([]);
+      setInitialLoading(false);
+      return;
+    }
+
+    try {
+      // ⚡ Check if we have cached data - USE IT IMMEDIATELY
+      if (analyticsCache && analyticsCache.gaAccounts) {
+        setGaAccounts(analyticsCache.gaAccounts);
+
+        // If there's a selected account in cache, use it
+        if (analyticsCache.accountId) {
+          setSelectedAccountId(analyticsCache.accountId);
+
+          // Set all cached data immediately for instant display
+          if (analyticsCache.keyMetrics) setKeyMetrics(analyticsCache.keyMetrics);
+          if (analyticsCache.chartData) setChartData(analyticsCache.chartData);
+          if (analyticsCache.aiModelsData) setAiModelsData(analyticsCache.aiModelsData);
+          if (analyticsCache.aiLandingPageData) setAiLandingPageData(analyticsCache.aiLandingPageData);
+
+          setInitialLoading(false);
+          return; // Exit early - data loaded from cache, no loading needed!
+        }
+      }
+
+      // No cache - fetch fresh data
+      const response = await api.get("/api/ga-accounts");
+      setGaAccounts(response.data);
+
+      if (response.data.length > 0) {
+        setSelectedAccountId((prev) => {
+          if (!prev) return response.data[0]._id;
+          const exists = response.data.find((a: any) => a._id === prev);
+          return exists ? prev : response.data[0]._id;
+        });
+      }
+    } catch (error: any) {
+      console.error("Failed to load GA accounts:", error);
+      toast.error(error.response?.data?.message || "Failed to load accounts");
+      setGaAccounts([]);
+    } finally {
+      setInitialLoading(false);
+    }
+  }, [activeWorkspace?._id, analyticsCache]);
+
+  // Load Search Console Account (separate from GA)
+  const loadGscAccount = useCallback(async () => {
+    if (!activeWorkspace?._id) return;
+
+    try {
+      const response = await api.get("/api/search-console-accounts");
+      setGscAccount(response.data);
+    } catch (error) {
+      console.error("Failed to load GSC account:", error);
+      setGscAccount(null);
+    }
+  }, [activeWorkspace?._id]);
+
   useEffect(() => {
     if (activeWorkspace?._id) {
       // Reset local state to ensure clean transition before loading new data
@@ -166,8 +246,9 @@ export default function GoogleAnalyticsPage() {
 
       setInitialLoading(true);
       loadGAAccounts();
+      loadGscAccount(); // Load GSC separately
     }
-  }, [activeWorkspace?._id]);
+  }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
 
   // Handle OAuth callback - force refresh when account is connected
   useEffect(() => {
@@ -180,9 +261,10 @@ export default function GoogleAnalyticsPage() {
 
       // Force reload accounts
       loadGAAccounts();
+      loadGscAccount();
       toast.success("Google Analytics connected successfully!");
     }
-  }, [activeWorkspace?._id]);
+  }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
 
   useEffect(() => {
     if (selectedAccountId && dateRange?.from && dateRange?.to) {
@@ -190,6 +272,7 @@ export default function GoogleAnalyticsPage() {
     }
   }, [selectedAccountId, dateRange]);
 
+<<<<<<< HEAD
   // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
   const loadGAAccounts = useCallback(async () => {
     if (!activeWorkspace?._id) return;
@@ -215,6 +298,8 @@ export default function GoogleAnalyticsPage() {
 
 
   // load Account Data
+=======
+>>>>>>> d885c42ec5cac1bcfe70b3f97e21e94afd34dc03
   const loadAccountData = useCallback(async (accountId: string) => {
 
     if (!accountId || isQuotaExceeded) {
@@ -422,9 +507,8 @@ export default function GoogleAnalyticsPage() {
       console.error("Search Console data error:", error);
       if (error.response?.data?.error?.includes("not configured")) {
         loadSearchConsoleSites(accountId);
-      } else {
-        toast.error("Failed to load Search Console data");
       }
+      // Silently handle error - no toast message
     } finally {
       setScLoading(false);
     }
@@ -555,6 +639,55 @@ export default function GoogleAnalyticsPage() {
     }
   };
 
+  const handleGscSelection = async (accountId: string) => {
+    setTargetSetupAccountId(accountId);
+    setGscLoading(true);
+    setGscSites([]);
+
+    try {
+      // Fetch available GSC sites using existing tokens
+      const res = await api.get(`/api/search-console/sites?accountId=${accountId}`);
+      const sites = res.data.sites || [];
+
+      setGscSites(sites);
+
+      // Smart Default: If only 1 site, auto-link immediately
+      if (sites.length === 1) {
+        const singleSite = sites[0].siteUrl;
+        await linkSearchConsoleSite(accountId, singleSite);
+        // Reload GSC account to update UI
+        loadGscAccount();
+        return; // Skip opening dialog
+      }
+
+      // If multiple or zero, let user choose (or show empty state in dialog)
+      setIsGscDialogOpen(true);
+    } catch (error) {
+      console.error("Failed to fetch GSC sites:", error);
+      toast.error("Could not fetch Search Console properties. Ensure you have permissions.");
+    } finally {
+      setGscLoading(false);
+    }
+  };
+
+  const confirmGscLink = async () => {
+    if (!targetSetupAccountId || !selectedGscSite) return;
+
+    await linkSearchConsoleSite(targetSetupAccountId, selectedGscSite);
+    setIsGscDialogOpen(false);
+    loadGscAccount(); // Reload GSC account data
+  };
+
+  const handleGscSetup = () => {
+    if (!activeWorkspace?._id) {
+      toast.error("No workspace selected");
+      return;
+    }
+
+    // Redirect to OAuth for Search Console authentication
+    window.location.href = `/api/auth/google/search-console?workspaceId=${activeWorkspace._id}`;
+  };
+
   // OPTIMIZATION: Memoize formatDate to prevent recreation
   const formatDate = useCallback((dateValue: any) => {
     if (!dateValue) return "";
@@ -566,6 +699,42 @@ export default function GoogleAnalyticsPage() {
     const date = new Date(year, month - 1, day);
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }, []);
+
+  // Excel Export Handler
+  const handleExcelExport = async () => {
+    if (!activeWorkspace || !selectedAccountId) {
+      toast.error("Please select an account first");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      await exportAnalyticsToExcel({
+        workspaceName: activeWorkspace.name || 'Analytics',
+        keyMetrics,
+        chartData,
+        aiModelsData,
+        aiLandingPageData,
+        scTopQueries,
+        scChartData,
+        searchConsoleData,
+        aiOverviewStats,
+        firstTouchData,
+        zeroTouchData,
+        conversionRateData,
+        topicClusterData,
+        aiGrowthData,
+        aiDeviceData,
+        demographicsData,
+      });
+      toast.success('Excel report downloaded successfully!');
+    } catch (error) {
+      console.error('Export failed:', error);
+      toast.error('Failed to export Excel report');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen p-6 space-y-8 max-w-[1700px] mx-auto">
@@ -586,6 +755,24 @@ export default function GoogleAnalyticsPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="default"
+              onClick={handleExcelExport}
+              disabled={exporting || !selectedAccountId}
+              className="h-10 px-4 rounded-xl bg-black hover:bg-slate-800 text-white shadow-lg shadow-slate-200"
+            >
+              {exporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export to Excel
+                </>
+              )}
+            </Button>
 
             <Sheet>
               <SheetTrigger asChild>
@@ -595,9 +782,9 @@ export default function GoogleAnalyticsPage() {
               </SheetTrigger>
               <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
                 <SheetHeader>
-                  <SheetTitle>Manage GA4 Accounts</SheetTitle>
+                  <SheetTitle>Manage Analytics & Search Console</SheetTitle>
                   <SheetDescription>
-                    Connect and manage your Google Analytics properties.
+                    Connect and manage your Google Analytics and Search Console properties.
                   </SheetDescription>
                 </SheetHeader>
 
@@ -610,9 +797,11 @@ export default function GoogleAnalyticsPage() {
                   </Button>
 
                   <div className="space-y-4">
-                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
-                      Connected Accounts
-                    </h3>
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Google Analytics Properties
+                      </h3>
+                    </div>
                     {gaAccounts.length === 0 ? (
                       <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
                         <p className="font-medium text-[13px]">No accounts connected</p>
@@ -626,11 +815,11 @@ export default function GoogleAnalyticsPage() {
                           >
                             <div className="flex items-center justify-between">
                               <div className="space-y-1">
-                                <p className="font-bold text-slate-900 text-sm">
+                                <p className="font-bold text-slate-900 text-base">
                                   {account.accountName}
                                 </p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                                  Current Property: {account.propertyName}
+                                <p className="text-[10px] font-semibold text-slate-500 tracking-tight">
+                                  Active Property • {account.propertyName}
                                 </p>
                               </div>
                               <Button
@@ -684,7 +873,6 @@ export default function GoogleAnalyticsPage() {
                                 </div>
                               </DialogContent>
                             </Dialog>
-                            {/* Property Selector */}
                             <div className="pt-2">
                               <Select
                                 value={account.propertyId}
@@ -720,8 +908,116 @@ export default function GoogleAnalyticsPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* SEARCH CONSOLE SECTION - Completely Separate */}
+                  <div className="space-y-4 mt-8">
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Search Console Integration
+                      </h3>
+                    </div>
+
+                    {gscAccount?.siteUrl ? (
+                      // CONNECTED STATE - Styled card matching GA accounts
+                      <div className="border border-slate-100 rounded-2xl divide-y divide-slate-50 overflow-hidden shadow-sm">
+                        <div className="p-4 bg-white hover:bg-slate-50 transition-colors space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                              <p className="font-bold text-slate-900 text-base">
+                                {gscAccount.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '')}
+                              </p>
+                              <p className="text-[10px] font-semibold text-slate-500 tracking-tight">
+                                Verified • Owner Access
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={async () => {
+                                if (confirm('Are you sure you want to disconnect Search Console?')) {
+                                  try {
+                                    await api.delete(`/api/search-console-accounts?id=${gscAccount._id}`);
+                                    toast.success('Search Console disconnected');
+                                    loadGscAccount();
+                                  } catch (error) {
+                                    toast.error('Failed to disconnect');
+                                  }
+                                }
+                              }}
+                              className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      // NOT CONNECTED STATE - Show connect button (no GA dependency)
+                      <div className="border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50 p-6 text-center">
+                        <Globe className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-slate-600 mb-4">
+                          No Search Console property connected
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={handleGscSetup}
+                          disabled={gscLoading}
+                          className="bg-white"
+                        >
+                          {gscLoading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="w-4 h-4 mr-2" />
+                              Connect Search Console
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </SheetContent>
+
+              {/* GSC Selection Dialog */}
+              <Dialog open={isGscDialogOpen} onOpenChange={setIsGscDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Link Search Console Property</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-4">
+                    <Select onValueChange={setSelectedGscSite}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a Property" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {gscSites.length === 0 ? (
+                          <div className="p-2 text-sm text-center text-muted-foreground">
+                            No verified properties found
+                          </div>
+                        ) : (
+                          gscSites.map((site: any) => (
+                            <SelectItem key={site.siteUrl} value={site.siteUrl}>
+                              {site.siteUrl}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+
+                    <Button
+                      className="w-full bg-slate-900"
+                      onClick={confirmGscLink}
+                      disabled={!selectedGscSite}
+                    >
+                      Connect Property
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </Sheet>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
-import { GAAccount } from "@/lib/models/gaAccount.model";
+import { SearchConsoleAccount } from "@/lib/models/searchConsoleAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
 /**
@@ -43,14 +43,16 @@ export async function GET(request: NextRequest) {
         const workspaceId = await getWorkspaceId(request);
         if (!workspaceId) return workspaceError();
 
-        const account = await GAAccount.findOne({ _id: accountId, workspaceId });
+        const account = await SearchConsoleAccount.findOne({ workspaceId, isActive: true });
         if (!account) {
-            return NextResponse.json({ error: "Account not found" }, { status: 404 });
+            return NextResponse.json({
+                error: "Search Console not connected"
+            }, { status: 404 });
         }
 
-        if (!account.searchConsoleSiteUrl) {
+        if (!account.siteUrl) {
             return NextResponse.json({
-                error: "Search Console not linked"
+                error: "Search Console not configured"
             }, { status: 400 });
         }
 
@@ -84,7 +86,7 @@ export async function GET(request: NextRequest) {
 
         // Fetch data grouped by QUERY (not date)
         const response = await searchconsole.searchanalytics.query({
-            siteUrl: account.searchConsoleSiteUrl,
+            siteUrl: account.siteUrl,
             requestBody: {
                 startDate: formattedStartDate,
                 endDate: formattedEndDate,

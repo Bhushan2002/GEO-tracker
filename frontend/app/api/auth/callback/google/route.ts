@@ -116,67 +116,65 @@ export async function GET(request: Request) {
 
     console.log("GA Account link saved/updated:", gaAccount._id);
 
-    // --- AUTO-LINK SEARCH CONSOLE ---
-    try {
-      console.log("Attempting to auto-link Search Console...");
+    // --- AUTO-LINK SEARCH CONSOLE (DISABLED: Manual selection implemented in frontend) ---
+    // try {
+    //   console.log("Attempting to auto-link Search Console...");
 
-      // Fetch available Search Console sites
-      const searchconsole = google.searchconsole({
-        version: 'v1',
-        auth: oauth2Client,
-      });
+    //   // Fetch available Search Console sites
+    //   const searchconsole = google.searchconsole({
+    //     version: 'v1',
+    //     auth: oauth2Client,
+    //   });
 
-      const sitesResponse = await searchconsole.sites.list();
-      const sites = sitesResponse.data.siteEntry || [];
+    //   const sitesResponse = await searchconsole.sites.list();
+    //   const sites = sitesResponse.data.siteEntry || [];
 
-      console.log("Found Search Console sites:", sites.length);
+    //   console.log("Found Search Console sites:", sites.length);
 
-      if (sites.length > 0) {
-        // Strategy: Pick the best matching site
-        let selectedSite = null;
+    //   if (sites.length > 0) {
+    //     // Strategy: Pick the best matching site
+    //     let selectedSite = null;
 
-        // 1. Try to find a site that matches the GA property domain
-        const propertyDomain = (firstProperty.displayName || '').toLowerCase();
+    //     // 1. Try to find a site that matches the GA property domain
+    //     const propertyDomain = (firstProperty.displayName || '').toLowerCase();
 
-        // First, look for exact domain match (https://example.com)
-        selectedSite = sites.find((site: any) =>
-          site.siteUrl?.toLowerCase().includes(propertyDomain) && site.siteUrl?.startsWith('https://')
-        );
+    //     // First, look for exact domain match (https://example.com)
+    //     selectedSite = sites.find((site: any) =>
+    //       site.siteUrl?.toLowerCase().includes(propertyDomain) && site.siteUrl?.startsWith('https://')
+    //     );
 
-        // If not found, look for sc-domain match
-        if (!selectedSite) {
-          selectedSite = sites.find((site: any) =>
-            site.siteUrl?.toLowerCase().includes(propertyDomain) && site.siteUrl?.startsWith('sc-domain:')
-          );
-        }
+    //     // If not found, look for sc-domain match
+    //     if (!selectedSite) {
+    //       selectedSite = sites.find((site: any) =>
+    //         site.siteUrl?.toLowerCase().includes(propertyDomain) && site.siteUrl?.startsWith('sc-domain:')
+    //       );
+    //     }
 
+    //     if (selectedSite) {
+    //       console.log("Selected Search Console site:", selectedSite.siteUrl);
 
+    //       // Save to database
+    //       gaAccount.searchConsoleSiteUrl = selectedSite.siteUrl;
+    //       gaAccount.searchConsoleVerified = true;
+    //       await gaAccount.save();
 
-        if (selectedSite) {
-          console.log("Selected Search Console site:", selectedSite.siteUrl);
+    //       console.log("Search Console auto-linked successfully!");
+    //     } else {
+    //       console.log("No matching Search Console site found for property domain:", propertyDomain);
 
-          // Save to database
-          gaAccount.searchConsoleSiteUrl = selectedSite.siteUrl;
-          gaAccount.searchConsoleVerified = true;
-          await gaAccount.save();
-
-          console.log("Search Console auto-linked successfully!");
-        } else {
-          console.log("No matching Search Console site found for property domain:", propertyDomain);
-
-          // CRITICAL FIX: Explicitly clear any previously linked value to prevent stale incorrect data
-          // This ensures that if a workspace was wrongly linked to 'creatosaurus.io', re-authing will wipe that link.
-          gaAccount.searchConsoleSiteUrl = undefined;
-          gaAccount.searchConsoleVerified = false;
-          await gaAccount.save();
-        }
-      } else {
-        console.log("No Search Console sites found for this account");
-      }
-    } catch (scError: any) {
-      console.error("Search Console auto-link warning (non-fatal):", scError.message);
-      // Don't fail the whole flow if Search Console linking fails
-    }
+    //       // CRITICAL FIX: Explicitly clear any previously linked value to prevent stale incorrect data
+    //       // This ensures that if a workspace was wrongly linked to 'creatosaurus.io', re-authing will wipe that link.
+    //       gaAccount.searchConsoleSiteUrl = undefined;
+    //       gaAccount.searchConsoleVerified = false;
+    //       await gaAccount.save();
+    //     }
+    //   } else {
+    //     console.log("No Search Console sites found for this account");
+    //   }
+    // } catch (scError: any) {
+    //   console.error("Search Console auto-link warning (non-fatal):", scError.message);
+    //   // Don't fail the whole flow if Search Console linking fails
+    // }
 
     // --- Audience Creation Logic ---
     // Automatically attempts to create an "AI Traffic" audience in the user's GA4 property
