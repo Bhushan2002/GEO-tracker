@@ -89,16 +89,12 @@ import CitationsPieChart from "@/components/Charts/CitationsPieChart";
 import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
 import { DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { AiOverviewStats } from "@/components/Charts/AiOverviewStats";
-<<<<<<< HEAD
 import { RangeCalendar } from "@/components/RangeCalendar";
 import { subDays, format } from 'date-fns'
 import { DateRange } from "react-day-picker";
-=======
-import { RangeCalandar } from "@/components/RangeCalandar";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
 
->>>>>>> d885c42ec5cac1bcfe70b3f97e21e94afd34dc03
 /**
  * Analytics page integrating Google Analytics data.
  * Visualizes user engagement, AI model traffic, and conversion metrics.
@@ -272,34 +268,6 @@ export default function GoogleAnalyticsPage() {
     }
   }, [selectedAccountId, dateRange]);
 
-<<<<<<< HEAD
-  // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
-  const loadGAAccounts = useCallback(async () => {
-    if (!activeWorkspace?._id) return;
-
-    try {
-      const response = await api.get("/api/ga-accounts");
-      setGaAccounts(response.data);
-
-      if (response.data.length > 0) {
-        setSelectedAccountId((prev) => {
-          if (!prev) return response.data[0]._id;
-          const exists = response.data.find((a: any) => a._id === prev);
-          return exists ? prev : response.data[0]._id;
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load GA accounts:", error);
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [activeWorkspace?._id, selectedAccountId]);
-
-
-
-  // load Account Data
-=======
->>>>>>> d885c42ec5cac1bcfe70b3f97e21e94afd34dc03
   const loadAccountData = useCallback(async (accountId: string) => {
 
     if (!accountId || isQuotaExceeded) {
