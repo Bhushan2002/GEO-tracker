@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
-import { GAAccount } from "@/lib/models/gaAccount.model";
 import { SearchConsoleAccount } from "@/lib/models/searchConsoleAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 
@@ -22,30 +21,30 @@ export async function POST(request: NextRequest) {
     const workspaceId = await getWorkspaceId(request);
     if (!workspaceId) return workspaceError();
 
-    // Get GA account to copy OAuth tokens
-    const gaAccount = await GAAccount.findOne({ _id: accountId, workspaceId });
+    // Get SearchConsoleAccount (accountId is now SearchConsoleAccount._id)
+    const account = await SearchConsoleAccount.findOne({
+      _id: accountId,
+      workspaceId
+    });
 
-    if (!gaAccount) {
-      return NextResponse.json({ error: "GA Account not found" }, { status: 404 });
+    if (!account) {
+      return NextResponse.json({
+        error: "Search Console account not found in this workspace"
+      }, { status: 404 });
     }
 
-    // Create or update SearchConsoleAccount
-    const scAccount = await SearchConsoleAccount.findOneAndUpdate(
-      { workspaceId, isActive: true },
-      {
-        siteUrl,
-        verified: true,
-        accessToken: gaAccount.accessToken,
-        refreshToken: gaAccount.refreshToken,
-        expiresAt: gaAccount.expiresAt,
-        isActive: true,
-      },
-      { upsert: true, new: true }
-    );
+    // Update siteUrl and verification status
+    account.siteUrl = siteUrl;
+    account.verified = true;
+    await account.save();
 
     return NextResponse.json({
       success: true,
-      account: scAccount
+      account: {
+        _id: account._id,
+        siteUrl: account.siteUrl,
+        verified: account.verified
+      }
     });
 
   } catch (error: any) {

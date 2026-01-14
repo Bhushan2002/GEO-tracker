@@ -623,19 +623,10 @@ function createAIModelsSheet(workbook: ExcelJS.Workbook, data: ExportData) {
     sheet.addRow(headers);
     styleHeader(sheet.getRow(1));
 
-    const modelColors: Record<string, string> = {
-        ChatGPT: 'FF10B981',
-        Copilot: 'FF3B82F6',
-        Perplexity: 'FF8B5CF6',
-        Gemini: 'FFF97316',
-        Claude: 'FF06B6D4',
-    };
-
     const filteredModels = data.aiModelsData.filter((model) => model.users > 0);
     const totalUsers = filteredModels.reduce((sum, model) => sum + (model.users || 0), 0);
 
-    filteredModels.forEach((model, index) => {
-        const rowNum = index + 2;
+    filteredModels.forEach((model) => {
         const convRate = parseFloat(model.conversionRate?.toString().replace('%', '') || '0');
         const trafficShare = totalUsers > 0 ? ((model.users / totalUsers) * 100).toFixed(1) : '0';
 
@@ -646,16 +637,6 @@ function createAIModelsSheet(workbook: ExcelJS.Workbook, data: ExportData) {
             convRate,
             parseFloat(trafficShare),
         ]);
-
-        // Color-code row
-        const color = modelColors[model.model] || 'FFFFFFFF';
-        const row = sheet.getRow(rowNum);
-        row.getCell(1).fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: color },
-        };
-        row.getCell(1).font = { color: { argb: 'FFFFFFFF' }, bold: true };
     });
 
     sheet.getColumn('D').numFmt = '0.00"%"';
@@ -740,27 +721,8 @@ function createDeviceBreakdownSheet(workbook: ExcelJS.Workbook, data: ExportData
     sheet.getColumn('C').numFmt = '#,##0';
     const lastRow = sheet.lastRow?.number || 1;
 
-    // Conditional formatting
-    sheet.addConditionalFormatting({
-        ref: `B2:B${lastRow}`,
-        rules: [
-            {
-                type: 'colorScale',
-                cfvo: [
-                    { type: 'min' },
-                    { type: 'max' },
-                ],
-                color: [
-                    { argb: 'FFFFFFFF' },
-                    { argb: COLORS.successGreen },
-                ],
-                priority: 1,
-            },
-        ],
-    });
-
     sheet.views = [{ state: 'frozen', ySplit: 1 }];
-    applyZebraStriping(sheet, 2, lastRow + 1);
+    applyZebraStriping(sheet, 2, lastRow);
     autoFitColumns(sheet);
 }
 
