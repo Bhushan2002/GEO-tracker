@@ -1185,7 +1185,7 @@ export default function GoogleAnalyticsPage() {
                     className="rounded-full px-5 py-2 h-9 text-sm font-medium"
                     onClick={() => setActiveView("ai-analytics")}
                   >
-                    AI Analytics
+                    AI Traffic Analytics
                   </Button>
                   <Button
                     variant={activeView === "search-console" ? "default" : "outline"}
