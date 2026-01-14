@@ -72,6 +72,7 @@ import {
   LucideTrafficCone,
   Group,
   FileSpreadsheet,
+  Search,
 } from "lucide-react";
 import {
   Tooltip as InfoTooltip,
@@ -151,6 +152,7 @@ export default function GoogleAnalyticsPage() {
   const [gscProperties, setGscProperties] = useState<any[]>([]);
   const [loadingGscProperties, setLoadingGscProperties] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
   const loadGAAccounts = useCallback(async () => {
@@ -295,6 +297,8 @@ export default function GoogleAnalyticsPage() {
       loadAccountData(selectedAccountId);
     }
   }, [selectedAccountId, dateRange]);
+
+
 
   const loadAccountData = useCallback(async (accountId: string) => {
 
@@ -477,10 +481,10 @@ export default function GoogleAnalyticsPage() {
   };
 
   useEffect(() => {
-    if (selectedAccountId && !isQuotaExceeded) {
-      loadSearchConsoleData(selectedAccountId);
+    if (gscAccount?._id && gscAccount?.siteUrl && !isQuotaExceeded) {
+      loadSearchConsoleData(gscAccount._id);
     }
-  }, [scLimit, selectedAccountId, isQuotaExceeded]); // Re-fetch when limit changes
+  }, [scLimit, gscAccount, isQuotaExceeded, dateRange]); // Re-fetch when limit changes or GSC account updates
 
   const loadSearchConsoleData = useCallback(async (accountId: string) => {
     setScLoading(true);
@@ -589,19 +593,67 @@ export default function GoogleAnalyticsPage() {
       toast.error("Failed to remove account");
     }
   };
-  const fetchPropertiesForAccount = async (accountId: string) => {
+  const fetchPropertiesForAccount = useCallback(async (accountId: string) => {
     if (propertiesMap[accountId]) return;
     setLoadingProperties(prev => ({ ...prev, [accountId]: true }));
     try {
       const res = await api.get(`/api/ga-accounts/${accountId}/properties`);
-      setPropertiesMap(prev => ({ ...prev, [accountId]: res.data }))
+      const properties = res.data;
+      setPropertiesMap(prev => ({ ...prev, [accountId]: properties }))
+
+      // Auto-select logic: If only 1 property exists and none is selected, select it automatically
+      if (properties && properties.length === 1) {
+        const account = gaAccounts.find((a) => a._id === accountId);
+        if (account && !account.propertyId) {
+          const singleProp = properties[0];
+          try {
+            await api.patch(`/api/ga-accounts/${accountId}`, {
+              propertyId: singleProp.id,
+              propertyName: singleProp.name,
+            });
+            // Toast removed for seamless auto-selection
+
+            // Update local state immediately
+            setGaAccounts((prev) =>
+              prev.map((acc) => {
+                if (acc._id === accountId) {
+                  return {
+                    ...acc,
+                    propertyId: singleProp.id,
+                    propertyName: singleProp.name,
+                  };
+                }
+                return acc;
+              })
+            );
+
+            // Trigger data load if this is the active account
+            if (selectedAccountId === accountId) {
+              loadAccountData(accountId);
+            }
+          } catch (err) {
+            console.error("Auto-select property failed:", err);
+          }
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch properties", error);
       toast.error("Could not load properties");
     } finally {
       setLoadingProperties(prev => ({ ...prev, [accountId]: false }));
     }
-  }
+  }, [gaAccounts, propertiesMap, selectedAccountId, loadAccountData]);
+
+  // NEW: Auto-fetch properties if selected account doesn't have a property set
+  useEffect(() => {
+    if (selectedAccountId && gaAccounts.length > 0) {
+      const account = gaAccounts.find((a) => a._id === selectedAccountId);
+      if (account && !account.propertyId) {
+        // Fetch properties to see if we can auto-select one
+        fetchPropertiesForAccount(selectedAccountId);
+      }
+    }
+  }, [selectedAccountId, gaAccounts, fetchPropertiesForAccount]);
   const handlePropertyChange = async (accountId: string, propertyId: string) => {
     const properties = propertiesMap[accountId];
     const selectedProp = properties?.find(p => p.id === propertyId);
@@ -654,36 +706,47 @@ export default function GoogleAnalyticsPage() {
   };
 
   // NEW: Fetch GSC properties for property selection
-  const fetchGscProperties = async (accountId: string) => {
+  // NEW: Fetch GSC properties for property selection
+  const fetchGscProperties = useCallback(async (accountId: string) => {
     setLoadingGscProperties(true);
     try {
-      const res = await api.get(`/api/search-console/sites`);
+      const res = await api.get(`/api/search-console/sites?accountId=${accountId}`);
       const sites = res.data.sites || [];
       setGscProperties(sites);
 
       // Auto-select if only one property
       if (sites.length === 1) {
         const singleSite = sites[0].siteUrl;
-        await linkGscProperty(accountId, singleSite);
-        toast.success("Property auto-linked!");
+        // Don't auto-link if it's already linked - check logic handled in linkGscProperty or here? 
+        // We know this is called when no site is selected, so safe to link.
+        await linkGscProperty(accountId, singleSite, false);
       }
     } catch (error) {
       console.error("Failed to fetch GSC properties:", error);
-      toast.error("Failed to load Search Console properties");
+      // toast.error("Failed to load Search Console properties");
     } finally {
       setLoadingGscProperties(false);
     }
-  };
+  }, []);
+
+  // NEW: Auto-fetch GSC properties if account connected but no site selected
+  useEffect(() => {
+    if (gscAccount && gscAccount._id && !gscAccount.siteUrl) {
+      fetchGscProperties(gscAccount._id);
+    }
+  }, [gscAccount, fetchGscProperties]);
 
   // NEW: Link a property to GSC account
-  const linkGscProperty = async (accountId: string, siteUrl: string) => {
+  const linkGscProperty = async (accountId: string, siteUrl: string, showToast = true) => {
     try {
       await api.post('/api/search-console/link', { accountId, siteUrl });
       await loadGscAccount(); // Reload to update UI
-      toast.success("Property linked successfully!");
+      // Trigger data fetch immediately for the linked account
+      await loadSearchConsoleData(accountId);
+      if (showToast) toast.success("Property linked successfully!");
     } catch (error) {
       console.error("Failed to link property:", error);
-      toast.error("Failed to link property");
+      if (showToast) toast.error("Failed to link property");
     }
   };
 
@@ -778,12 +841,17 @@ export default function GoogleAnalyticsPage() {
               )}
             </Button>
 
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-900 shadow-none" title="Manage Accounts">
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-400 hover:text-slate-900 shadow-none"
+              title="Manage Accounts"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+
+            <Sheet open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
               <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
                 <SheetHeader>
                   <SheetTitle>Manage Analytics & Search Console</SheetTitle>
@@ -956,8 +1024,17 @@ export default function GoogleAnalyticsPage() {
                                 if (confirm('Are you sure you want to disconnect Search Console?')) {
                                   try {
                                     await api.delete(`/api/search-console-accounts?id=${gscAccount._id}`);
+
+                                    // CLEAR ALL GSC DATA STATE IMMEDIATELY
+                                    setGscAccount(null);
+                                    setSearchConsoleData(null);
+                                    setScChartData([]);
+                                    setScTopQueries([]);
+                                    setScSites([]);
+                                    setGscProperties([]);
+
                                     toast.success('Search Console disconnected');
-                                    loadGscAccount();
+                                    loadGscAccount(); // Double check from server
                                   } catch (error) {
                                     toast.error('Failed to disconnect');
                                   }
@@ -1847,43 +1924,34 @@ export default function GoogleAnalyticsPage() {
                           </div>
                         </CardContent>
                       </Card>
-                    ) : !scChartData.length && scSites.length > 0 ? (
-                      // Setup card if not linked
-                      <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <CardHeader className="border-b border-slate-100 px-5">
-                          <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                            Link Search Console
-                          </CardTitle>
-                          <CardDescription className="text-[10px] text-slate-500 font-medium">
-                            Select a Search Console property to view organic search performance
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-4">
-                          <Select value={selectedSite} onValueChange={setSelectedSite}>
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a Search Console property" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {scSites.map((site: any) => (
-                                <SelectItem key={site.siteUrl} value={site.siteUrl}>
-                                  {site.siteUrl}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            onClick={() => {
-                              if (selectedSite && selectedAccountId) {
-                                linkSearchConsoleSite(selectedAccountId, selectedSite);
-                              }
-                            }}
-                            disabled={!selectedSite}
-                            className="w-full"
-                          >
-                            Link Selected Property
-                          </Button>
-                        </CardContent>
-                      </Card>
+                    ) : !gscAccount ? (
+                      // Not Connected State
+                      <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                        <div className="bg-white p-3 rounded-xl shadow-sm mb-4">
+                          <Globe className="h-8 w-8 text-slate-400" />
+                        </div>
+                        <h3 className="font-bold text-lg text-slate-900 mb-2">Connect Search Console</h3>
+                        <p className="text-sm text-slate-500 max-w-md text-center mb-6">
+                          Connect your Google Search Console account in the settings panel to view organic search performance data.
+                        </p>
+                        <Button onClick={() => setIsSettingsOpen(true)}>
+                          <Settings className="w-4 h-4 mr-2" />
+                          Open Settings
+                        </Button>
+                      </div>
+                    ) : !scChartData.length ? (
+                      // Connected but No Data / Loading
+                      <div className="flex flex-col items-center justify-center p-12 border border-slate-200 rounded-2xl bg-white">
+                        <div className="bg-slate-50 p-3 rounded-xl mb-4">
+                          <Search className="h-8 w-8 text-slate-400" />
+                        </div>
+                        <h3 className="font-bold text-lg text-slate-900 mb-2">No Data Available</h3>
+                        <p className="text-sm text-slate-500 max-w-md text-center">
+                          {gscAccount.siteUrl
+                            ? "We couldn't find any search performance data for the selected property in this date range."
+                            : "Please select a property in the settings panel to view your data."}
+                        </p>
+                      </div>
                     ) : scChartData.length > 0 ? (
                       <>
                         {/* Metrics Cards */}
