@@ -836,17 +836,18 @@ export default function GoogleAnalyticsPage() {
               variant="default"
               onClick={handleExcelExport}
               disabled={exporting || !selectedAccountId}
-              className="h-10 px-4 rounded-xl bg-black hover:bg-slate-800 text-white shadow-lg shadow-slate-200"
+              className="h-8 px-3 rounded-xl bg-black hover:bg-slate-800 text-white shadow-lg shadow-slate-200"
+              title="Export into Excel"
             >
               {exporting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Exporting...
+                  <Loader2 className="h-4 w-4 mr-0.5 animate-spin" />
+                  <span className="text-sm font-medium">Export</span>
                 </>
               ) : (
                 <>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Export to Excel
+                  <FileSpreadsheet className="h-4 w-4 mr-0.5" />
+                  <span className="text-sm font-medium">Export</span>
                 </>
               )}
             </Button>

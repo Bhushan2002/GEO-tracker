@@ -18,7 +18,6 @@ const SearchConsoleAccountSchema = new Schema<ISearchConsoleAccount>(
             type: Schema.Types.ObjectId,
             ref: 'Workspace',
             required: true,
-            index: true,
         },
         siteUrl: {
             type: String,
@@ -49,9 +48,6 @@ const SearchConsoleAccountSchema = new Schema<ISearchConsoleAccount>(
         timestamps: true,
     }
 );
-
-// Compound index for workspace isolation
-SearchConsoleAccountSchema.index({ workspaceId: 1, isActive: 1 });
 
 // Ensure only one active GSC account per workspace
 SearchConsoleAccountSchema.index(
