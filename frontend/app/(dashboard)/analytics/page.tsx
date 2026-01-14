@@ -753,7 +753,7 @@ export default function GoogleAnalyticsPage() {
             <div className="flex flex-col">
               <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Analytics</h1>
               <p className="text-[13px] text-slate-500 mt-1.5 font-medium">
-                Analyze AI mentions, sentiment patterns, and ranking trends.
+                Analyze AI mentions, sentiment patterns, and search traffic.
               </p>
             </div>
           </div>
