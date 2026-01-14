@@ -1,10 +1,8 @@
 import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
-import { GAAccount } from "@/lib/models/gaAccount.model";
 import { SearchConsoleAccount } from "@/lib/models/searchConsoleAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
-import { secretmanager } from "googleapis/build/src/apis/secretmanager";
 
 /**
  * List all Search Console sites the user has access to
@@ -32,27 +30,17 @@ async function refreshTokenIfNeeded(account: any) {
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const accountId = searchParams.get('accountId');
-
-    if (!accountId) {
-      return NextResponse.json({ error: "Account ID required" }, { status: 400 });
-    }
-
     await connectDatabase();
     const workspaceId = await getWorkspaceId(request);
     if (!workspaceId) return workspaceError();
 
-    // Try to get tokens from SearchConsoleAccount first, fallback to GAAccount
-    let account = await SearchConsoleAccount.findOne({ workspaceId, isActive: true });
+    // Fetch tokens from SearchConsoleAccount only (no GA fallback)
+    const account = await SearchConsoleAccount.findOne({ workspaceId, isActive: true });
 
     if (!account) {
-      // If no SearchConsoleAccount exists, get tokens from GA account
-      const gaAccount = await GAAccount.findOne({ _id: accountId, workspaceId });
-      if (!gaAccount) {
-        return NextResponse.json({ error: "No account found" }, { status: 404 });
-      }
-      account = gaAccount;
+      return NextResponse.json({
+        error: "Search Console not connected. Please connect your account first."
+      }, { status: 404 });
     }
 
     const accessToken = await refreshTokenIfNeeded(account);

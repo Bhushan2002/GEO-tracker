@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate') || '30daysAgo';
     const endDate = searchParams.get('endDate') || 'today';
 
+    const limit = searchParams.get('limit') || '10';
+
     if (!accountId) {
       return NextResponse.json(
         { error: "Account Id is required" },
@@ -96,7 +98,7 @@ export async function GET(request: NextRequest) {
           }
         },
         orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
-        limit: "10",
+        limit: limit,
       },
     });
 

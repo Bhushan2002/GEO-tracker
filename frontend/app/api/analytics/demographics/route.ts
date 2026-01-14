@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
     const analyticsData = google.analyticsdata({ version: "v1beta", auth: oauth2Client });
 
-    const aiSources = ["chatgpt", "perplexity", "copilot", "claude", "gemini"];
+
 
     // Fetch active users by country, filtered by AI sources
     const response = await analyticsData.properties.runReport({
@@ -64,20 +64,20 @@ export async function GET(request: NextRequest) {
         dateRanges: [{ startDate: startDate, endDate: endDate }],
         dimensions: [
           { name: "country" },
-          { name: "firstUserSource" }
+          { name: "sessionSourceMedium" }
         ],
         metrics: [{ name: "activeUsers" }],
         dimensionFilter: {
-          orGroup: {
-            expressions: aiSources.map(source => ({
-              filter: {
-                fieldName: "firstUserSource",
-                stringFilter: { matchType: "CONTAINS", value: source, caseSensitive: false }
-              }
-            }))
+          filter: {
+            fieldName: "sessionSourceMedium",
+            stringFilter: {
+              matchType: "FULL_REGEXP",
+              value: "(.*gpt.*|.*chatgpt.*|.*x\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\.google.*)",
+              caseSensitive: false,
+            }
           }
         },
-        limit: "100" // Fetch enough rows to cover top countries * models
+        limit: "1000"
       },
     });
 
@@ -89,12 +89,36 @@ export async function GET(request: NextRequest) {
       let source = row.dimensionValues?.[1]?.value || "Other";
       const users = parseInt(row.metricValues?.[0]?.value || "0");
 
-      // Normalize source name (e.g., "openai / chatgpt" -> "ChatGPT")
-      if (source.includes("chatgpt")) source = "ChatGPT";
-      else if (source.includes("perplexity")) source = "Perplexity";
-      else if (source.includes("copilot")) source = "Copilot";
-      else if (source.includes("claude")) source = "Claude";
-      else if (source.includes("gemini")) source = "Gemini";
+      const modelMapping: { [key: string]: string } = {
+        'chatgpt': 'ChatGPT',
+        'openai': 'ChatGPT',
+        'claude': 'Claude',
+        'anthropic': 'Claude',
+        'gemini': 'Gemini',
+        'bard': 'Gemini',
+        'perplexity': 'Perplexity',
+        'deepseek': 'DeepSeek',
+        'grok': 'Grok',
+        'copilot': 'Copilot',
+        'bing': 'Copilot',
+        'edgeservices': 'Copilot',
+        'neeva': 'Neeva',
+        'writesonic': 'Writesonic',
+        'outrider': 'Outrider',
+        'nimble': 'Nimble',
+        'x.ai': 'Grok',
+      };
+
+      let matchedModel = "Other";
+      for (const [key, value] of Object.entries(modelMapping)) {
+        if (source.includes(key)) {
+          matchedModel = value;
+          break;
+        }
+      }
+      source = matchedModel;
+
+      if (source === "Other") return;
 
       if (!countryMap[country]) {
         countryMap[country] = { country, total: 0 };

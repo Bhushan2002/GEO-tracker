@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
                   filter: {
                     fieldName: "firstUserSource",
                     inListFilter: {
-                      values: ["chatgpt", "perplexity", "copilot", "claude", "gemini"],
+                      values: ["chatgpt", "openai", "perplexity", "copilot", "bing", "claude", "anthropic", "gemini", "bard"],
                       caseSensitive: false,
                     },
                   },
@@ -119,6 +119,9 @@ export async function GET(request: NextRequest) {
       impressions: parseInt(row.metricValues?.[0]?.value || "0"),
       brandSearches: parseInt(row.metricValues?.[1]?.value || "0"),
     })) || [];
+
+    // Sort by date to ensure chart x-axis is ordered
+    zeroTouchData.sort((a, b) => a.date.localeCompare(b.date));
 
     return NextResponse.json(zeroTouchData);
 

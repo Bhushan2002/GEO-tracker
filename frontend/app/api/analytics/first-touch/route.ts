@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
                                     stringFilter: {
                                       matchType: "FULL_REGEXP",
                                       value:
-                                        "(chatgpt|openai|anthropic|deepseek|grok)\\.com|(gemini|bard)\\.google\\.com|(perplexity|claude)\\.ai|(copilot\\.microsoft|edgeservices\\.bing)\\.com|edge.*copilot",
+                                        "(chatgpt|openai|anthropic|claude|deepseek|grok)\\.com|(gemini|bard)\\.google\\.com|(perplexity|claude)\\.ai|(copilot\\.microsoft|edgeservices\\.bing|bing)\\.com|edge.*copilot",
                                     },
                                   },
                                 },

@@ -32,6 +32,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DashBrandTable } from "@/components/Brands/DashboardBrandTable";
 
 /**
  * Brand management page for adding and tracking target brands.
@@ -330,11 +331,12 @@ export default function BrandPage() {
                 </div>
               </div>
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <TargetBrandTable
+                {/* <TargetBrandTable
                   data={allBrands}
                   loading={isAllBrandsLoading}
                   onRefresh={refreshAllBrands}
-                />
+                /> */}
+                <DashBrandTable data={allBrands} loading={isAllBrandsLoading} />
               </div>
             </div>
           </div>

@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         metrics: [{ name: "activeUsers" }],
         dimensionFilter: {
           orGroup: {
-            expressions: ["chatgpt", "perplexity", "copilot", "claude", "gemini"].map(model => ({
+            expressions: ["chatgpt", "openai", "perplexity", "copilot", "bing", "claude", "anthropic", "gemini", "bard"].map(model => ({
               filter: {
                 fieldName: "firstUserSource",
                 stringFilter: { matchType: "CONTAINS", value: model, caseSensitive: false }

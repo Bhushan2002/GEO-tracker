@@ -22,7 +22,7 @@ const SearchConsoleAccountSchema = new Schema<ISearchConsoleAccount>(
         },
         siteUrl: {
             type: String,
-            required: true,
+            required: false, // Site selection is optional/fetched live
         },
         verified: {
             type: Boolean,

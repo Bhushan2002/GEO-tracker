@@ -219,6 +219,10 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
         if (activeWorkspace?._id) {
             // Reset loading tracking flags for a fresh start in the new workspace
             setHasLoaded(false);
+
+            // CRITICAL: Clear analytics cache to prevent stale data from previous workspace
+            setAnalyticsCache(null);
+
             refreshAll();
         }
     }, [activeWorkspace?._id, refreshAll]);

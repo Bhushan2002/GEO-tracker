@@ -53,18 +53,9 @@ export function PromptTable({ data, loading, onRefresh, onRowClick, onAddClick, 
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, promptId: string) => {
+  const handleDelete = (e: React.MouseEvent, promptId: string) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this prompt?")) {
-      try {
-        // await PromptAPI.delete(promptId);
-        toast.success("Prompt deleted successfully");
-        onRefresh();
-        onDelete?.(promptId);
-      } catch (error) {
-        toast.error("Failed to delete prompt");
-      }
-    }
+    onDelete?.(promptId);
   };
 
   const handleEdit = (e: React.MouseEvent, prompt: Prompt) => {
@@ -185,7 +176,7 @@ export function PromptTable({ data, loading, onRefresh, onRowClick, onAddClick, 
                 </TableCell>
 
                 <TableCell className="border-r border-slate-100 text-center">
-                  <div 
+                  <div
                     className="flex items-center justify-center"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -207,7 +198,7 @@ export function PromptTable({ data, loading, onRefresh, onRowClick, onAddClick, 
                 </TableCell>
 
                 <TableCell className="pr-6 text-center">
-                  <div 
+                  <div
                     className="flex items-center justify-center"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -222,14 +213,14 @@ export function PromptTable({ data, loading, onRefresh, onRowClick, onAddClick, 
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={(e) => handleEdit(e, prompt)}
                           className="cursor-pointer"
                         >
                           <Pencil className="h-3.5 w-3.5 mr-2" />
                           <span className="text-xs font-medium">Edit</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
+                        <DropdownMenuItem
                           onClick={(e) => handleDelete(e, prompt._id)}
                           className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                         >

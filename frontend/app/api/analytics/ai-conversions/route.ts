@@ -83,14 +83,14 @@ export async function GET(request: NextRequest) {
         dimensions: [{ name: "sessionSourceMedium" }],
         metrics: [
           { name: "sessions" },
-          { name: "keyEvents" }, // This represents conversions in GA4
+          { name: "keyEvents" },
         ],
         dimensionFilter: {
           filter: {
             fieldName: "sessionSourceMedium",
             stringFilter: {
               matchType: "FULL_REGEXP",
-              value: "(.*gpt.*|.*chatgpt.*|.*x\\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\\.google.*)",
+              value: "(.*gpt.*|.*chatgpt.*|.*x\\.ai.*|.*grok.*|.*openai.*|.*neeva.*|.*writesonic.*|.*nimble.*|.*outrider.*|.*perplexity.*|.*google\\.bard.*|.*bard.*|.*edgeservices.*|.*gemini\\.google.*|.*claude.*|.*anthropic.*|.*copilot.*|.*bing.*)",
               caseSensitive: false,
             }
           }
@@ -98,19 +98,58 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const conversionData =
-      response.data.rows?.map((row: any) => {
-        const sessions = parseInt(row.metricValues?.[0]?.value || "0");
-        const conversions = parseInt(row.metricValues?.[1]?.value || "0");
-        const rate =
-          sessions > 0 ? ((conversions / sessions) * 100).toFixed(2) : "0.00";
+    const modelMapping: { [key: string]: string } = {
+      'chatgpt': 'ChatGPT',
+      'openai': 'ChatGPT',
+      'claude': 'Claude',
+      'anthropic': 'Claude',
+      'gemini': 'Gemini',
+      'bard': 'Gemini',
+      'perplexity': 'Perplexity',
+      'deepseek': 'DeepSeek',
+      'grok': 'Grok',
+      'copilot': 'Copilot',
+      'bing': 'Copilot',
+      'edgeservices': 'Copilot',
+      'neeva': 'Neeva',
+      'writesonic': 'Writesonic',
+      'outrider': 'Outrider',
+      'nimble': 'Nimble',
+      'x.ai': 'Grok',
+    };
 
-        return {
-          model: row.dimensionValues?.[0]?.value || "Unknown",
-          rate: parseFloat(rate),
-          conversions: conversions,
-        };
-      }) || [];
+    const aggregated: Record<string, { sessions: number; conversions: number }> = {};
+
+    response.data.rows?.forEach((row: any) => {
+      const source = (row.dimensionValues?.[0]?.value || "").toLowerCase();
+      const sessions = parseInt(row.metricValues?.[0]?.value || "0");
+      const conversions = parseInt(row.metricValues?.[1]?.value || "0");
+
+      let model = "Other";
+      for (const [key, value] of Object.entries(modelMapping)) {
+        if (source.includes(key)) {
+          model = value;
+          break;
+        }
+      }
+
+      if (model === "Other") return;
+
+      if (!aggregated[model]) {
+        aggregated[model] = { sessions: 0, conversions: 0 };
+      }
+      aggregated[model].sessions += sessions;
+      aggregated[model].conversions += conversions;
+    });
+
+    const conversionData = Object.entries(aggregated).map(([model, data]) => {
+      const rate = data.sessions > 0 ? ((data.conversions / data.sessions) * 100).toFixed(2) : "0.00";
+      return {
+        model,
+        rate: parseFloat(rate),
+        conversions: data.conversions
+      };
+    }).sort((a, b) => b.rate - a.rate);
 
     return NextResponse.json(conversionData);
   } catch (error: any) {

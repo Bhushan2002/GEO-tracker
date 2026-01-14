@@ -271,7 +271,7 @@ export async function PATCH(
     }
 }
 
-// DELETE /api/prompt/[id] - Delete prompt
+// DELETE /api/prompt/[id] - Delete prompt and all associated data
 export async function DELETE(
     request: Request,
     context: { params: Promise<{ id: string }> }
@@ -284,16 +284,36 @@ export async function DELETE(
         const workspaceId = await getWorkspaceId(request as NextRequest);
         if (!workspaceId) return workspaceError();
 
-        // Find and delete prompt
-        const prompt = await Prompt.findOneAndDelete({ _id: id, workspaceId });
+        // Find the prompt first to verify it exists
+        const prompt = await Prompt.findOne({ _id: id, workspaceId });
 
         if (!prompt) {
             return NextResponse.json({ message: "Prompt not found" }, { status: 404 });
         }
 
+        // Find all PromptRuns associated with this prompt
+        const promptRuns = await PromptRun.find({ promptId: id, workspaceId });
+        const promptRunIds = promptRuns.map(run => (run as any)._id);
+
+        // Delete all ModelResponses associated with these PromptRuns
+        if (promptRunIds.length > 0) {
+            await ModelResponse.deleteMany({
+                promptRunId: { $in: promptRunIds },
+                workspaceId
+            });
+        }
+
+        // Delete all PromptRuns associated with this prompt
+        await PromptRun.deleteMany({ promptId: id, workspaceId });
+
+        // Finally, delete the prompt itself
+        await Prompt.findOneAndDelete({ _id: id, workspaceId });
+
         return NextResponse.json({
-            message: "Prompt deleted successfully",
-            promptId: id
+            message: "Prompt and all associated data deleted successfully",
+            promptId: id,
+            deletedRuns: promptRuns.length,
+            deletedResponses: promptRunIds.length
         }, { status: 200 });
 
     } catch (error) {
