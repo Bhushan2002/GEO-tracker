@@ -189,56 +189,39 @@ export const executePromptTask = async (promptId: string) => {
           }
 
           // Create or update brand document with running averages
+          const existingBrand = await Brand.findOne({ brand_name: data.brand_name, workspaceId });
+
+          const sentimentScore = data.sentiment_score || 0;
+          const newMentions = (existingBrand?.mentions || 0) + (data.mention_count || 1);
+          const newSentimentSum = (existingBrand?.sentiment_sum || 0) + sentimentScore;
+          const newTotalEvaluations = (existingBrand?.total_evaluations || 0) + (sentimentScore ? 1 : 0);
+          const avgSentimentScore = newTotalEvaluations > 0 ? Math.round(newSentimentSum / newTotalEvaluations * 10) / 10 : 0;
+
+
           const brand = await Brand.findOneAndUpdate(
             { brand_name: data.brand_name, workspaceId },
-            [
-              {
-                $set: {
-                  brand_name: data.brand_name,
-                  workspaceId: workspaceId,
-                  // Increment mentions visibility
-                  mentions: { $add: [{ $ifNull: ["$mentions", 0] }, data.mention_count || 1] },
-                  // Accumulate sentiment sum and evaluation count for averaging
-                  sentiment_sum: {
-                    $add: [
-                      { $ifNull: ["$sentiment_sum", 0] },
-                      { $toDouble: { $ifNull: [data.sentiment_score, 0] } }
-                    ]
-                  },
-                  total_evaluations: {
-                    $add: [
-                      { $ifNull: ["$total_evaluations", 0] },
-                      data.sentiment_score ? 1 : 0
-                    ]
-                  },
-                  // standard snapshot fields
-                  prominence_score: data.prominence_score,
-                  context: data.mention_context || data.context,
-                  found: data.found !== undefined ? data.found : true,
-                  mention_context: data.mention_context,
-                  sentiment: data.sentiment,
-                  sentiment_text: data.sentiment_text,
-                  rank_position: data.rank_position,
-                  funnel_stage: data.funnel_stage,
-                  attribute_mapping: data.attribute_mapping || [],
-                  recommendation_strength: data.recommendation_strength,
-                  associated_domain: data.associated_domain || [],
-                  alignment_analysis: alignmentNote,
-                }
-              },
-              {
-                $set: {
-                  // Calculate the overall average sentiment score across all runs
-                  sentiment_score: {
-                    $cond: [
-                      { $gt: ["$total_evaluations", 0] },
-                      { $round: [{ $divide: ["$sentiment_sum", "$total_evaluations"] }, 1] },
-                      0
-                    ]
-                  }
-                }
+            {
+              $set: {
+                brand_name: data.brand_name,
+                workspaceId: workspaceId,
+                mentions: newMentions,
+                sentiment_sum: newSentimentSum,
+                total_evaluations: newTotalEvaluations,
+                sentiment_score: avgSentimentScore,
+                prominence_score: data.prominence_score,
+                context: data.mention_context || data.context,
+                found: data.found !== undefined ? data.found : true,
+                mention_context: data.mention_context,
+                sentiment: data.sentiment,
+                sentiment_text: data.sentiment_text,
+                rank_position: data.rank_position,
+                funnel_stage: data.funnel_stage,
+                attribute_mapping: data.attribute_mapping || [],
+                recommendation_strength: data.recommendation_strength,
+                associated_domain: data.associated_domain || [],
+                alignment_analysis: alignmentNote,
               }
-            ],
+            },
             { upsert: true, new: true }
           );
 

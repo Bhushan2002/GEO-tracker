@@ -140,6 +140,21 @@ export async function GET(request: NextRequest) {
         }
       } catch (audienceError: any) {
         console.error("Failed to setup AI Traffic audience:", audienceError.message);
+        
+        // Check for permission errors
+        if (audienceError.message?.includes('permission') || 
+            audienceError.message?.includes('does not have sufficient permissions') ||
+            audienceError.code === 403) {
+          return NextResponse.json(
+            { 
+              error: "Insufficient permissions to create audience. Please ensure your Google account has Edit permissions for this GA4 property.",
+              needsPermissions: true,
+              details: "Required: Analytics Editor or Administrator role"
+            },
+            { status: 403 }
+          );
+        }
+        
         return NextResponse.json(
           { error: "Could not create AI Traffic audience. Error: " + audienceError.message },
           { status: 400 }

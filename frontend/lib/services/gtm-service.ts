@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library';
+
 
 export const getGtmClient = (accessToken: string, refreshToken: string) => {
     const auth = new google.auth.OAuth2(
@@ -66,7 +66,7 @@ export async function setupGtmTracking(
                 parameter: [{
                     type: "template",
                     key: "javascript",
-                    value: "function() { try { return performance.getEntries()[0].name.includes(\"#:~:text=\"); } catch (e) { return false; } }"
+                    value: "function() { try { return window.location.href.includes(\"#:~:text=\"); } catch (e) { return false; } }"
                 }]
             }
         });
@@ -152,8 +152,84 @@ export async function setupGtmTracking(
             }
         });
     }
-    // 5. Publish (Optional: Remove this if you want to Review only)
-    // await tagmanager.accounts.containers.versions.publish({ parent });
+    // 5. Create a version from the workspace (OPTIONAL - requires tagmanager.publish scope)
+    console.log("Creating version from workspace...");
+    try {
+        const versionResponse = await tagmanager.accounts.containers.workspaces.create_version({
+            path: parent,
+            requestBody: {
+                name: "AI Overview Tracking Setup",
+                notes: "Automated setup for AI Overview click tracking"
+            }
+        });
 
-    return { success: true, workspaceId: workspaceId, status: "Configured" };
+        const versionPath = versionResponse.data.containerVersion?.path;
+
+        if (versionPath) {
+            console.log("Version created successfully!", versionPath);
+
+            // 6. Publish the version
+            try {
+                await tagmanager.accounts.containers.versions.publish({
+                    path: versionPath
+                });
+                console.log("✅ Version published successfully!");
+                return {
+                    success: true,
+                    workspaceId: workspaceId,
+                    status: "Configured and Published",
+                    message: "🎉 GTM tracking is now live! The ai_overview_click event will fire when users land from AI Overviews."
+                };
+            } catch (publishError: any) {
+                console.error("Failed to publish version:", publishError.message);
+                return {
+                    success: true,
+                    workspaceId: workspaceId,
+                    status: "Configured (manual publish required)",
+                    message: "Tags configured successfully! Please publish the version manually in GTM to make it live.",
+                    warning: "Version created but not published. Go to GTM → Workspace → Submit to publish."
+                };
+            }
+        } else {
+            console.warn("Version created but no path returned. Check GTM UI.");
+            return {
+                success: true,
+                workspaceId: workspaceId,
+                status: "Configured (check GTM UI)",
+                message: "Tags configured in workspace. Please check GTM UI to create and publish a version.",
+                warning: "Version may have been created. Please check GTM UI."
+            };
+        }
+    } catch (versionError: any) {
+        console.error("Failed to create version:", versionError.message);
+        console.error("Error code:", versionError.code);
+
+        // If it's a scope error (403), provide helpful message
+        if (versionError.code === 403) {
+            console.log("❌ SCOPE ERROR: The OAuth token doesn't have 'tagmanager.publish' permission");
+            console.log("📋 SOLUTION: Disconnect and reconnect your Google Analytics account");
+            console.log("   1. Go to Analytics → Settings (gear icon)");
+            console.log("   2. Delete your GA account");
+            console.log("   3. Click 'Connect GA Account' again");
+            console.log("   4. On Google's consent screen, accept ALL permissions including 'Publish Tag Manager containers'");
+            console.log("   5. Try GTM setup again");
+
+            return {
+                success: true,
+                workspaceId: workspaceId,
+                status: "Configured (reconnect required)",
+                message: "✅ Tags, triggers, and variables configured successfully in GTM workspace!\n\n⚠️ To enable auto-publishing: Disconnect and reconnect your GA account to grant 'Publish Tag Manager' permission.\n\nOr publish manually: Go to GTM → Workspace → Submit → Publish",
+                warning: "Your current OAuth token doesn't have the 'tagmanager.publish' scope. Please reconnect your Google account."
+            };
+        }
+
+        // Other errors
+        return {
+            success: true,
+            workspaceId: workspaceId,
+            status: "Configured (not published)",
+            message: "Tags configured in workspace. Please create and publish a version manually in GTM.",
+            warning: `Version creation failed: ${versionError.message}`
+        };
+    }
 }

@@ -34,7 +34,8 @@ export async function GET(
   }
 }
 
-
+// PATCH: Update GA account property
+// This endpoint allows switching the GA property associated with an account
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ accountId: string }> }) {
   try {
     const workspaceId = await getWorkspaceId(req);
@@ -42,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ac
 
     const body = await req.json();
 
-    const { propertyId, propertyName } = body;
+    const { propertyId, propertyName, forceSwitch } = body;
     if (!propertyId || !propertyName) {
       return NextResponse.json(
         { error: "Property ID and Property Name are required" },
@@ -51,11 +52,53 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ac
     }
     await connectDatabase();
     const { accountId } = await params;
+
+    // IMPORTANT: Check if another account already uses this propertyId in this workspace
+    // The DB has a unique compound index on { propertyId: 1, workspaceId: 1 }
+    // We must exclude the current account (_id: $ne) to allow updating the same account
+    const existingAccount = await GAAccount.findOne({
+      workspaceId,
+      propertyId,
+      _id: { $ne: accountId } // Exclude current account from duplicate check
+    });
+
+    if (existingAccount) {
+      // If forceSwitch is true, clear the property from the old account first
+      if (forceSwitch) {
+        console.log(`Force switching property ${propertyId} from ${existingAccount.accountName} to new account`);
+        
+        // Clear the property from the old account
+        await GAAccount.findByIdAndUpdate(existingAccount._id, {
+          $unset: { 
+            propertyId: 1, 
+            propertyName: 1,
+            aiAudienceId: 1,
+            aiAudienceName: 1
+          }
+        });
+        
+        console.log(`Property cleared from ${existingAccount.accountName}`);
+      } else {
+        // Return conflict error with suggestion to use forceSwitch
+        return NextResponse.json(
+          { 
+            error: "Property already in use", 
+            details: `This property is already connected to account: ${existingAccount.accountName}. Would you like to switch it to this account?`,
+            conflictingAccountName: existingAccount.accountName,
+            conflictingAccountId: existingAccount._id,
+            canForceSwitch: true
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     const updatedAccount = await GAAccount.findOneAndUpdate(
       { _id: accountId, workspaceId },
       {
         propertyId,
         propertyName,
+        // Clear audience data when switching properties as audiences are property-specific
         aiAudienceId: null,
         aiAudienceName: null,
 

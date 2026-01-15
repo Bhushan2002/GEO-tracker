@@ -318,9 +318,6 @@ export default function BrandPage() {
                   <ShieldCheck className="w-5 h-5 text-slate-400" />
                   <h2 className="text-lg font-bold text-slate-900">
                     Discovered Brands{" "}
-                    <span className="text-xs font-medium text-slate-400 ml-2 font-normal">
-                      • Click card for full details
-                    </span>
                   </h2>
                 </div>
                 <div className="flex items-center gap-3">

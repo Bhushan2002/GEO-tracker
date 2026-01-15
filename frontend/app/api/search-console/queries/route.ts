@@ -43,14 +43,15 @@ export async function GET(request: NextRequest) {
     const account = await SearchConsoleAccount.findOne({ workspaceId, isActive: true });
     if (!account) {
       return NextResponse.json({
-        error: "Search Console not connected. Please link a property first."
+        error: "Search Console not connected. Please connect your account first."
       }, { status: 404 });
     }
 
-
     if (!account.siteUrl) {
+      console.log("Search Console account exists but no property selected");
       return NextResponse.json({
-        error: "Search Console not configured properly."
+        error: "Search Console property not selected. Please select a property from the settings.",
+        needsPropertySelection: true
       }, { status: 400 });
     }
 

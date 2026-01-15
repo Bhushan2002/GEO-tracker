@@ -12,7 +12,12 @@ export async function POST(req: NextRequest) {
 
         const gaAccount = await GAAccount.findById(dbAccountId);
         if (!gaAccount) return NextResponse.json({ error: "Account not found" }, { status: 404 });
-        const oauth2Client = new google.auth.OAuth2();
+
+        // Initialize OAuth2 client with credentials
+        const oauth2Client = new google.auth.OAuth2(
+            process.env.NEXT_PUBLIC_GA_CLIENT_ID,
+            process.env.GA_CLIENT_SECRET
+        );
         oauth2Client.setCredentials({
             access_token: gaAccount.accessToken,
             refresh_token: gaAccount.refreshToken,
@@ -51,6 +56,12 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(result);
     } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error("GTM Setup Error:", error.message);
+        console.error("Full error:", error);
+        console.error("Error response:", error.response?.data);
+        return NextResponse.json({
+            error: error.message || "GTM setup failed",
+            details: error.response?.data?.error || error.toString()
+        }, { status: 500 });
     }
 }

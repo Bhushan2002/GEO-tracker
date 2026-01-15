@@ -34,6 +34,7 @@ export async function GET(request: Request) {
     // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken(code);
     console.log("Tokens received successfully");
+    console.log("Token scopes granted:", tokens.scope); // Log what scopes were actually granted
     oauth2Client.setCredentials(tokens);
 
     // Get user's GA4 properties using Admin API

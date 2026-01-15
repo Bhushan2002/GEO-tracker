@@ -153,6 +153,8 @@ export default function GoogleAnalyticsPage() {
   const [loadingGscProperties, setLoadingGscProperties] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
+  const [installationGtmId, setInstallationGtmId] = useState("");
 
   // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
   const loadGAAccounts = useCallback(async () => {
@@ -343,9 +345,10 @@ export default function GoogleAnalyticsPage() {
 
           return result.value;
         } else {
-          // Check if the error is about missing AI audience
+          // Check if the error is about missing AI audience or permissions
           const errorMsg = result.reason?.response?.data?.error || result.reason?.message || '';
           const errorStatus = result.reason?.response?.status;
+          const needsPermissions = result.reason?.response?.data?.needsPermissions;
 
           console.error(` ${endpoints[index]} failed:`, {
             status: errorStatus,
@@ -353,8 +356,15 @@ export default function GoogleAnalyticsPage() {
             fullError: result.reason
           });
 
-
-          if (errorMsg.includes('AI Traffic audience') ||
+          // Handle permission errors
+          if (errorStatus === 403 || needsPermissions || errorMsg.includes('permission')) {
+            console.warn(`Permission error for ${endpoints[index]}`);
+            if (endpoints[index] === 'first-touch') {
+              toast.error("GA4 Permission Required: Please reconnect with Editor or Admin role to create audiences");
+            }
+          }
+          // Handle audience-related errors
+          else if (errorMsg.includes('AI Traffic audience') ||
             errorMsg.includes('audience') ||
             errorMsg.includes('Could not create') ||
             errorMsg.toLowerCase().includes('audience')) {
@@ -515,10 +525,16 @@ export default function GoogleAnalyticsPage() {
       setScTopQueries(queriesResponse.data.queries || []);
     } catch (error: any) {
       console.error("Search Console data error:", error);
-      if (error.response?.data?.error?.includes("not configured")) {
+      
+      const errorMsg = error.response?.data?.error || '';
+      const needsPropertySelection = error.response?.data?.needsPropertySelection;
+      
+      // If property not selected, try to load available properties
+      if (needsPropertySelection || errorMsg.includes("not selected") || errorMsg.includes("not configured")) {
+        console.log("Property not selected, loading available sites...");
         loadSearchConsoleSites(accountId);
       }
-      // Silently handle error - no toast message
+      // Silently handle other errors - no toast message for non-critical failures
     } finally {
       setScLoading(false);
     }
@@ -532,11 +548,15 @@ export default function GoogleAnalyticsPage() {
       "https://www.googleapis.com/auth/analytics.edit",
       "https://www.googleapis.com/auth/webmasters.readonly",
       "https://www.googleapis.com/auth/tagmanager.edit.containers",
+      "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
+      "https://www.googleapis.com/auth/tagmanager.publish",
       "https://www.googleapis.com/auth/tagmanager.readonly"
     ].join(" ");
     const state = activeWorkspace?._id || "";
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}`;
+    // Add timestamp to force fresh consent and prevent caching
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${client_id}&redirect_uri=${redirect_uri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent&state=${state}&login_hint=${Date.now()}`;
 
+    console.log("Requesting OAuth with scopes:", scope);
     toast.info("Redirecting to Google sign-in...");
     window.location.href = authUrl;
   };
@@ -564,23 +584,42 @@ export default function GoogleAnalyticsPage() {
       setGtmLoading(true);
       toast.info("Configuring GTM...");
 
-      await api.post('/api/gtm/setup', {
+      const response = await api.post('/api/gtm/setup', {
         dbAccountId,
         gtmAccountId: container.gtmAccountId,
-        // gtmContainerId: container.publicId,  
         gtmContainerId: container.containerId,
-        measurementId // This will be your GA4 Property ID/Measurement ID
+        measurementId
       });
 
-      toast.success("Success! GTM Tags & Triggers created.");
+      const result = response.data;
+
+      // Show appropriate message based on status
+      if (result.status === "Configured and Published") {
+        toast.success(result.message || "Success! GTM tracking is now live!");
+
+        // Show installation instructions
+        setInstallationGtmId(container.publicId); // Use the public GTM ID (GTM-XXXXX)
+        setShowInstallInstructions(true);
+      } else {
+        // Partial success - configured but not published
+        toast.success(result.message || "GTM configured successfully!");
+        if (result.warning) {
+          setTimeout(() => {
+            toast.warning(result.warning, { duration: 8000 });
+          }, 500);
+        }
+      }
+
       setIsGtmDialogOpen(false);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Setup failed. Check console for details.");
+      const errorMsg = e.response?.data?.error || "Setup failed. Check console for details.";
+      toast.error(errorMsg);
     } finally {
       setGtmLoading(false);
     }
   };
+
 
   const handleDeleteAccount = async (accountId: string) => {
     if (!confirm("Are you sure you want to remove this account?")) return;
@@ -654,7 +693,7 @@ export default function GoogleAnalyticsPage() {
     }
   }, [gaAccounts, propertiesMap, selectedAccountId, loadAccountData]);
 
-  // NEW: Auto-fetch properties if selected account doesn't have a property set
+  // Auto-fetch properties if selected account doesn't have a property set
   useEffect(() => {
     if (selectedAccountId && gaAccounts.length > 0) {
       const account = gaAccounts.find((a) => a._id === selectedAccountId);
@@ -664,16 +703,24 @@ export default function GoogleAnalyticsPage() {
       }
     }
   }, [selectedAccountId, gaAccounts, fetchPropertiesForAccount]);
-  const handlePropertyChange = async (accountId: string, propertyId: string) => {
+  
+  // Handle property change for GA account
+  // When a property is switched, we need to:
+  // 1. Update the account in the database
+  // 2. Clear audience data (audiences are property-specific)
+  // 3. Update local state
+  // 4. Reload analytics data for the new property
+  const handlePropertyChange = async (accountId: string, propertyId: string, forceSwitch = false) => {
     const properties = propertiesMap[accountId];
     const selectedProp = properties?.find(p => p.id === propertyId);
 
     if (!selectedProp) return;
 
     try {
-      await api.patch(`/api/ga-accounts/${accountId}`, {
+      const response = await api.patch(`/api/ga-accounts/${accountId}`, {
         propertyId: selectedProp.id,
-        propertyName: selectedProp.name
+        propertyName: selectedProp.name,
+        forceSwitch
       });
 
       toast.success("Property updated successfully");
@@ -681,19 +728,68 @@ export default function GoogleAnalyticsPage() {
       // Update local state to reflect change immediately
       setGaAccounts(prev => prev.map(acc => {
         if (acc._id === accountId) {
-          return { ...acc, propertyId: selectedProp.id, propertyName: selectedProp.name };
+          return { 
+            ...acc, 
+            propertyId: selectedProp.id, 
+            propertyName: selectedProp.name,
+            // Clear audience data when switching properties
+            aiAudienceId: null,
+            aiAudienceName: null
+          };
+        }
+        // If this property was used by another account, clear it
+        if (acc.propertyId === selectedProp.id && acc._id !== accountId && forceSwitch) {
+          return {
+            ...acc,
+            propertyId: undefined,
+            propertyName: undefined,
+            aiAudienceId: null,
+            aiAudienceName: null
+          };
         }
         return acc;
       }));
 
-      // If this is the currently selected account, reload data
+      // If this is the currently selected account, reload data immediately
       if (selectedAccountId === accountId) {
-        loadAccountData(accountId);
+        // Clear existing data first to show loading state
+        setChartData([]);
+        setAiModelsData([]);
+        setAiLandingPageData([]);
+        
+        // Reload fresh data for the new property
+        await loadAccountData(accountId);
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update property", error);
-      toast.error("Failed to update property");
+      console.log("Error response:", error.response);
+      console.log("Error status:", error.response?.status);
+      console.log("Error data:", error.response?.data);
+      
+      // Check if this is a conflict error that can be resolved by force switching
+      if (error.response?.status === 409 && error.response?.data?.canForceSwitch) {
+        const conflictingAccount = error.response.data.conflictingAccountName;
+        console.log("Showing confirmation dialog for:", conflictingAccount);
+        
+        const confirmed = confirm(
+          `This property is currently connected to "${conflictingAccount}".\n\n` +
+          `Would you like to switch it to this account? This will disconnect it from "${conflictingAccount}".`
+        );
+        
+        console.log("User confirmed:", confirmed);
+        
+        if (confirmed) {
+          // Retry with forceSwitch flag
+          console.log("Retrying with forceSwitch=true");
+          return handlePropertyChange(accountId, propertyId, true);
+        } else {
+          toast.info("Property change cancelled");
+        }
+      } else {
+        const errorMessage = error.response?.data?.details || error.response?.data?.error || "Failed to update property";
+        toast.error(errorMessage);
+      }
     }
   };
 
@@ -722,18 +818,29 @@ export default function GoogleAnalyticsPage() {
     try {
       const res = await api.get(`/api/search-console/sites?accountId=${accountId}`);
       const sites = res.data.sites || [];
+      const message = res.data.message;
+      
       setGscProperties(sites);
+
+      // Show helpful message if no sites found
+      if (sites.length === 0 && message) {
+        console.log("No GSC properties available:", message);
+        toast.info(message);
+      }
 
       // Auto-select if only one property
       if (sites.length === 1) {
         const singleSite = sites[0].siteUrl;
-        // Don't auto-link if it's already linked - check logic handled in linkGscProperty or here? 
-        // We know this is called when no site is selected, so safe to link.
         await linkGscProperty(accountId, singleSite, false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch GSC properties:", error);
-      // toast.error("Failed to load Search Console properties");
+      const needsReconnect = error.response?.data?.needsReconnect;
+      const errorMsg = error.response?.data?.error;
+      
+      if (needsReconnect || error.response?.status === 403) {
+        toast.error(errorMsg || "Permission error. Please reconnect Search Console.");
+      }
     } finally {
       setLoadingGscProperties(false);
     }
@@ -880,12 +987,14 @@ export default function GoogleAnalyticsPage() {
                       </h3>
                     </div>
 
-                    <Button
-                      onClick={handleConnectAccount}
-                      className="w-full bg-slate-900 hover:bg-black text-white h-11 rounded-xl font-bold text-[13px] shadow-lg shadow-slate-200"
-                    >
-                      <Plus className="mr-2 h-4 w-4" /> Connect GA Account
-                    </Button>
+                    {gaAccounts.length === 0 && (
+                      <Button
+                        onClick={handleConnectAccount}
+                        className="w-full bg-slate-900 hover:bg-black text-white h-11 rounded-xl font-bold text-[13px] shadow-lg shadow-slate-200"
+                      >
+                        <Plus className="mr-2 h-4 w-4" /> Connect GA Account
+                      </Button>
+                    )}
                     {gaAccounts.length === 0 ? (
                       <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
                         <p className="font-medium text-[13px]">No accounts connected</p>
@@ -954,6 +1063,129 @@ export default function GoogleAnalyticsPage() {
                                   >
                                     {gtmLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Install Tags"}
                                   </Button>
+                                </div>
+                              </DialogContent>
+                            </Dialog>
+
+                            {/* Installation Instructions Dialog */}
+                            <Dialog open={showInstallInstructions} onOpenChange={setShowInstallInstructions}>
+                              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                                <DialogHeader>
+                                  <DialogTitle className="text-2xl">GTM Setup Complete!</DialogTitle>
+                                  <p className="text-sm text-slate-600 mt-2">
+                                    Now add this code to your website to start tracking AI Overview clicks
+                                  </p>
+                                </DialogHeader>
+
+                                <div className="space-y-6 pt-4">
+                                  {/* Step 1 */}
+                                  <div className="space-y-3">
+                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">1</span>
+                                      Add code to your website's HEAD
+                                    </h3>
+                                    <p className="text-sm text-slate-600">
+                                      Paste this code as high in the <code className="bg-slate-100 px-1 py-0.5 rounded">&lt;head&gt;</code> section of your page as possible
+                                    </p>
+
+                                    <div className="relative">
+                                      <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-xs">
+                                        {`<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${installationGtmId}');</script>
+<!-- End Google Tag Manager -->`}
+                                      </pre>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="absolute top-2 right-2"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(`<!-- Google Tag Manager -->
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${installationGtmId}');</script>
+<!-- End Google Tag Manager -->`);
+                                          toast.success("HEAD code copied to clipboard!");
+                                        }}
+                                      >
+                                        Copy Code
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Step 2 - Body Code */}
+                                  <div className="space-y-3">
+                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">2</span>
+                                      Add code to your website's BODY
+                                    </h3>
+                                    <p className="text-sm text-slate-600">
+                                      Paste this code immediately after the opening <code className="bg-slate-100 px-1 py-0.5 rounded">&lt;body&gt;</code> tag
+                                    </p>
+
+                                    <div className="relative">
+                                      <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-xs">
+                                        {`<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${installationGtmId}"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->`}
+                                      </pre>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="absolute top-2 right-2"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(`<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${installationGtmId}"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->`);
+                                          toast.success("BODY code copied to clipboard!");
+                                        }}
+                                      >
+                                        Copy Code
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Step 3 */}
+                                  <div className="space-y-3">
+                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">3</span>
+                                      Deploy to production
+                                    </h3>
+                                    <p className="text-sm text-slate-600">
+                                      After adding both code snippets, deploy your website to production. The tracking will start working immediately.
+                                    </p>
+                                  </div>
+
+                                  {/* Step 4 */}
+                                  <div className="space-y-3">
+                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">4</span>
+                                      Verify it's working
+                                    </h3>
+                                    <p className="text-sm text-slate-600">
+                                      Visit your website with <code className="bg-slate-100 px-1 py-0.5 rounded">#:~:text=test</code> at the end of the URL to test the tracking.
+                                    </p>
+                                    <p className="text-sm text-slate-600">
+                                      Example: <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">https://yourwebsite.com/#:~:text=test</code>
+                                    </p>
+                                  </div>
+
+                                  {/* Info Box */}
+                                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <h4 className="font-semibold text-blue-900 mb-2">📊 What happens next?</h4>
+                                    <ul className="text-sm text-blue-800 space-y-1">
+                                      <li>• AI Overview clicks will be tracked automatically</li>
+                                      <li>• Data will appear in your analytics within 24-48 hours</li>
+                                      <li>• Check GA4 Realtime reports to see events immediately</li>
+                                    </ul>
+                                  </div>
                                 </div>
                               </DialogContent>
                             </Dialog>

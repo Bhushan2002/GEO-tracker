@@ -1,15 +1,11 @@
 import axios from "axios";
 
 const Models = [
-  // "openai/gpt-5.2",
-  // "google/gemini-3-flash-preview",
-  // "anthropic/claude-sonnet-4.5",
-  // "x-ai/grok-4.1-fast",
-  "openai/gpt-oss-20b:free",
-  // "deepseek/deepseek-r1-0528:free",
-  "google/gemini-2.0-flash-exp:free",
-  // "moonshotai/kimi-k2:free",
-  // "nvidia/nemotron-3-nano-30b-a3b:free", 
+  // 'google/gemini-flash-1.5',
+  'openai/gpt-4o-mini',
+  // "anthropic/claude-3-haiku",
+  // "meta-llama/llama-3.3-70b-instruct:free",
+  // "openai/gpt-oss-120b:free",
 ];
 
 /**
@@ -115,7 +111,7 @@ export const extractBrandFromText = async (
   mainBrandDescription: string,
   retries = 3
 ) => {
-  const extractionModel = "openai/gpt-oss-120b:free";
+  const extractionModel = "openai/gpt-4o-mini";
 
   const extractionPrompt = `
 You are an advanced AEO (Answer Engine Optimization) and GEO (Generative Engine Optimization) Intelligence Audit Agent with more than 10 years of experience having worked at top SEO/GEO/AEO tools company. Your purpose is to analyze AI-generated chat transcripts to extract competitive intelligence, brand visibility metrics, brand sentiment and technical citation audits with high precision.
@@ -389,9 +385,11 @@ Required Output JSON Schema Format:
 
   const jsonSchema = {
     type: "object",
+    additionalProperties: false,
     properties: {
       audit_summary: {
         type: "object",
+        additionalProperties: false,
         properties: {
           total_brands_detected: { type: "integer" },
           implied_user_persona: { type: "string" },
@@ -401,6 +399,7 @@ Required Output JSON Schema Format:
             type: "array",
             items: {
               type: "object",
+              additionalProperties: false,
               properties: {
                 asset_type: { type: "string" },
                 competitor_example: { type: "string" },
@@ -433,6 +432,7 @@ Required Output JSON Schema Format:
             type: "array",
             items: {
               type: "object",
+              additionalProperties: false,
               properties: {
                 claimed_statement: { type: "string" },
                 factual_accuracy: { type: "string" },
@@ -458,6 +458,7 @@ Required Output JSON Schema Format:
         type: "array",
         items: {
           type: "object",
+          additionalProperties: false,
           properties: {
             brand_name: { type: "string" },
             found: { type: "boolean" },
@@ -475,6 +476,7 @@ Required Output JSON Schema Format:
               type: "array",
               items: {
                 type: "object",
+                additionalProperties: false,
                 properties: {
                   domain_citation: { type: "string" },
                   domain_citation_source: { type: "boolean" },
@@ -483,6 +485,7 @@ Required Output JSON Schema Format:
                     type: "array",
                     items: {
                       type: "object",
+                      additionalProperties: false,
                       properties: {
                         url_citation: { type: "string" },
                         url_anchor_text: { type: "string" },
@@ -530,6 +533,7 @@ Required Output JSON Schema Format:
         type: "array",
         items: {
           type: "object",
+          additionalProperties: false,
           properties: {
             brand_name: { type: "string" },
             found: { type: "boolean" },
