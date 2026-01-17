@@ -102,7 +102,6 @@ import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
  */
 export default function GoogleAnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
-  const { analyticsCache } = useDashboardData();
   const [gaAccounts, setGaAccounts] = useState<any[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -129,7 +128,7 @@ export default function GoogleAnalyticsPage() {
   const [aiGrowthData, setAiGrowthData] = useState<any[]>([]);
   const [aiDeviceData, setAiDeviceData] = useState<any[]>([]);
   const [demographicsData, setDemographicsData] = useState<any[]>([]);
-  const [missingAudience, setMissingAudience] = useState(false);
+  // const [missingAudience, setMissingAudience] = useState(false);
   const [searchConsoleData, setSearchConsoleData] = useState<any>(null);
   const [scLoading, setScLoading] = useState(false);
   const [scSites, setScSites] = useState<any[]>([]);
@@ -140,7 +139,6 @@ export default function GoogleAnalyticsPage() {
   const [isGtmDialogOpen, setIsGtmDialogOpen] = useState(false);
   const [gtmContainers, setGtmContainers] = useState<any[]>([]);
   const [selectedGtmContainer, setSelectedGtmContainer] = useState<string>("");
-  const [gtmLoading, setGtmLoading] = useState(false);
   const [activeSetupAccount, setActiveSetupAccount] = useState<any>(null);
   const [aiOverviewStats, setAiOverviewStats] = useState<{ pages: any[], devices: any[] }>({ pages: [], devices: [] });
   const [activeView, setActiveView] = useState<"ai-analytics" | "search-console">("ai-analytics");
@@ -284,7 +282,7 @@ export default function GoogleAnalyticsPage() {
     }
 
     setLoading(true);
-    setMissingAudience(false); // Reset the warning
+    // setMissingAudience(false); // Reset the warning
 
     const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '30daysAgo';
     const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : 'today';
@@ -359,7 +357,7 @@ export default function GoogleAnalyticsPage() {
             errorMsg.includes('audience') ||
             errorMsg.includes('Could not create') ||
             errorMsg.toLowerCase().includes('audience')) {
-            setMissingAudience(true);
+            // setMissingAudience(true);
           }
 
           console.warn(`Failed to load ${endpoints[index]}:`, errorMsg);
@@ -496,8 +494,6 @@ export default function GoogleAnalyticsPage() {
   };
 
   const loadSearchConsoleData = useCallback(async (accountId: string) => {
-    if (scLoading) return; // Prevent duplicate fetches
-    
     setScLoading(true);
 
     const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '30daysAgo';
@@ -533,10 +529,10 @@ export default function GoogleAnalyticsPage() {
 
   // Load Search Console data when GSC account, limit, or date changes
   useEffect(() => {
-    if (gscAccount?._id && gscAccount?.siteUrl && !isQuotaExceeded && !scLoading) {
+    if (gscAccount?._id && gscAccount?.siteUrl && !isQuotaExceeded) {
       loadSearchConsoleData(gscAccount._id);
     }
-  }, [scLimit, gscAccount, isQuotaExceeded, dateRange, loadSearchConsoleData, scLoading]);
+  }, [scLimit, gscAccount, isQuotaExceeded, dateRange, loadSearchConsoleData]);
 
   const handleConnectAccount = () => {
     const client_id = process.env.NEXT_PUBLIC_GA_CLIENT_ID;
@@ -558,18 +554,18 @@ export default function GoogleAnalyticsPage() {
     toast.info("Redirecting to Google sign-in...");
     window.location.href = authUrl;
   };
-  const fetchGtmContainers = async (accountId: string) => {
-    setGtmLoading(true);
-    try {
-      const res = await api.get(`/api/gtm/containers?accountId=${accountId}`);
-      setGtmContainers(res.data);
-      setIsGtmDialogOpen(true);
-    } catch (error) {
-      toast.error("Failed to load GTM containers. Please reconnect account with permissions.");
-    } finally {
-      setGtmLoading(false);
-    }
-  };
+  // const fetchGtmContainers = async (accountId: string) => {
+  //   setGtmLoading(true);
+  //   try {
+  //     const res = await api.get(`/api/gtm/containers?accountId=${accountId}`);
+  //     setGtmContainers(res.data);
+  //     setIsGtmDialogOpen(true);
+  //   } catch (error) {
+  //     toast.error("Failed to load GTM containers. Please reconnect account with permissions.");
+  //   } finally {
+  //     setGtmLoading(false);
+  //   }
+  // };
 
   const handleGtmSetup = async (dbAccountId: string, measurementId: string) => {
     if (!selectedGtmContainer) return;
@@ -579,14 +575,11 @@ export default function GoogleAnalyticsPage() {
     if (!container) return;
 
     try {
-      setGtmLoading(true);
-      toast.info("Configuring GTM...");
+      // setGtmLoading(true);
+      // toast.info("Configuring GTM...");
 
       const response = await api.post('/api/gtm/setup', {
         dbAccountId,
-        gtmAccountId: container.gtmAccountId,
-        gtmContainerId: container.containerId,
-        measurementId
       });
 
       const result = response.data;
@@ -613,9 +606,7 @@ export default function GoogleAnalyticsPage() {
       console.error(e);
       const errorMsg = e.response?.data?.error || "Setup failed. Check console for details.";
       toast.error(errorMsg);
-    } finally {
-      setGtmLoading(false);
-    }
+    } 
   };
 
 
