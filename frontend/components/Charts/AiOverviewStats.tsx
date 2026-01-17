@@ -88,7 +88,6 @@ export function AiOverviewStats({ pages, devices, loading }: AiOverviewStatsProp
                     ) : (
                         <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                             <p>No AI Overview clicks recorded yet.</p>
-                            <p className="text-xs mt-1">Wait for GTM to collect data.</p>
                             <p className="text-xs mt-1">If your site appears in AI Overviews, you'll start seeing data within 24-48 hours.</p>
                         </div>
                     )}

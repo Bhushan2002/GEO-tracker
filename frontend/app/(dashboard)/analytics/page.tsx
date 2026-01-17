@@ -185,7 +185,7 @@ export default function GoogleAnalyticsPage() {
     } finally {
       setInitialLoading(false);
     }
-  }, [activeWorkspace?._id, analyticsCache]);
+  }, [activeWorkspace?._id]);
 
   // Load Search Console Account (separate from GA)
   const loadGscAccount = useCallback(async () => {
@@ -277,18 +277,9 @@ export default function GoogleAnalyticsPage() {
     }
   }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
 
-  useEffect(() => {
-    if (selectedAccountId && dateRange?.from && dateRange?.to) {
-      loadAccountData(selectedAccountId);
-    }
-  }, [selectedAccountId, dateRange]);
-
-
-
   const loadAccountData = useCallback(async (accountId: string) => {
 
     if (!accountId || isQuotaExceeded) {
-
       return;
     }
 
@@ -423,13 +414,6 @@ export default function GoogleAnalyticsPage() {
       setTopicClusterData(topicRes.data || []);
       setDemographicsData(demoRes.data || []);
 
-
-
-      // OPTIMIZATION: Lazy load Search Console data after initial render (lower priority)
-      setTimeout(() => {
-        loadSearchConsoleData(accountId);
-      }, 100);
-
       setIsQuotaExceeded(false);
     } catch (error: any) {
       const isQuotaError =
@@ -450,7 +434,14 @@ export default function GoogleAnalyticsPage() {
       setLoading(false);
 
     }
-  }, [isQuotaExceeded, dateRange]); // REMOVED limit from dependency
+  }, [isQuotaExceeded, dateRange]); // Search Console loads independently via separate effect
+
+  // Trigger data load when account or date range changes
+  useEffect(() => {
+    if (selectedAccountId && dateRange?.from && dateRange?.to) {
+      loadAccountData(selectedAccountId);
+    }
+  }, [selectedAccountId, dateRange, loadAccountData]);
 
   // NEW: Dedicated function to reload ONLY landing pages when limit changes
   const loadLandingPagesOnly = useCallback(async (accountId: string) => {
@@ -472,12 +463,16 @@ export default function GoogleAnalyticsPage() {
     }
   }, [limit, dateRange]);
 
-  // Effect to trigger ONLY the landing page reload when limit changes
+  // Effect to trigger ONLY the landing page reload when limit changes (debounced)
   useEffect(() => {
-    if (selectedAccountId) {
+    if (!selectedAccountId || initialLoading) return;
+    
+    const timer = setTimeout(() => {
       loadLandingPagesOnly(selectedAccountId);
-    }
-  }, [limit, selectedAccountId]); // Run when limit or account changes (though account change also triggers main load)
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [limit, selectedAccountId, loadLandingPagesOnly, initialLoading]);
 
   const loadSearchConsoleSites = useCallback(async (accountId: string) => {
     try {
@@ -500,13 +495,9 @@ export default function GoogleAnalyticsPage() {
     }
   };
 
-  useEffect(() => {
-    if (gscAccount?._id && gscAccount?.siteUrl && !isQuotaExceeded) {
-      loadSearchConsoleData(gscAccount._id);
-    }
-  }, [scLimit, gscAccount, isQuotaExceeded, dateRange]); // Re-fetch when limit changes or GSC account updates
-
   const loadSearchConsoleData = useCallback(async (accountId: string) => {
+    if (scLoading) return; // Prevent duplicate fetches
+    
     setScLoading(true);
 
     const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '30daysAgo';
@@ -538,7 +529,14 @@ export default function GoogleAnalyticsPage() {
     } finally {
       setScLoading(false);
     }
-  }, [scLimit, dateRange]);
+  }, [scLimit, dateRange, loadSearchConsoleSites]);
+
+  // Load Search Console data when GSC account, limit, or date changes
+  useEffect(() => {
+    if (gscAccount?._id && gscAccount?.siteUrl && !isQuotaExceeded && !scLoading) {
+      loadSearchConsoleData(gscAccount._id);
+    }
+  }, [scLimit, gscAccount, isQuotaExceeded, dateRange, loadSearchConsoleData, scLoading]);
 
   const handleConnectAccount = () => {
     const client_id = process.env.NEXT_PUBLIC_GA_CLIENT_ID;
@@ -1028,123 +1026,60 @@ export default function GoogleAnalyticsPage() {
                               variant="outline"
                               onClick={() => {
                                 setActiveSetupAccount(account);
-                                fetchGtmContainers(account._id);
+                                setShowInstallInstructions(true);
                               }}
-                              disabled={gtmLoading}
                             >
                               <Tag className="w-3 h-3 mr-2" />
-                              Setup GTM
+                              Setup AI Overview Tracking
                             </Button>
-                            <Dialog open={isGtmDialogOpen} onOpenChange={setIsGtmDialogOpen}>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Select GTM Container</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4 pt-4">
-                                  <Select onValueChange={setSelectedGtmContainer}>
-                                    <SelectTrigger><SelectValue placeholder="Choose Container" /></SelectTrigger>
-                                    <SelectContent>
-                                      {gtmContainers.map(c => (
-                                        <SelectItem key={c.publicId} value={c.publicId}>
-                                          {c.name} ({c.publicId})
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <Button
-                                    className="w-full"
-                                    disabled={!selectedGtmContainer || gtmLoading}
-                                    onClick={() => {
-                                      if (activeSetupAccount && selectedGtmContainer) {
-                                        // We use the account ID and Property ID (as a fallback for Measurement ID)
-                                        handleGtmSetup(activeSetupAccount._id, activeSetupAccount.propertyId);
-                                      }
-                                    }}
-                                  >
-                                    {gtmLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Install Tags"}
-                                  </Button>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
 
-                            {/* Installation Instructions Dialog */}
+
+                            {/* AI Overview Tracking Instructions Dialog */}
                             <Dialog open={showInstallInstructions} onOpenChange={setShowInstallInstructions}>
                               <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
                                 <DialogHeader>
-                                  <DialogTitle className="text-2xl">GTM Setup Complete!</DialogTitle>
+                                  <DialogTitle className="text-2xl">AI Overview Tracking Setup</DialogTitle>
                                   <p className="text-sm text-slate-600 mt-2">
-                                    Now add this code to your website to start tracking AI Overview clicks
+                                    Add this simple code to your client's website to track AI Overview clicks
                                   </p>
                                 </DialogHeader>
 
                                 <div className="space-y-6 pt-4">
+
+
                                   {/* Step 1 */}
                                   <div className="space-y-3">
                                     <h3 className="font-bold text-lg flex items-center gap-2">
                                       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">1</span>
-                                      Add code to your website's HEAD
+                                      Find the GA4 tracking code
                                     </h3>
                                     <p className="text-sm text-slate-600">
-                                      Paste this code as high in the <code className="bg-slate-100 px-1 py-0.5 rounded">&lt;head&gt;</code> section of your page as possible
+                                      Locate the existing Google Analytics code in your client's website <code className="bg-slate-100 px-1 py-0.5 rounded">&lt;head&gt;</code> section
                                     </p>
-
-                                    <div className="relative">
-                                      <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-xs">
-                                        {`<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${installationGtmId}');</script>
-<!-- End Google Tag Manager -->`}
-                                      </pre>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="absolute top-2 right-2"
-                                        onClick={() => {
-                                          navigator.clipboard.writeText(`<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${installationGtmId}');</script>
-<!-- End Google Tag Manager -->`);
-                                          toast.success("HEAD code copied to clipboard!");
-                                        }}
-                                      >
-                                        Copy Code
-                                      </Button>
-                                    </div>
                                   </div>
 
-                                  {/* Step 2 - Body Code */}
+                                  {/* Step 2 */}
                                   <div className="space-y-3">
                                     <h3 className="font-bold text-lg flex items-center gap-2">
                                       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">2</span>
-                                      Add code to your website's BODY
+                                      Add one line after gtag('config')
                                     </h3>
                                     <p className="text-sm text-slate-600">
-                                      Paste this code immediately after the opening <code className="bg-slate-100 px-1 py-0.5 rounded">&lt;body&gt;</code> tag
+                                      Copy this code and paste it right after the <code className="bg-slate-100 px-1 py-0.5 rounded">gtag('config', ...)</code> line
                                     </p>
 
                                     <div className="relative">
-                                      <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-xs">
-                                        {`<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${installationGtmId}"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->`}
+                                      <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-sm">
+{`// AI Overview Detection
+if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_path:location.pathname+location.hash});`}
                                       </pre>
                                       <Button
                                         size="sm"
                                         variant="outline"
                                         className="absolute top-2 right-2"
                                         onClick={() => {
-                                          navigator.clipboard.writeText(`<!-- Google Tag Manager (noscript) -->
-<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=${installationGtmId}"
-height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-<!-- End Google Tag Manager (noscript) -->`);
-                                          toast.success("BODY code copied to clipboard!");
+                                          navigator.clipboard.writeText(`if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_path:location.pathname+location.hash});`);
+                                          toast.success("Code copied to clipboard!");
                                         }}
                                       >
                                         Copy Code
@@ -1152,40 +1087,48 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                                     </div>
                                   </div>
 
-                                  {/* Step 3 */}
+                                  {/* Complete Example */}
                                   <div className="space-y-3">
-                                    <h3 className="font-bold text-lg flex items-center gap-2">
-                                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">3</span>
-                                      Deploy to production
+                                    <h3 className="font-bold text-base text-slate-700">
+                                      Complete Example:
                                     </h3>
-                                    <p className="text-sm text-slate-600">
-                                      After adding both code snippets, deploy your website to production. The tracking will start working immediately.
-                                    </p>
+                                    <div className="relative">
+                                      <pre className="bg-slate-50 border border-slate-200 text-slate-800 p-4 rounded-lg overflow-x-auto text-xs">
+{`<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+  
+  // AI Overview Detection - ADD THIS LINE
+  if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_path:location.pathname+location.hash});
+</script>`}
+                                      </pre>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="absolute top-2 right-2"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(`<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+  
+  // AI Overview Detection
+  if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_path:location.pathname+location.hash});
+</script>`);
+                                          toast.success("Full example copied!");
+                                        }}
+                                      >
+                                        Copy Full Example
+                                      </Button>
+                                    </div>
                                   </div>
 
-                                  {/* Step 4 */}
-                                  <div className="space-y-3">
-                                    <h3 className="font-bold text-lg flex items-center gap-2">
-                                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">4</span>
-                                      Verify it's working
-                                    </h3>
-                                    <p className="text-sm text-slate-600">
-                                      Visit your website with <code className="bg-slate-100 px-1 py-0.5 rounded">#:~:text=test</code> at the end of the URL to test the tracking.
-                                    </p>
-                                    <p className="text-sm text-slate-600">
-                                      Example: <code className="bg-slate-100 px-1 py-0.5 rounded text-xs">https://yourwebsite.com/#:~:text=test</code>
-                                    </p>
-                                  </div>
-
-                                  {/* Info Box */}
-                                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                    <h4 className="font-semibold text-blue-900 mb-2">📊 What happens next?</h4>
-                                    <ul className="text-sm text-blue-800 space-y-1">
-                                      <li>• AI Overview clicks will be tracked automatically</li>
-                                      <li>• Data will appear in your analytics within 24-48 hours</li>
-                                      <li>• Check GA4 Realtime reports to see events immediately</li>
-                                    </ul>
-                                  </div>
+                                 
                                 </div>
                               </DialogContent>
                             </Dialog>

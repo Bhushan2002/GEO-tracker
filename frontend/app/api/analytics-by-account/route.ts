@@ -133,21 +133,56 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // fetch ai overview click (Time series)
-    const aiOverviewReport = await analyticsData.properties.runReport({
-      property: `properties/${account.propertyId}`,
-      requestBody: {
-        dateRanges: [{ startDate: startDate, endDate: endDate }],
-        dimensions: [{ name: "date" }], // Now grouping by date
-        metrics: [{ name: "eventCount" }],
-        dimensionFilter: {
-          filter: {
-            fieldName: "eventName",
-            stringFilter: { matchType: "EXACT", value: "ai_overview_click" },
+    // Fetch AI Overview clicks using event-based detection (requires GA4 event rule setup)
+    // Falls back to URL pattern detection if events don't exist
+    let aiOverviewReport;
+    try {
+      aiOverviewReport = await analyticsData.properties.runReport({
+        property: `properties/${account.propertyId}`,
+        requestBody: {
+          dateRanges: [{ startDate: startDate, endDate: endDate }],
+          dimensions: [{ name: "date" }],
+          metrics: [{ name: "eventCount" }],
+          dimensionFilter: {
+            filter: {
+              fieldName: "eventName",
+              stringFilter: { 
+                matchType: "EXACT", 
+                value: "ai_overview_click",
+                caseSensitive: false
+              },
+            },
           },
         },
-      },
-    });
+      });
+      
+      // If no event data, try URL-based detection as fallback
+      if (!aiOverviewReport.data.rows || aiOverviewReport.data.rows.length === 0) {
+        console.log("⚠️ No AI Overview event data, trying URL detection...");
+        aiOverviewReport = await analyticsData.properties.runReport({
+          property: `properties/${account.propertyId}`,
+          requestBody: {
+            dateRanges: [{ startDate: startDate, endDate: endDate }],
+            dimensions: [{ name: "date" }],
+            metrics: [{ name: "sessions" }],
+            dimensionFilter: {
+              filter: {
+                fieldName: "landingPagePlusQueryString",
+                stringFilter: { 
+                  matchType: "CONTAINS", 
+                  value: "#:~:text=",
+                  caseSensitive: false
+                },
+              },
+            },
+          },
+        });
+      }
+    } catch (error) {
+      console.error("AI Overview tracking error:", error);
+      // Set empty data if tracking fails
+      aiOverviewReport = { data: { rows: [] } };
+    }
 
 
 

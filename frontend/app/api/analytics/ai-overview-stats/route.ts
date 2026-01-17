@@ -41,39 +41,90 @@ export async function GET(request: NextRequest) {
 
         const property = `properties/${account.propertyId}`;
         const dateRanges = [{ startDate: startDate, endDate: endDate }];
-        const dimensionFilter = {
-            filter: {
-                fieldName: "eventName",
-                stringFilter: {
-                    matchType: "EXACT",
-                    value: "ai_overview_click",
+        
+        console.log("🔍 Checking AI Overview data for property:", account.propertyId);
+        
+        // Method 1: Try event-based detection (requires client to add tracking code)
+        let pagesRes, devicesRes;
+        let detectionMethod = "event";
+        
+        try {
+            const eventFilter = {
+                filter: {
+                    fieldName: "eventName",
+                    stringFilter: {
+                        matchType: "EXACT",
+                        value: "ai_overview_click",
+                        caseSensitive: false
+                    },
                 },
-            },
-        };
+            };
 
-        // 1. Fetch Top Landing Pages for AI Overviews
-        const pagesRes = await analyticsData.properties.runReport({
-            property,
-            requestBody: {
-                dateRanges,
-                dimensions: [{ name: "landingPagePlusQueryString" }, { name: "pageTitle" }],
-                metrics: [{ name: "eventCount" }],
-                dimensionFilter,
-                orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
-                limit: '10',
-            },
-        });
+            // Try event-based detection first
+            pagesRes = await analyticsData.properties.runReport({
+                property,
+                requestBody: {
+                    dateRanges,
+                    dimensions: [{ name: "pagePath" }, { name: "pageTitle" }],
+                    metrics: [{ name: "eventCount" }],
+                    dimensionFilter: eventFilter,
+                    orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+                    limit: '10',
+                },
+            });
 
-        // 2. Fetch Device Category for AI Overviews
-        const devicesRes = await analyticsData.properties.runReport({
-            property,
-            requestBody: {
-                dateRanges,
-                dimensions: [{ name: "deviceCategory" }],
-                metrics: [{ name: "eventCount" }],
-                dimensionFilter,
-            },
-        });
+            devicesRes = await analyticsData.properties.runReport({
+                property,
+                requestBody: {
+                    dateRanges,
+                    dimensions: [{ name: "deviceCategory" }],
+                    metrics: [{ name: "eventCount" }],
+                    dimensionFilter: eventFilter,
+                },
+            });
+            
+            // If no data found with events, try URL-based detection
+            if (!pagesRes.data.rows || pagesRes.data.rows.length === 0) {
+                console.log("⚠️ No event data found, trying URL-based detection...");
+                detectionMethod = "url";
+                
+                const urlFilter = {
+                    filter: {
+                        fieldName: "landingPagePlusQueryString",
+                        stringFilter: {
+                            matchType: "CONTAINS",
+                            value: "#:~:text=",
+                            caseSensitive: false
+                        },
+                    },
+                };
+                
+                pagesRes = await analyticsData.properties.runReport({
+                    property,
+                    requestBody: {
+                        dateRanges,
+                        dimensions: [{ name: "landingPagePlusQueryString" }, { name: "pageTitle" }],
+                        metrics: [{ name: "sessions" }],
+                        dimensionFilter: urlFilter,
+                        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+                        limit: '10',
+                    },
+                });
+
+                devicesRes = await analyticsData.properties.runReport({
+                    property,
+                    requestBody: {
+                        dateRanges,
+                        dimensions: [{ name: "deviceCategory" }],
+                        metrics: [{ name: "sessions" }],
+                        dimensionFilter: urlFilter,
+                    },
+                });
+            }
+        } catch (error) {
+            console.error("Error in detection:", error);
+            throw error;
+        }
 
         const pages = pagesRes.data.rows?.map((row: any) => ({
             path: row.dimensionValues?.[0]?.value || "(not set)",
@@ -89,14 +140,22 @@ export async function GET(request: NextRequest) {
         // Calculate total clicks for debugging
         const totalClicks = pages.reduce((sum, page) => sum + page.clicks, 0);
 
-        console.log("AI Overview Stats Debug:", {
+        console.log("📊 AI Overview Stats Result:", {
+            detectionMethod,
             totalPages: pages.length,
             totalClicks,
-            hasRows: !!pagesRes.data.rows,
-            rowCount: pagesRes.data.rows?.length || 0
+            hasData: totalClicks > 0,
+            startDate,
+            endDate
         });
 
-        return NextResponse.json({ pages, devices, totalClicks });
+        return NextResponse.json({ 
+            pages, 
+            devices, 
+            totalClicks,
+            detectionMethod,
+            message: totalClicks === 0 ? "No AI Overview traffic detected. Make sure GTM tracking is set up." : undefined
+        });
 
     } catch (error: any) {
         console.error("AI Overview Stats Error:", error);
