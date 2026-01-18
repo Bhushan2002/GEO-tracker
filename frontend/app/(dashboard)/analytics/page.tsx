@@ -91,7 +91,7 @@ import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
 import { DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { AiOverviewStats } from "@/components/Charts/AiOverviewStats";
 import { RangeCalendar } from "@/components/RangeCalendar";
-import { subDays, format } from 'date-fns'
+import { subDays, format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
@@ -121,7 +121,9 @@ export default function GoogleAnalyticsPage() {
 
   // property selection state
   const [propertiesMap, setPropertiesMap] = useState<Record<string, any[]>>({});
-  const [loadingProperties, setLoadingProperties] = useState<Record<string, boolean>>({})
+  const [loadingProperties, setLoadingProperties] = useState<
+    Record<string, boolean>
+  >({});
 
   const [conversionRateData, setConversionRateData] = useState<any[]>([]);
   const [topicClusterData, setTopicClusterData] = useState<any[]>([]);
@@ -140,10 +142,18 @@ export default function GoogleAnalyticsPage() {
   const [gtmContainers, setGtmContainers] = useState<any[]>([]);
   const [selectedGtmContainer, setSelectedGtmContainer] = useState<string>("");
   const [activeSetupAccount, setActiveSetupAccount] = useState<any>(null);
-  const [aiOverviewStats, setAiOverviewStats] = useState<{ pages: any[], devices: any[] }>({ pages: [], devices: [] });
-  const [activeView, setActiveView] = useState<"ai-analytics" | "search-console">("ai-analytics");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: subDays(new Date(), 30), to: new Date() });
-  const [limit, setLimit] = useState<string>('10');
+  const [aiOverviewStats, setAiOverviewStats] = useState<{
+    pages: any[];
+    devices: any[];
+  }>({ pages: [], devices: [] });
+  const [activeView, setActiveView] = useState<
+    "ai-analytics" | "search-console"
+  >("ai-analytics");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 30),
+    to: new Date(),
+  });
+  const [limit, setLimit] = useState<string>("10");
 
   // GSC property management state
   const [gscAccount, setGscAccount] = useState<any>(null);
@@ -163,8 +173,6 @@ export default function GoogleAnalyticsPage() {
     }
 
     try {
-
-
       // No cache - fetch fresh data
       const response = await api.get("/api/ga-accounts");
       setGaAccounts(response.data);
@@ -252,12 +260,12 @@ export default function GoogleAnalyticsPage() {
   // Handle OAuth callback - force refresh when account is connected
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const connected = urlParams.get('connected');
-    const gscConnected = urlParams.get('gsc_connected');
+    const connected = urlParams.get("connected");
+    const gscConnected = urlParams.get("gsc_connected");
 
-    if (connected === 'true' && activeWorkspace?._id) {
+    if (connected === "true" && activeWorkspace?._id) {
       // Remove the query parameter from URL
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, "", window.location.pathname);
 
       // Force reload accounts
       loadGAAccounts();
@@ -265,9 +273,9 @@ export default function GoogleAnalyticsPage() {
       toast.success("Google Analytics connected successfully!");
     }
 
-    if (gscConnected === 'true' && activeWorkspace?._id) {
+    if (gscConnected === "true" && activeWorkspace?._id) {
       // Remove the query parameter from URL
-      window.history.replaceState({}, '', window.location.pathname);
+      window.history.replaceState({}, "", window.location.pathname);
 
       // Force reload GSC account
       loadGscAccount();
@@ -275,164 +283,210 @@ export default function GoogleAnalyticsPage() {
     }
   }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
 
-  const loadAccountData = useCallback(async (accountId: string) => {
-
-    if (!accountId || isQuotaExceeded) {
-      return;
-    }
-
-    setLoading(true);
-    // setMissingAudience(false); // Reset the warning
-
-    const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '30daysAgo';
-    const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : 'today';
-    const dateParams = `&startDate=${startDate}&endDate=${endDate}`
-    try {
-      // OPTIMIZATION: Fetch ALL data in parallel instead of sequentially
-      const results = await Promise.allSettled([
-        api.get(`/api/analytics-by-account?accountId=${accountId}${dateParams}`),
-        api.get(`/api/ai-models-by-account?accountId=${accountId}${dateParams}`),
-        api.get(`/api/analytics/ai-overview-stats?accountId=${accountId}${dateParams}`),
-        api.get(`/api/analytics/first-touch?accountId=${accountId}`),
-        api.get(`/api/analytics/zero-touch?accountId=${accountId}${dateParams}`),
-        api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}${dateParams}&limit=${limit}`),
-        api.get(`/api/analytics/ai-conversions?accountId=${accountId}${dateParams}`),
-        api.get(`/api/analytics/ai-growth-mom?accountId=${accountId}`),
-        api.get(`/api/analytics/ai-device-split?accountId=${accountId}${dateParams}`),
-        api.get(`/api/analytics/demographics?accountId=${accountId}${dateParams}`),
-        api.get(`/api/analytics/topic-clusters?accountId=${accountId}${dateParams}`),
-      ])
-      // Extract data from settled promises, using empty arrays as fallbacks
-      const endpoints = [
-        'analytics-by-account',
-        'ai-models-by-account',
-        'ai-overview-stats',
-        'first-touch',
-        'zero-touch',
-        'ai-landing-pages',
-        'ai-conversions',
-        'ai-growth-mom',
-        'ai-device-split',
-        'demographics',
-        'topic-clusters'
-      ];
-
-      const [
-        analyticsRes,
-        aiModelsRes,
-        aiStatsRes,
-        firstTouchRes,
-        zeroTouchRes,
-        landingPagesRes,
-        convRes,
-        growthRes,
-        deviceRes,
-        demoRes,
-        topicRes,
-      ] = results.map((result, index) => {
-        if (result.status === 'fulfilled') {
-
-          return result.value;
-        } else {
-          // Check if the error is about missing AI audience or permissions
-          const errorMsg = result.reason?.response?.data?.error || result.reason?.message || '';
-          const errorStatus = result.reason?.response?.status;
-          const needsPermissions = result.reason?.response?.data?.needsPermissions;
-
-          console.error(` ${endpoints[index]} failed:`, {
-            status: errorStatus,
-            error: errorMsg,
-            fullError: result.reason
-          });
-
-          // Handle permission errors
-          if (errorStatus === 403 || needsPermissions || errorMsg.includes('permission')) {
-            console.warn(`Permission error for ${endpoints[index]}`);
-            if (endpoints[index] === 'first-touch') {
-              toast.error("GA4 Permission Required: Please reconnect with Editor or Admin role to create audiences");
-            }
-          }
-          // Handle audience-related errors
-          else if (errorMsg.includes('AI Traffic audience') ||
-            errorMsg.includes('audience') ||
-            errorMsg.includes('Could not create') ||
-            errorMsg.toLowerCase().includes('audience')) {
-            // setMissingAudience(true);
-          }
-
-          console.warn(`Failed to load ${endpoints[index]}:`, errorMsg);
-          return { data: endpoints[index] === 'analytics-by-account' ? { chartData: [], metrics: { activeUsers: 0, engagedSessions: 0, keyEvents: 0 } } : [] };
-        }
-      });
-
-      // Process analytics data
-      const mainData = analyticsRes.data?.chartData || [];
-      const metrics = analyticsRes.data?.metrics || {
-        activeUsers: 0,
-        engagedSessions: 0,
-        keyEvents: 0,
-      };
-
-      // Process AI models data
-      const allowedModels = [
-        "ChatGPT",
-        "Copilot",
-        "Perplexity",
-        "Gemini",
-        "Claude",
-      ];
-      const formattedAIModels = allowedModels.map((modelName) => {
-        const existingData = aiModelsRes.data?.find(
-          (item: any) => item.model === modelName
-        );
-        if (existingData) return existingData;
-        return {
-          model: modelName,
-          users: 0,
-          sessions: 0,
-          conversionRate: "0%",
-        };
-      });
-
-      const fTouch = firstTouchRes.data || [];
-      const zTouch = zeroTouchRes.data || [];
-      const landingPages = landingPagesRes.data?.landingPageData || [];
-
-      // OPTIMIZATION: Batch state updates to reduce re-renders
-      setChartData(mainData);
-      setKeyMetrics(metrics);
-      setAiModelsData(formattedAIModels);
-      setAiOverviewStats(aiStatsRes.data || { pages: [], devices: [] });
-      setFirstTouchData(fTouch);
-      setZeroTouchData(zTouch);
-      setAiLandingPageData(landingPages);
-      setConversionRateData(convRes.data || []);
-      setAiGrowthData(growthRes.data || []);
-      setAiDeviceData(deviceRes.data || []);
-      setTopicClusterData(topicRes.data || []);
-      setDemographicsData(demoRes.data || []);
-
-      setIsQuotaExceeded(false);
-    } catch (error: any) {
-      const isQuotaError =
-        error.response?.status === 429 || error.message?.includes("quota");
-
-      if (isQuotaError) {
-        setIsQuotaExceeded(true);
-        // Use warn instead of error to avoid the development overlay
-        console.warn("GA Quota limit reached:", error.message);
-        toast.error(
-          "Analytics quota exceeded. This view will refresh once the quota is available."
-        );
-      } else {
-        console.error("Failed to load GA account data:", error);
-        toast.error("Failed to fetch analytics data");
+  const loadAccountData = useCallback(
+    async (accountId: string) => {
+      if (!accountId || isQuotaExceeded) {
+        return;
       }
-    } finally {
-      setLoading(false);
 
-    }
-  }, [isQuotaExceeded, dateRange]); // Search Console loads independently via separate effect
+      setLoading(true);
+      // setMissingAudience(false); // Reset the warning
+
+      const startDate = dateRange?.from
+        ? format(dateRange.from, "yyyy-MM-dd")
+        : "30daysAgo";
+      const endDate = dateRange?.to
+        ? format(dateRange.to, "yyyy-MM-dd")
+        : "today";
+      const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
+      try {
+        // OPTIMIZATION: Fetch ALL data in parallel instead of sequentially
+        const results = await Promise.allSettled([
+          api.get(
+            `/api/analytics-by-account?accountId=${accountId}${dateParams}`
+          ),
+          api.get(
+            `/api/ai-models-by-account?accountId=${accountId}${dateParams}`
+          ),
+          api.get(
+            `/api/analytics/ai-overview-stats?accountId=${accountId}${dateParams}`
+          ),
+          api.get(`/api/analytics/first-touch?accountId=${accountId}`),
+          api.get(
+            `/api/analytics/zero-touch?accountId=${accountId}${dateParams}`
+          ),
+          api.get(
+            `/api/analytics/ai-landing-pages?accountId=${accountId}${dateParams}&limit=${limit}`
+          ),
+          api.get(
+            `/api/analytics/ai-conversions?accountId=${accountId}${dateParams}`
+          ),
+          api.get(`/api/analytics/ai-growth-mom?accountId=${accountId}`),
+          api.get(
+            `/api/analytics/ai-device-split?accountId=${accountId}${dateParams}`
+          ),
+          api.get(
+            `/api/analytics/demographics?accountId=${accountId}${dateParams}`
+          ),
+          api.get(
+            `/api/analytics/topic-clusters?accountId=${accountId}${dateParams}`
+          ),
+        ]);
+        // Extract data from settled promises, using empty arrays as fallbacks
+        const endpoints = [
+          "analytics-by-account",
+          "ai-models-by-account",
+          "ai-overview-stats",
+          "first-touch",
+          "zero-touch",
+          "ai-landing-pages",
+          "ai-conversions",
+          "ai-growth-mom",
+          "ai-device-split",
+          "demographics",
+          "topic-clusters",
+        ];
+
+        const [
+          analyticsRes,
+          aiModelsRes,
+          aiStatsRes,
+          firstTouchRes,
+          zeroTouchRes,
+          landingPagesRes,
+          convRes,
+          growthRes,
+          deviceRes,
+          demoRes,
+          topicRes,
+        ] = results.map((result, index) => {
+          if (result.status === "fulfilled") {
+            return result.value;
+          } else {
+            // Check if the error is about missing AI audience or permissions
+            const errorMsg =
+              result.reason?.response?.data?.error ||
+              result.reason?.message ||
+              "";
+            const errorStatus = result.reason?.response?.status;
+            const needsPermissions =
+              result.reason?.response?.data?.needsPermissions;
+
+            console.error(` ${endpoints[index]} failed:`, {
+              status: errorStatus,
+              error: errorMsg,
+              fullError: result.reason,
+            });
+
+            // Handle permission errors
+            if (
+              errorStatus === 403 ||
+              needsPermissions ||
+              errorMsg.includes("permission")
+            ) {
+              console.warn(`Permission error for ${endpoints[index]}`);
+              if (endpoints[index] === "first-touch") {
+                toast.error(
+                  "GA4 Permission Required: Please reconnect with Editor or Admin role to create audiences"
+                );
+              }
+            }
+            // Handle audience-related errors
+            else if (
+              errorMsg.includes("AI Traffic audience") ||
+              errorMsg.includes("audience") ||
+              errorMsg.includes("Could not create") ||
+              errorMsg.toLowerCase().includes("audience")
+            ) {
+              // setMissingAudience(true);
+            }
+
+            console.warn(`Failed to load ${endpoints[index]}:`, errorMsg);
+            return {
+              data:
+                endpoints[index] === "analytics-by-account"
+                  ? {
+                      chartData: [],
+                      metrics: {
+                        activeUsers: 0,
+                        engagedSessions: 0,
+                        keyEvents: 0,
+                      },
+                    }
+                  : [],
+            };
+          }
+        });
+
+        // Process analytics data
+        const mainData = analyticsRes.data?.chartData || [];
+        const metrics = analyticsRes.data?.metrics || {
+          activeUsers: 0,
+          engagedSessions: 0,
+          keyEvents: 0,
+        };
+
+        // Process AI models data
+        const allowedModels = [
+          "ChatGPT",
+          "Copilot",
+          "Perplexity",
+          "Gemini",
+          "Claude",
+        ];
+        const formattedAIModels = allowedModels.map((modelName) => {
+          const existingData = aiModelsRes.data?.find(
+            (item: any) => item.model === modelName
+          );
+          if (existingData) return existingData;
+          return {
+            model: modelName,
+            users: 0,
+            sessions: 0,
+            conversionRate: "0%",
+          };
+        });
+
+        const fTouch = firstTouchRes.data || [];
+        const zTouch = zeroTouchRes.data || [];
+        const landingPages = landingPagesRes.data?.landingPageData || [];
+
+        // OPTIMIZATION: Batch state updates to reduce re-renders
+        setChartData(mainData);
+        setKeyMetrics(metrics);
+        setAiModelsData(formattedAIModels);
+        setAiOverviewStats(aiStatsRes.data || { pages: [], devices: [] });
+        setFirstTouchData(fTouch);
+        setZeroTouchData(zTouch);
+        setAiLandingPageData(landingPages);
+        setConversionRateData(convRes.data || []);
+        setAiGrowthData(growthRes.data || []);
+        setAiDeviceData(deviceRes.data || []);
+        setTopicClusterData(topicRes.data || []);
+        setDemographicsData(demoRes.data || []);
+
+        setIsQuotaExceeded(false);
+      } catch (error: any) {
+        const isQuotaError =
+          error.response?.status === 429 || error.message?.includes("quota");
+
+        if (isQuotaError) {
+          setIsQuotaExceeded(true);
+          // Use warn instead of error to avoid the development overlay
+          console.warn("GA Quota limit reached:", error.message);
+          toast.error(
+            "Analytics quota exceeded. This view will refresh once the quota is available."
+          );
+        } else {
+          console.error("Failed to load GA account data:", error);
+          toast.error("Failed to fetch analytics data");
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isQuotaExceeded, dateRange]
+  ); // Search Console loads independently via separate effect
 
   // Trigger data load when account or date range changes
   useEffect(() => {
@@ -442,39 +496,50 @@ export default function GoogleAnalyticsPage() {
   }, [selectedAccountId, dateRange, loadAccountData]);
 
   // NEW: Dedicated function to reload ONLY landing pages when limit changes
-  const loadLandingPagesOnly = useCallback(async (accountId: string) => {
-    if (!accountId) return;
+  const loadLandingPagesOnly = useCallback(
+    async (accountId: string) => {
+      if (!accountId) return;
 
-    // Use a separate loading state or just strict local update?
-    // Ideally we might want a local loading state for the table, but for now we'll just update the data.
-    // If we want a spinner on the table, we'd need a separate `isTableLoading` state.
+      // Use a separate loading state or just strict local update?
+      // Ideally we might want a local loading state for the table, but for now we'll just update the data.
+      // If we want a spinner on the table, we'd need a separate `isTableLoading` state.
 
-    try {
-      const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '30daysAgo';
-      const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : 'today';
-      const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
+      try {
+        const startDate = dateRange?.from
+          ? format(dateRange.from, "yyyy-MM-dd")
+          : "30daysAgo";
+        const endDate = dateRange?.to
+          ? format(dateRange.to, "yyyy-MM-dd")
+          : "today";
+        const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
 
-      const res = await api.get(`/api/analytics/ai-landing-pages?accountId=${accountId}${dateParams}&limit=${limit}`);
-      setAiLandingPageData(res.data?.landingPageData || []);
-    } catch (error) {
-      console.error("Failed to reload landing pages:", error);
-    }
-  }, [limit, dateRange]);
+        const res = await api.get(
+          `/api/analytics/ai-landing-pages?accountId=${accountId}${dateParams}&limit=${limit}`
+        );
+        setAiLandingPageData(res.data?.landingPageData || []);
+      } catch (error) {
+        console.error("Failed to reload landing pages:", error);
+      }
+    },
+    [limit, dateRange]
+  );
 
   // Effect to trigger ONLY the landing page reload when limit changes (debounced)
   useEffect(() => {
     if (!selectedAccountId || initialLoading) return;
-    
+
     const timer = setTimeout(() => {
       loadLandingPagesOnly(selectedAccountId);
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, [limit, selectedAccountId, loadLandingPagesOnly, initialLoading]);
 
   const loadSearchConsoleSites = useCallback(async (accountId: string) => {
     try {
-      const response = await api.get(`/api/search-console/sites?accountId=${accountId}`);
+      const response = await api.get(
+        `/api/search-console/sites?accountId=${accountId}`
+      );
       setScSites(response.data.sites || []);
     } catch (error: any) {
       console.error("Failed to load Search Console sites:", error);
@@ -484,7 +549,7 @@ export default function GoogleAnalyticsPage() {
 
   const linkSearchConsoleSite = async (accountId: string, siteUrl: string) => {
     try {
-      await api.post('/api/search-console/link', { accountId, siteUrl });
+      await api.post("/api/search-console/link", { accountId, siteUrl });
       toast.success("Search Console linked successfully!");
       loadSearchConsoleData(accountId);
     } catch (error: any) {
@@ -493,39 +558,55 @@ export default function GoogleAnalyticsPage() {
     }
   };
 
-  const loadSearchConsoleData = useCallback(async (accountId: string) => {
-    setScLoading(true);
+  const loadSearchConsoleData = useCallback(
+    async (accountId: string) => {
+      setScLoading(true);
 
-    const startDate = dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : '30daysAgo';
-    const endDate = dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : 'today';
-    const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
+      const startDate = dateRange?.from
+        ? format(dateRange.from, "yyyy-MM-dd")
+        : "30daysAgo";
+      const endDate = dateRange?.to
+        ? format(dateRange.to, "yyyy-MM-dd")
+        : "today";
+      const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
 
-    try {
-      // Fetch BOTH chart data and top queries
-      const [chartResponse, queriesResponse] = await Promise.all([
-        api.get(`/api/search-console/queries?accountId=${accountId}${dateParams}`),
-        api.get(`/api/search-console/top-queries?accountId=${accountId}&limit=${scLimit}${dateParams}`),
-      ]);
+      try {
+        // Fetch BOTH chart data and top queries
+        const [chartResponse, queriesResponse] = await Promise.all([
+          api.get(
+            `/api/search-console/queries?accountId=${accountId}${dateParams}`
+          ),
+          api.get(
+            `/api/search-console/top-queries?accountId=${accountId}&limit=${scLimit}${dateParams}`
+          ),
+        ]);
 
-      setScChartData(chartResponse.data.chartData || []);
-      setSearchConsoleData({ totals: chartResponse.data.totals });
-      setScTopQueries(queriesResponse.data.queries || []);
-    } catch (error: any) {
-      console.error("Search Console data error:", error);
-      
-      const errorMsg = error.response?.data?.error || '';
-      const needsPropertySelection = error.response?.data?.needsPropertySelection;
-      
-      // If property not selected, try to load available properties
-      if (needsPropertySelection || errorMsg.includes("not selected") || errorMsg.includes("not configured")) {
-        console.log("Property not selected, loading available sites...");
-        loadSearchConsoleSites(accountId);
+        setScChartData(chartResponse.data.chartData || []);
+        setSearchConsoleData({ totals: chartResponse.data.totals });
+        setScTopQueries(queriesResponse.data.queries || []);
+      } catch (error: any) {
+        console.error("Search Console data error:", error);
+
+        const errorMsg = error.response?.data?.error || "";
+        const needsPropertySelection =
+          error.response?.data?.needsPropertySelection;
+
+        // If property not selected, try to load available properties
+        if (
+          needsPropertySelection ||
+          errorMsg.includes("not selected") ||
+          errorMsg.includes("not configured")
+        ) {
+          console.log("Property not selected, loading available sites...");
+          loadSearchConsoleSites(accountId);
+        }
+        // Silently handle other errors - no toast message for non-critical failures
+      } finally {
+        setScLoading(false);
       }
-      // Silently handle other errors - no toast message for non-critical failures
-    } finally {
-      setScLoading(false);
-    }
-  }, [scLimit, dateRange, loadSearchConsoleSites]);
+    },
+    [scLimit, dateRange, loadSearchConsoleSites]
+  );
 
   // Load Search Console data when GSC account, limit, or date changes
   useEffect(() => {
@@ -544,7 +625,7 @@ export default function GoogleAnalyticsPage() {
       "https://www.googleapis.com/auth/tagmanager.edit.containers",
       "https://www.googleapis.com/auth/tagmanager.edit.containerversions",
       "https://www.googleapis.com/auth/tagmanager.publish",
-      "https://www.googleapis.com/auth/tagmanager.readonly"
+      "https://www.googleapis.com/auth/tagmanager.readonly",
     ].join(" ");
     const state = activeWorkspace?._id || "";
     // Add timestamp to force fresh consent and prevent caching
@@ -571,14 +652,16 @@ export default function GoogleAnalyticsPage() {
     if (!selectedGtmContainer) return;
 
     // Find the full container object to get the internal gtmAccountId
-    const container = gtmContainers.find(c => c.publicId === selectedGtmContainer);
+    const container = gtmContainers.find(
+      (c) => c.publicId === selectedGtmContainer
+    );
     if (!container) return;
 
     try {
       // setGtmLoading(true);
       // toast.info("Configuring GTM...");
 
-      const response = await api.post('/api/gtm/setup', {
+      const response = await api.post("/api/gtm/setup", {
         dbAccountId,
       });
 
@@ -604,11 +687,11 @@ export default function GoogleAnalyticsPage() {
       setIsGtmDialogOpen(false);
     } catch (e: any) {
       console.error(e);
-      const errorMsg = e.response?.data?.error || "Setup failed. Check console for details.";
+      const errorMsg =
+        e.response?.data?.error || "Setup failed. Check console for details.";
       toast.error(errorMsg);
-    } 
+    }
   };
-
 
   const handleDeleteAccount = async (accountId: string) => {
     if (!confirm("Are you sure you want to remove this account?")) return;
@@ -631,56 +714,59 @@ export default function GoogleAnalyticsPage() {
       toast.error("Failed to remove account");
     }
   };
-  const fetchPropertiesForAccount = useCallback(async (accountId: string) => {
-    if (propertiesMap[accountId]) return;
-    setLoadingProperties(prev => ({ ...prev, [accountId]: true }));
-    try {
-      const res = await api.get(`/api/ga-accounts/${accountId}/properties`);
-      const properties = res.data;
-      setPropertiesMap(prev => ({ ...prev, [accountId]: properties }))
+  const fetchPropertiesForAccount = useCallback(
+    async (accountId: string) => {
+      if (propertiesMap[accountId]) return;
+      setLoadingProperties((prev) => ({ ...prev, [accountId]: true }));
+      try {
+        const res = await api.get(`/api/ga-accounts/${accountId}/properties`);
+        const properties = res.data;
+        setPropertiesMap((prev) => ({ ...prev, [accountId]: properties }));
 
-      // Auto-select logic: If only 1 property exists and none is selected, select it automatically
-      if (properties && properties.length === 1) {
-        const account = gaAccounts.find((a) => a._id === accountId);
-        if (account && !account.propertyId) {
-          const singleProp = properties[0];
-          try {
-            await api.patch(`/api/ga-accounts/${accountId}`, {
-              propertyId: singleProp.id,
-              propertyName: singleProp.name,
-            });
-            // Toast removed for seamless auto-selection
+        // Auto-select logic: If only 1 property exists and none is selected, select it automatically
+        if (properties && properties.length === 1) {
+          const account = gaAccounts.find((a) => a._id === accountId);
+          if (account && !account.propertyId) {
+            const singleProp = properties[0];
+            try {
+              await api.patch(`/api/ga-accounts/${accountId}`, {
+                propertyId: singleProp.id,
+                propertyName: singleProp.name,
+              });
+              // Toast removed for seamless auto-selection
 
-            // Update local state immediately
-            setGaAccounts((prev) =>
-              prev.map((acc) => {
-                if (acc._id === accountId) {
-                  return {
-                    ...acc,
-                    propertyId: singleProp.id,
-                    propertyName: singleProp.name,
-                  };
-                }
-                return acc;
-              })
-            );
+              // Update local state immediately
+              setGaAccounts((prev) =>
+                prev.map((acc) => {
+                  if (acc._id === accountId) {
+                    return {
+                      ...acc,
+                      propertyId: singleProp.id,
+                      propertyName: singleProp.name,
+                    };
+                  }
+                  return acc;
+                })
+              );
 
-            // Trigger data load if this is the active account
-            if (selectedAccountId === accountId) {
-              loadAccountData(accountId);
+              // Trigger data load if this is the active account
+              if (selectedAccountId === accountId) {
+                loadAccountData(accountId);
+              }
+            } catch (err) {
+              console.error("Auto-select property failed:", err);
             }
-          } catch (err) {
-            console.error("Auto-select property failed:", err);
           }
         }
+      } catch (error) {
+        console.error("Failed to fetch properties", error);
+        toast.error("Could not load properties");
+      } finally {
+        setLoadingProperties((prev) => ({ ...prev, [accountId]: false }));
       }
-    } catch (error) {
-      console.error("Failed to fetch properties", error);
-      toast.error("Could not load properties");
-    } finally {
-      setLoadingProperties(prev => ({ ...prev, [accountId]: false }));
-    }
-  }, [gaAccounts, propertiesMap, selectedAccountId, loadAccountData]);
+    },
+    [gaAccounts, propertiesMap, selectedAccountId, loadAccountData]
+  );
 
   // Auto-fetch properties if selected account doesn't have a property set
   useEffect(() => {
@@ -692,16 +778,20 @@ export default function GoogleAnalyticsPage() {
       }
     }
   }, [selectedAccountId, gaAccounts, fetchPropertiesForAccount]);
-  
+
   // Handle property change for GA account
   // When a property is switched, we need to:
   // 1. Update the account in the database
   // 2. Clear audience data (audiences are property-specific)
   // 3. Update local state
   // 4. Reload analytics data for the new property
-  const handlePropertyChange = async (accountId: string, propertyId: string, forceSwitch = false) => {
+  const handlePropertyChange = async (
+    accountId: string,
+    propertyId: string,
+    forceSwitch = false
+  ) => {
     const properties = propertiesMap[accountId];
-    const selectedProp = properties?.find(p => p.id === propertyId);
+    const selectedProp = properties?.find((p) => p.id === propertyId);
 
     if (!selectedProp) return;
 
@@ -709,35 +799,41 @@ export default function GoogleAnalyticsPage() {
       const response = await api.patch(`/api/ga-accounts/${accountId}`, {
         propertyId: selectedProp.id,
         propertyName: selectedProp.name,
-        forceSwitch
+        forceSwitch,
       });
 
       toast.success("Property updated successfully");
 
       // Update local state to reflect change immediately
-      setGaAccounts(prev => prev.map(acc => {
-        if (acc._id === accountId) {
-          return { 
-            ...acc, 
-            propertyId: selectedProp.id, 
-            propertyName: selectedProp.name,
-            // Clear audience data when switching properties
-            aiAudienceId: null,
-            aiAudienceName: null
-          };
-        }
-        // If this property was used by another account, clear it
-        if (acc.propertyId === selectedProp.id && acc._id !== accountId && forceSwitch) {
-          return {
-            ...acc,
-            propertyId: undefined,
-            propertyName: undefined,
-            aiAudienceId: null,
-            aiAudienceName: null
-          };
-        }
-        return acc;
-      }));
+      setGaAccounts((prev) =>
+        prev.map((acc) => {
+          if (acc._id === accountId) {
+            return {
+              ...acc,
+              propertyId: selectedProp.id,
+              propertyName: selectedProp.name,
+              // Clear audience data when switching properties
+              aiAudienceId: null,
+              aiAudienceName: null,
+            };
+          }
+          // If this property was used by another account, clear it
+          if (
+            acc.propertyId === selectedProp.id &&
+            acc._id !== accountId &&
+            forceSwitch
+          ) {
+            return {
+              ...acc,
+              propertyId: undefined,
+              propertyName: undefined,
+              aiAudienceId: null,
+              aiAudienceName: null,
+            };
+          }
+          return acc;
+        })
+      );
 
       // If this is the currently selected account, reload data immediately
       if (selectedAccountId === accountId) {
@@ -745,29 +841,31 @@ export default function GoogleAnalyticsPage() {
         setChartData([]);
         setAiModelsData([]);
         setAiLandingPageData([]);
-        
+
         // Reload fresh data for the new property
         await loadAccountData(accountId);
       }
-
     } catch (error: any) {
       console.error("Failed to update property", error);
       console.log("Error response:", error.response);
       console.log("Error status:", error.response?.status);
       console.log("Error data:", error.response?.data);
-      
+
       // Check if this is a conflict error that can be resolved by force switching
-      if (error.response?.status === 409 && error.response?.data?.canForceSwitch) {
+      if (
+        error.response?.status === 409 &&
+        error.response?.data?.canForceSwitch
+      ) {
         const conflictingAccount = error.response.data.conflictingAccountName;
         console.log("Showing confirmation dialog for:", conflictingAccount);
-        
+
         const confirmed = confirm(
           `This property is currently connected to "${conflictingAccount}".\n\n` +
-          `Would you like to switch it to this account? This will disconnect it from "${conflictingAccount}".`
+            `Would you like to switch it to this account? This will disconnect it from "${conflictingAccount}".`
         );
-        
+
         console.log("User confirmed:", confirmed);
-        
+
         if (confirmed) {
           // Retry with forceSwitch flag
           console.log("Retrying with forceSwitch=true");
@@ -776,7 +874,10 @@ export default function GoogleAnalyticsPage() {
           toast.info("Property change cancelled");
         }
       } else {
-        const errorMessage = error.response?.data?.details || error.response?.data?.error || "Failed to update property";
+        const errorMessage =
+          error.response?.data?.details ||
+          error.response?.data?.error ||
+          "Failed to update property";
         toast.error(errorMessage);
       }
     }
@@ -805,10 +906,12 @@ export default function GoogleAnalyticsPage() {
   const fetchGscProperties = useCallback(async (accountId: string) => {
     setLoadingGscProperties(true);
     try {
-      const res = await api.get(`/api/search-console/sites?accountId=${accountId}`);
+      const res = await api.get(
+        `/api/search-console/sites?accountId=${accountId}`
+      );
       const sites = res.data.sites || [];
       const message = res.data.message;
-      
+
       setGscProperties(sites);
 
       // Show helpful message if no sites found
@@ -826,9 +929,11 @@ export default function GoogleAnalyticsPage() {
       console.error("Failed to fetch GSC properties:", error);
       const needsReconnect = error.response?.data?.needsReconnect;
       const errorMsg = error.response?.data?.error;
-      
+
       if (needsReconnect || error.response?.status === 403) {
-        toast.error(errorMsg || "Permission error. Please reconnect Search Console.");
+        toast.error(
+          errorMsg || "Permission error. Please reconnect Search Console."
+        );
       }
     } finally {
       setLoadingGscProperties(false);
@@ -843,9 +948,13 @@ export default function GoogleAnalyticsPage() {
   }, [gscAccount, fetchGscProperties]);
 
   // NEW: Link a property to GSC account
-  const linkGscProperty = async (accountId: string, siteUrl: string, showToast = true) => {
+  const linkGscProperty = async (
+    accountId: string,
+    siteUrl: string,
+    showToast = true
+  ) => {
     try {
-      await api.post('/api/search-console/link', { accountId, siteUrl });
+      await api.post("/api/search-console/link", { accountId, siteUrl });
       await loadGscAccount(); // Reload to update UI
       // Trigger data fetch immediately for the linked account
       await loadSearchConsoleData(accountId);
@@ -857,7 +966,10 @@ export default function GoogleAnalyticsPage() {
   };
 
   // NEW: Handle property change from dropdown
-  const handleGscPropertyChange = async (accountId: string, siteUrl: string) => {
+  const handleGscPropertyChange = async (
+    accountId: string,
+    siteUrl: string
+  ) => {
     await linkGscProperty(accountId, siteUrl);
   };
 
@@ -883,7 +995,7 @@ export default function GoogleAnalyticsPage() {
     setExporting(true);
     try {
       await exportAnalyticsToExcel({
-        workspaceName: activeWorkspace.name || 'Analytics',
+        workspaceName: activeWorkspace.name || "Analytics",
         keyMetrics,
         chartData,
         aiModelsData,
@@ -900,10 +1012,10 @@ export default function GoogleAnalyticsPage() {
         aiDeviceData,
         demographicsData,
       });
-      toast.success('Excel report downloaded successfully!');
+      toast.success("Excel report downloaded successfully!");
     } catch (error) {
-      console.error('Export failed:', error);
-      toast.error('Failed to export Excel report');
+      console.error("Export failed:", error);
+      toast.error("Failed to export Excel report");
     } finally {
       setExporting(false);
     }
@@ -920,7 +1032,9 @@ export default function GoogleAnalyticsPage() {
               <ChartBar className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">Analytics</h1>
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight leading-none">
+                Analytics
+              </h1>
               <p className="text-[13px] text-slate-500 mt-1.5 font-medium">
                 Analyze AI mentions, sentiment patterns, and search traffic.
               </p>
@@ -963,12 +1077,12 @@ export default function GoogleAnalyticsPage() {
                 <SheetHeader>
                   <SheetTitle>Manage Analytics & Search Console</SheetTitle>
                   <SheetDescription>
-                    Connect and manage your Google Analytics and Search Console properties.
+                    Connect and manage your Google Analytics and Search Console
+                    properties.
                   </SheetDescription>
                 </SheetHeader>
 
                 <div className="mt-6 space-y-6 px-4">
-
                   <div className="space-y-4">
                     <div className="flex items-center justify-between px-1">
                       <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
@@ -986,7 +1100,9 @@ export default function GoogleAnalyticsPage() {
                     )}
                     {gaAccounts.length === 0 ? (
                       <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
-                        <p className="font-medium text-[13px]">No accounts connected</p>
+                        <p className="font-medium text-[13px]">
+                          No accounts connected
+                        </p>
                       </div>
                     ) : (
                       <div className="border border-slate-100 rounded-2xl divide-y divide-slate-50 overflow-hidden shadow-sm">
@@ -1025,110 +1141,15 @@ export default function GoogleAnalyticsPage() {
                             </Button>
 
 
-                            {/* AI Overview Tracking Instructions Dialog */}
-                            <Dialog open={showInstallInstructions} onOpenChange={setShowInstallInstructions}>
-                              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                                <DialogHeader>
-                                  <DialogTitle className="text-2xl">AI Overview Tracking Setup</DialogTitle>
-                                  <p className="text-sm text-slate-600 mt-2">
-                                    Add this simple code to your client's website to track AI Overview clicks
-                                  </p>
-                                </DialogHeader>
-
-                                <div className="space-y-6 pt-4">
-
-
-                                  {/* Step 1 */}
-                                  <div className="space-y-3">
-                                    <h3 className="font-bold text-lg flex items-center gap-2">
-                                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">1</span>
-                                      Find the GA4 tracking code
-                                    </h3>
-                                    <p className="text-sm text-slate-600">
-                                      Locate the existing Google Analytics code in your client's website <code className="bg-slate-100 px-1 py-0.5 rounded">&lt;head&gt;</code> section
-                                    </p>
-                                  </div>
-
-                                  {/* Step 2 */}
-                                  <div className="space-y-3">
-                                    <h3 className="font-bold text-lg flex items-center gap-2">
-                                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 text-white text-sm">2</span>
-                                      Add one line after gtag('config')
-                                    </h3>
-                                    <p className="text-sm text-slate-600">
-                                      Copy this code and paste it right after the <code className="bg-slate-100 px-1 py-0.5 rounded">gtag('config', ...)</code> line
-                                    </p>
-
-                                    <div className="relative">
-                                      <pre className="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-sm">
-{`// AI Overview Detection
-if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_path:location.pathname+location.hash});`}
-                                      </pre>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="absolute top-2 right-2"
-                                        onClick={() => {
-                                          navigator.clipboard.writeText(`if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_path:location.pathname+location.hash});`);
-                                          toast.success("Code copied to clipboard!");
-                                        }}
-                                      >
-                                        Copy Code
-                                      </Button>
-                                    </div>
-                                  </div>
-
-                                  {/* Complete Example */}
-                                  <div className="space-y-3">
-                                    <h3 className="font-bold text-base text-slate-700">
-                                      Complete Example:
-                                    </h3>
-                                    <div className="relative">
-                                      <pre className="bg-slate-50 border border-slate-200 text-slate-800 p-4 rounded-lg overflow-x-auto text-xs">
-{`<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-  
-  // AI Overview Detection - ADD THIS LINE
-  if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_path:location.pathname+location.hash});
-</script>`}
-                                      </pre>
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="absolute top-2 right-2"
-                                        onClick={() => {
-                                          navigator.clipboard.writeText(`<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-  
-  // AI Overview Detection
-  if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_path:location.pathname+location.hash});
-</script>`);
-                                          toast.success("Full example copied!");
-                                        }}
-                                      >
-                                        Copy Full Example
-                                      </Button>
-                                    </div>
-                                  </div>
-
-                                 
-                                </div>
-                              </DialogContent>
-                            </Dialog>
                             <div className="pt-2">
                               <Select
                                 value={account.propertyId}
-                                onValueChange={(val) => handlePropertyChange(account._id, val)}
+                                onValueChange={(val) =>
+                                  handlePropertyChange(account._id, val)
+                                }
                                 onOpenChange={(isOpen) => {
-                                  if (isOpen) fetchPropertiesForAccount(account._id);
+                                  if (isOpen)
+                                    fetchPropertiesForAccount(account._id);
                                 }}
                               >
                                 <SelectTrigger className="w-full h-9 text-xs bg-slate-100 border-slate-200">
@@ -1143,9 +1164,18 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                   ) : (
                                     (propertiesMap[account._id]?.length
                                       ? propertiesMap[account._id]
-                                      : [{ id: account.propertyId, name: account.propertyName }]
+                                      : [
+                                          {
+                                            id: account.propertyId,
+                                            name: account.propertyName,
+                                          },
+                                        ]
                                     ).map((prop) => (
-                                      <SelectItem key={prop.id} value={prop.id} className="text-xs">
+                                      <SelectItem
+                                        key={prop.id}
+                                        value={prop.id}
+                                        className="text-xs"
+                                      >
                                         {prop.name}
                                       </SelectItem>
                                     ))
@@ -1159,6 +1189,157 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                     )}
                   </div>
 
+                  {/* AI Overview Tracking Instructions Dialog - MOVED Outside Loop */}
+                  <Dialog
+                    open={showInstallInstructions}
+                    onOpenChange={setShowInstallInstructions}
+                  >
+                    <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl">
+                          AI Overview Tracking Setup
+                        </DialogTitle>
+                        <p className="text-sm text-slate-600 mt-2">
+                          Add this simple code to your client's
+                          website to track AI Overview clicks.
+                        </p>
+                      </DialogHeader>
+
+                      <div className="space-y-8 pt-4">
+                        {/* Step 1 */}
+                        <div className="group relative rounded-lg border border-slate-200 bg-slate-50 p-5">
+                            <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 border-4 border-white text-white font-bold shadow-sm">
+                                1
+                            </div>
+                            <h3 className="mb-2 font-bold text-slate-900 ml-3">Find GA4 Tracking Code</h3>
+                            <p className="text-sm text-slate-600 ml-3">
+                                Check the <code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-xs font-semibold">&lt;head&gt;</code> section of your client's website for the Google Analytics script.
+                            </p>
+                        </div>
+
+                        {/* Step 2 */}
+                        <div className="group relative rounded-lg border border-slate-200 bg-slate-50 p-5">
+                            <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 border-4 border-white text-white font-bold shadow-sm">
+                                2
+                            </div>
+                            <h3 className="mb-2 font-bold text-slate-900 ml-3">Insert Tracking Script</h3>
+                            <p className="text-sm text-slate-600 ml-3 mb-4">
+                                Paste the snippet below immediately after the line <code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-xs font-semibold">gtag('config', 'G-XXXX');</code>.
+                            </p>
+
+                            <div className="relative rounded-md bg-slate-900 mx-3">
+                                <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-slate-300 font-mono">
+{`// AI Overview Detection (Performance API)
+(function(){try{var n=performance.getEntriesByType('navigation')[0];
+var u=n?n.name:document.URL;
+if(u.includes(':~:text=')){
+  var r=0,s=function(){
+    var p={page_location:u,page_path:new URL(u).pathname+new URL(u).hash};
+    if(typeof gtag!=='undefined'){gtag('event','ai_overview_click',p);}
+    else if(window.dataLayer){dataLayer.push({'event':'ai_overview_click',...p});}
+    else if(r++<50){setTimeout(s,200);}
+  };s();
+}}catch(e){}})();`}
+                                </pre>
+                                <Button
+                                  size="sm"
+                                  variant="secondary" 
+                                  className="absolute right-2 top-2 h-7 px-2 text-xs hover:bg-slate-700 hover:text-white bg-slate-800 text-slate-400 border border-slate-700"
+                                  onClick={() => {
+                                      navigator.clipboard.writeText(`(function(){try{var n=performance.getEntriesByType('navigation')[0];
+var u=n?n.name:document.URL;
+if(u.includes(':~:text=')){
+  var r=0,s=function(){
+    var p={page_location:u,page_path:new URL(u).pathname+new URL(u).hash};
+    if(typeof gtag!=='undefined'){gtag('event','ai_overview_click',p);}
+    else if(window.dataLayer){dataLayer.push({'event':'ai_overview_click',...p});}
+    else if(r++<50){setTimeout(s,200);}
+  };s();
+}}catch(e){}})();`);
+                                      toast.success("Snippet copied to clipboard");
+                                  }}
+                                >
+                                  Copy Snippet
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Complete Example */}
+                        <div className="space-y-3 pt-2">
+                           <h3 className="font-bold text-base text-slate-700 ml-1">
+                                Complete Example Reference:
+                           </h3>
+                           <div className="relative rounded-md bg-slate-50 border border-slate-200">
+                               <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-slate-600 font-mono">
+{`<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+  
+  // AI Overview Detection
+  (function(){try{var n=performance.getEntriesByType('navigation')[0];
+  var u=n?n.name:document.URL;
+  if(u.includes(':~:text=')){
+    var r=0,s=function(){
+      var p={page_location:u,page_path:new URL(u).pathname+new URL(u).hash};
+      if(typeof gtag!=='undefined'){gtag('event','ai_overview_click',p);}
+      else if(window.dataLayer){dataLayer.push({'event':'ai_overview_click',...p});}
+      else if(r++<50){setTimeout(s,200);}
+    };s();
+  }}catch(e){}})();
+</script>`}
+                               </pre>
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 className="absolute right-2 top-2 h-7 px-2 text-xs bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                                 onClick={() => {
+                                     navigator.clipboard.writeText(`<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+  
+  // AI Overview Detection
+  (function(){try{var n=performance.getEntriesByType('navigation')[0];
+  var u=n?n.name:document.URL;
+  if(u.includes(':~:text=')){
+    var r=0,s=function(){
+      var p={page_location:u,page_path:new URL(u).pathname+new URL(u).hash};
+      if(typeof gtag!=='undefined'){gtag('event','ai_overview_click',p);}
+      else if(window.dataLayer){dataLayer.push({'event':'ai_overview_click',...p});}
+      else if(r++<50){setTimeout(s,200);}
+    };s();
+  }}catch(e){}})();
+</script>`);
+                                     toast.success("Complete example copied");
+                                 }}
+                               >
+                                 Copy Full Example
+                               </Button>
+                           </div>
+                        </div>
+
+                      </div>
+                      
+                      <div className="mt-8 rounded-lg border border-blue-100 bg-blue-50/50 p-4">
+                          <h4 className="mb-2 font-semibold text-blue-900 flex items-center gap-2">
+                              <span className="text-xs uppercase tracking-wider font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Validation</span>
+                              How to verify?
+                          </h4>
+                          <ul className="list-disc list-inside text-sm text-blue-800 space-y-1 ml-1">
+                              <li>Open the browser console (F12)</li>
+                              <li>Go to the <strong>Network</strong> tab</li>
+                              <li>Filter for "collect" requests</li>
+                              <li>Click an AI Overview link and ensure an event is fired</li>
+                          </ul>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
                   {/* SEARCH CONSOLE SECTION - Independent Integration */}
                   <div className="space-y-4 mt-8">
                     <div className="flex items-center justify-between px-1">
@@ -1171,7 +1352,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                       // NOT CONNECTED STATE - Show connect button
                       <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50/50">
                         <Globe className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-                        <p className="font-medium text-[13px] mb-4">No Search Console account connected</p>
+                        <p className="font-medium text-[13px] mb-4">
+                          No Search Console account connected
+                        </p>
                         <Button
                           onClick={handleConnectGscAccount}
                           className="bg-slate-900 hover:bg-black text-white h-11 rounded-xl font-bold text-[13px] shadow-lg"
@@ -1190,17 +1373,26 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                               </p>
                               <p className="text-[10px] font-semibold text-slate-500 tracking-tight">
                                 {gscAccount.siteUrl
-                                  ? `Active Property • ${gscAccount.siteUrl.replace('sc-domain:', '').replace('https://', '').replace('http://', '')}`
-                                  : 'No property selected'}
+                                  ? `Active Property • ${gscAccount.siteUrl
+                                      .replace("sc-domain:", "")
+                                      .replace("https://", "")
+                                      .replace("http://", "")}`
+                                  : "No property selected"}
                               </p>
                             </div>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={async () => {
-                                if (confirm('Are you sure you want to disconnect Search Console?')) {
+                                if (
+                                  confirm(
+                                    "Are you sure you want to disconnect Search Console?"
+                                  )
+                                ) {
                                   try {
-                                    await api.delete(`/api/search-console-accounts?id=${gscAccount._id}`);
+                                    await api.delete(
+                                      `/api/search-console-accounts?id=${gscAccount._id}`
+                                    );
 
                                     // CLEAR ALL GSC DATA STATE IMMEDIATELY
                                     setGscAccount(null);
@@ -1210,10 +1402,12 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                     setScSites([]);
                                     setGscProperties([]);
 
-                                    toast.success('Search Console disconnected');
+                                    toast.success(
+                                      "Search Console disconnected"
+                                    );
                                     loadGscAccount(); // Double check from server
                                   } catch (error) {
-                                    toast.error('Failed to disconnect');
+                                    toast.error("Failed to disconnect");
                                   }
                                 }
                               }}
@@ -1227,7 +1421,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                           <div className="pt-2">
                             <Select
                               value={gscAccount.siteUrl || ""}
-                              onValueChange={(val) => handleGscPropertyChange(gscAccount._id, val)}
+                              onValueChange={(val) =>
+                                handleGscPropertyChange(gscAccount._id, val)
+                              }
                               onOpenChange={(isOpen) => {
                                 if (isOpen && gscProperties.length === 0) {
                                   fetchGscProperties(gscAccount._id);
@@ -1243,9 +1439,13 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                     <Loader2 className="h-3 w-3 animate-spin mr-2" />
                                     Loading properties...
                                   </div>
-                                ) : gscProperties.length === 0 && gscAccount.siteUrl ? (
+                                ) : gscProperties.length === 0 &&
+                                  gscAccount.siteUrl ? (
                                   // Show currently selected property even if full list not loaded
-                                  <SelectItem value={gscAccount.siteUrl} className="text-xs">
+                                  <SelectItem
+                                    value={gscAccount.siteUrl}
+                                    className="text-xs"
+                                  >
                                     {gscAccount.siteUrl}
                                   </SelectItem>
                                 ) : gscProperties.length === 0 ? (
@@ -1254,7 +1454,11 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                   </div>
                                 ) : (
                                   gscProperties.map((site: any) => (
-                                    <SelectItem key={site.siteUrl} value={site.siteUrl} className="text-xs">
+                                    <SelectItem
+                                      key={site.siteUrl}
+                                      value={site.siteUrl}
+                                      className="text-xs"
+                                    >
                                       {site.siteUrl}
                                     </SelectItem>
                                   ))
@@ -1347,14 +1551,18 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
               <div className="flex flex-row justify-between items-center ">
                 <div className="flex items-center gap-2">
                   <Button
-                    variant={activeView === "ai-analytics" ? "default" : "outline"}
+                    variant={
+                      activeView === "ai-analytics" ? "default" : "outline"
+                    }
                     className="rounded-full px-5 py-2 h-9 text-sm font-medium"
                     onClick={() => setActiveView("ai-analytics")}
                   >
                     AI Traffic Analytics
                   </Button>
                   <Button
-                    variant={activeView === "search-console" ? "default" : "outline"}
+                    variant={
+                      activeView === "search-console" ? "default" : "outline"
+                    }
                     className="rounded-full px-5 py-2 h-9 text-sm font-medium "
                     onClick={() => setActiveView("search-console")}
                   >
@@ -1362,7 +1570,10 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                   </Button>
                 </div>
                 <div className="mr-3">
-                  <RangeCalendar dateRange={dateRange} setDateRange={setDateRange} />
+                  <RangeCalendar
+                    dateRange={dateRange}
+                    setDateRange={setDateRange}
+                  />
                 </div>
               </div>
 
@@ -1391,7 +1602,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                         </div>
                         <CardContent className="pt-6">
                           <div className="text-2xl font-bold text-slate-900">
-                            {(keyMetrics.aiOverviewClicks ?? 0).toLocaleString()}
+                            {(
+                              keyMetrics.aiOverviewClicks ?? 0
+                            ).toLocaleString()}
                           </div>
                           <p className="text-xs text-slate-600/80 mt-1">
                             Visits via "AI Overview" highlights
@@ -1466,7 +1679,8 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                               <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              Shows daily active user trends comparing total website traffic with AI-referred traffic
+                              Shows daily active user trends comparing total
+                              website traffic with AI-referred traffic
                             </TooltipContent>
                           </InfoTooltip>
                         </div>
@@ -1542,7 +1756,6 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                     />
                   </div>
 
-
                   {/* 2. User Journey and Conversion */}
                   <div className="space-y-4">
                     {/* AI Audience Warning */}
@@ -1597,7 +1810,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                 <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                Tracks impressions and brand searches where users don't directly click but are influenced by brand awareness
+                                Tracks impressions and brand searches where
+                                users don't directly click but are influenced by
+                                brand awareness
                               </TooltipContent>
                             </InfoTooltip>
                           </div>
@@ -1611,7 +1826,12 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                             <ResponsiveContainer width="100%" height={320}>
                               <LineChart
                                 data={zeroTouchData}
-                                margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                                margin={{
+                                  top: 20,
+                                  right: 30,
+                                  left: 0,
+                                  bottom: 0,
+                                }}
                               >
                                 <defs>
                                   <linearGradient
@@ -1656,10 +1876,12 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                 />
                                 <Tooltip
                                   contentStyle={{
-                                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                                    backgroundColor:
+                                      "rgba(255, 255, 255, 0.95)",
                                     border: "none",
                                     borderRadius: "8px",
-                                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                                    boxShadow:
+                                      "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                                     padding: "12px",
                                   }}
                                   cursor={{
@@ -1736,7 +1958,10 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                       <div className="col-span-2">
                         <TopicClustersTreemap data={topicClusterData} />
                       </div>
-                      <AIGrowthRateChart data={aiGrowthData} loading={loading} />
+                      <AIGrowthRateChart
+                        data={aiGrowthData}
+                        loading={loading}
+                      />
 
                       {/* AI Models Distribution Pie */}
                       <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1755,7 +1980,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                 <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                Breakdown of user traffic distribution across different AI models (ChatGPT, Copilot, Perplexity, etc.)
+                                Breakdown of user traffic distribution across
+                                different AI models (ChatGPT, Copilot,
+                                Perplexity, etc.)
                               </TooltipContent>
                             </InfoTooltip>
                           </div>
@@ -1795,7 +2022,6 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                       </Card>
                     </div>
 
-
                     {/* Traffic by AI Model Bar */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                       <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1814,7 +2040,8 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                 <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                Bar chart showing the number of active users coming from each AI model over the last 30 days
+                                Bar chart showing the number of active users
+                                coming from each AI model over the last 30 days
                               </TooltipContent>
                             </InfoTooltip>
                           </div>
@@ -1827,13 +2054,18 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                           ) : (
                             <ResponsiveContainer width="100%" height={300}>
                               <BarChart
-                                data={aiModelsData.filter((item) => item.users > 0)}
+                                data={aiModelsData.filter(
+                                  (item) => item.users > 0
+                                )}
                               >
                                 <CartesianGrid
                                   strokeDasharray="3 3"
                                   stroke="#e5e7eb"
                                 />
-                                <XAxis dataKey="model" tick={{ fontSize: 12 }} />
+                                <XAxis
+                                  dataKey="model"
+                                  tick={{ fontSize: 12 }}
+                                />
                                 <YAxis tick={{ fontSize: 12 }} />
                                 <Tooltip />
                                 <Bar dataKey="users" fill="#1e40af" />
@@ -1844,7 +2076,6 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                       </Card>
 
                       <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-
                         <CardHeader className="border-b border-slate-100  px-5 ">
                           <div className="flex items-center justify-between">
                             <div>
@@ -1860,7 +2091,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                 <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                               </TooltipTrigger>
                               <TooltipContent>
-                                Detailed performance metrics including active users, sessions, and conversion rates for each AI model
+                                Detailed performance metrics including active
+                                users, sessions, and conversion rates for each
+                                AI model
                               </TooltipContent>
                             </InfoTooltip>
                           </div>
@@ -1892,7 +2125,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                           {row.model}
                                         </TableCell>
                                         <TableCell>{row.users || 0}</TableCell>
-                                        <TableCell>{row.sessions || 0}</TableCell>
+                                        <TableCell>
+                                          {row.sessions || 0}
+                                        </TableCell>
                                         <TableCell>
                                           {row.conversionRate || "0%"}
                                         </TableCell>
@@ -1932,7 +2167,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                               <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              Shows the top landing pages and entry points for users coming from AI sources with their traffic distribution
+                              Shows the top landing pages and entry points for
+                              users coming from AI sources with their traffic
+                              distribution
                             </TooltipContent>
                           </InfoTooltip>
                         </div>
@@ -1961,8 +2198,13 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-700">Rows:</span>
-                                <Select value={limit} onValueChange={(val) => setLimit(val)}>
+                                <span className="text-sm font-medium text-gray-700">
+                                  Rows:
+                                </span>
+                                <Select
+                                  value={limit}
+                                  onValueChange={(val) => setLimit(val)}
+                                >
                                   <SelectTrigger className="w-[70px] h-8 text-xs">
                                     <SelectValue placeholder="10" />
                                   </SelectTrigger>
@@ -1976,9 +2218,21 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                               </div>
                             </div>
 
-                            <div className={cn("border rounded-lg overflow-hidden", parseInt(limit) > 10 && "max-h-[500px] overflow-y-auto")}>
+                            <div
+                              className={cn(
+                                "border rounded-lg overflow-hidden",
+                                parseInt(limit) > 10 &&
+                                  "max-h-[500px] overflow-y-auto"
+                              )}
+                            >
                               <Table>
-                                <TableHeader className={cn("bg-purple-50", parseInt(limit) > 10 && "sticky top-0 z-10 shadow-sm")}>
+                                <TableHeader
+                                  className={cn(
+                                    "bg-purple-50",
+                                    parseInt(limit) > 10 &&
+                                      "sticky top-0 z-10 shadow-sm"
+                                  )}
+                                >
                                   <TableRow className="bg-purple-50 hover:bg-purple-50">
                                     <TableHead className="font-semibold">
                                       #
@@ -2040,7 +2294,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                             <div className="w-24 bg-gray-200 rounded-full h-2">
                                               <div
                                                 className="bg-purple-600 h-2 rounded-full transition-all"
-                                                style={{ width: `${percentage}%` }}
+                                                style={{
+                                                  width: `${percentage}%`,
+                                                }}
                                               />
                                             </div>
                                             <span className="text-sm font-medium text-gray-600 w-12 text-right">
@@ -2121,9 +2377,13 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                         <div className="bg-white p-3 rounded-xl shadow-sm mb-4">
                           <Globe className="h-8 w-8 text-slate-400" />
                         </div>
-                        <h3 className="font-bold text-lg text-slate-900 mb-2">Connect Search Console</h3>
+                        <h3 className="font-bold text-lg text-slate-900 mb-2">
+                          Connect Search Console
+                        </h3>
                         <p className="text-sm text-slate-500 max-w-md text-center mb-6">
-                          Connect your Google Search Console account in the settings panel to view organic search performance data.
+                          Connect your Google Search Console account in the
+                          settings panel to view organic search performance
+                          data.
                         </p>
                         <Button onClick={() => setIsSettingsOpen(true)}>
                           <Settings className="w-4 h-4 mr-2" />
@@ -2136,7 +2396,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                         <div className="bg-slate-50 p-3 rounded-xl mb-4">
                           <Search className="h-8 w-8 text-slate-400" />
                         </div>
-                        <h3 className="font-bold text-lg text-slate-900 mb-2">No Data Available</h3>
+                        <h3 className="font-bold text-lg text-slate-900 mb-2">
+                          No Data Available
+                        </h3>
                         <p className="text-sm text-slate-500 max-w-md text-center">
                           {gscAccount.siteUrl
                             ? "We couldn't find any search performance data for the selected property in this date range."
@@ -2156,7 +2418,8 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                             </div>
                             <CardContent className="pt-6">
                               <div className="text-2xl font-bold text-slate-900">
-                                {searchConsoleData?.totals?.totalClicks?.toLocaleString() || 0}
+                                {searchConsoleData?.totals?.totalClicks?.toLocaleString() ||
+                                  0}
                               </div>
                               <p className="text-xs text-slate-600/80 mt-1">
                                 From long-tail queries
@@ -2173,7 +2436,8 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                             </div>
                             <CardContent className="pt-6">
                               <div className="text-2xl font-bold text-slate-900">
-                                {searchConsoleData?.totals?.totalImpressions?.toLocaleString() || 0}
+                                {searchConsoleData?.totals?.totalImpressions?.toLocaleString() ||
+                                  0}
                               </div>
                               <p className="text-xs text-slate-600/80 mt-1">
                                 Times shown in search
@@ -2190,7 +2454,10 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                             </div>
                             <CardContent className="pt-6">
                               <div className="text-2xl font-bold text-slate-900">
-                                {((searchConsoleData?.totals?.avgCtr || 0) * 100).toFixed(2)}%
+                                {(
+                                  (searchConsoleData?.totals?.avgCtr || 0) * 100
+                                ).toFixed(2)}
+                                %
                               </div>
                               <p className="text-xs text-slate-600/80 mt-1">
                                 Click-through rate
@@ -2207,7 +2474,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                             </div>
                             <CardContent className="pt-6">
                               <div className="text-2xl font-bold text-slate-900">
-                                {(searchConsoleData?.totals?.avgPosition || 0).toFixed(1)}
+                                {(
+                                  searchConsoleData?.totals?.avgPosition || 0
+                                ).toFixed(1)}
                               </div>
                               <p className="text-xs text-slate-600/80 mt-1">
                                 In search results
@@ -2225,7 +2494,8 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                   Long-Tail Query Performance Over Time
                                 </CardTitle>
                                 <CardDescription className="text-[10px] text-slate-500 font-medium">
-                                  Clicks and impressions for detailed search queries (4+ words)
+                                  Clicks and impressions for detailed search
+                                  queries (4+ words)
                                 </CardDescription>
                               </div>
                               <InfoTooltip>
@@ -2233,7 +2503,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                   <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  Shows search performance trends for queries with 4 or more words - typically more specific, high-intent searches
+                                  Shows search performance trends for queries
+                                  with 4 or more words - typically more
+                                  specific, high-intent searches
                                 </TooltipContent>
                               </InfoTooltip>
                             </div>
@@ -2241,17 +2513,26 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                           <CardContent className="pt-6">
                             <ResponsiveContainer width="100%" height={300}>
                               <LineChart data={scChartData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                                <CartesianGrid
+                                  strokeDasharray="3 3"
+                                  stroke="#e5e7eb"
+                                />
                                 <XAxis
                                   dataKey="date"
                                   stroke="#6b7280"
                                   tick={{ fontSize: 12 }}
                                   tickFormatter={(date) => {
                                     const d = new Date(date);
-                                    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                    return d.toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                    });
                                   }}
                                 />
-                                <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
+                                <YAxis
+                                  stroke="#6b7280"
+                                  tick={{ fontSize: 12 }}
+                                />
                                 <Tooltip
                                   contentStyle={{
                                     backgroundColor: "white",
@@ -2300,17 +2581,47 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                 <div className="flex items-center gap-3">
                                   {/* Limit Selector */}
                                   <div className="flex items-center gap-2">
-                                    <span className="text-[10px] uppercase font-bold text-slate-400">Rows:</span>
-                                    <Select value={scLimit} onValueChange={setScLimit}>
+                                    <span className="text-[10px] uppercase font-bold text-slate-400">
+                                      Rows:
+                                    </span>
+                                    <Select
+                                      value={scLimit}
+                                      onValueChange={setScLimit}
+                                    >
                                       <SelectTrigger className="h-7 w-[70px] text-xs font-semibold bg-slate-50 border-slate-200">
                                         <SelectValue placeholder="50" />
                                       </SelectTrigger>
                                       <SelectContent align="end">
-                                        <SelectItem value="25" className="text-xs">25</SelectItem>
-                                        <SelectItem value="50" className="text-xs">50</SelectItem>
-                                        <SelectItem value="100" className="text-xs">100</SelectItem>
-                                        <SelectItem value="250" className="text-xs">250</SelectItem>
-                                        <SelectItem value="500" className="text-xs">500</SelectItem>
+                                        <SelectItem
+                                          value="25"
+                                          className="text-xs"
+                                        >
+                                          25
+                                        </SelectItem>
+                                        <SelectItem
+                                          value="50"
+                                          className="text-xs"
+                                        >
+                                          50
+                                        </SelectItem>
+                                        <SelectItem
+                                          value="100"
+                                          className="text-xs"
+                                        >
+                                          100
+                                        </SelectItem>
+                                        <SelectItem
+                                          value="250"
+                                          className="text-xs"
+                                        >
+                                          250
+                                        </SelectItem>
+                                        <SelectItem
+                                          value="500"
+                                          className="text-xs"
+                                        >
+                                          500
+                                        </SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
@@ -2320,7 +2631,9 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                                       <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      Shows the most common long-tail search queries (4+ words) that bring users to your site
+                                      Shows the most common long-tail search
+                                      queries (4+ words) that bring users to
+                                      your site
                                     </TooltipContent>
                                   </InfoTooltip>
                                 </div>
@@ -2335,41 +2648,72 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                               <Table>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead className="font-semibold border-r border-slate-100 last:border-r-0 w-[50px]">#</TableHead>
-                                    <TableHead className="font-semibold border-r border-slate-100 last:border-r-0">Query</TableHead>
-                                    <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Clicks</TableHead>
-                                    <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Impressions</TableHead>
-                                    <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">CTR</TableHead>
-                                    <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">Avg Position</TableHead>
+                                    <TableHead className="font-semibold border-r border-slate-100 last:border-r-0 w-[50px]">
+                                      #
+                                    </TableHead>
+                                    <TableHead className="font-semibold border-r border-slate-100 last:border-r-0">
+                                      Query
+                                    </TableHead>
+                                    <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">
+                                      Clicks
+                                    </TableHead>
+                                    <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">
+                                      Impressions
+                                    </TableHead>
+                                    <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">
+                                      CTR
+                                    </TableHead>
+                                    <TableHead className="font-semibold text-right border-r border-slate-100 last:border-r-0 w-[100px]">
+                                      Avg Position
+                                    </TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {scTopQueries.map((query: any, index: number) => (
-                                    <TableRow key={index} className="hover:bg-slate-50/50 transition-colors">
-                                      <TableCell className="font-medium text-gray-600 border-r border-slate-100 last:border-r-0">
-                                        {index + 1}
-                                      </TableCell>
-                                      <TableCell className="max-w-md border-r border-slate-100 last:border-r-0">
-                                        <span className="text-sm font-medium">{query.query}</span>
-                                      </TableCell>
-                                      <TableCell className="text-right font-semibold text-blue-600 border-r border-slate-100 last:border-r-0">
-                                        {query.clicks.toLocaleString()}
-                                      </TableCell>
-                                      <TableCell className="text-right border-r border-slate-100 last:border-r-0">
-                                        {query.impressions.toLocaleString()}
-                                      </TableCell>
-                                      <TableCell className="text-right border-r border-slate-100 last:border-r-0">
-                                        <span className={`font-medium ${query.ctr > 0.05 ? 'text-green-600' : 'text-gray-600'}`}>
-                                          {(query.ctr * 100).toFixed(2)}%
-                                        </span>
-                                      </TableCell>
-                                      <TableCell className="text-right border-r border-slate-100 last:border-r-0">
-                                        <span className={`font-medium ${query.position <= 10 ? 'text-green-600' : 'text-gray-600'}`}>
-                                          {query.position.toFixed(1)}
-                                        </span>
-                                      </TableCell>
-                                    </TableRow>
-                                  ))}
+                                  {scTopQueries.map(
+                                    (query: any, index: number) => (
+                                      <TableRow
+                                        key={index}
+                                        className="hover:bg-slate-50/50 transition-colors"
+                                      >
+                                        <TableCell className="font-medium text-gray-600 border-r border-slate-100 last:border-r-0">
+                                          {index + 1}
+                                        </TableCell>
+                                        <TableCell className="max-w-md border-r border-slate-100 last:border-r-0">
+                                          <span className="text-sm font-medium">
+                                            {query.query}
+                                          </span>
+                                        </TableCell>
+                                        <TableCell className="text-right font-semibold text-blue-600 border-r border-slate-100 last:border-r-0">
+                                          {query.clicks.toLocaleString()}
+                                        </TableCell>
+                                        <TableCell className="text-right border-r border-slate-100 last:border-r-0">
+                                          {query.impressions.toLocaleString()}
+                                        </TableCell>
+                                        <TableCell className="text-right border-r border-slate-100 last:border-r-0">
+                                          <span
+                                            className={`font-medium ${
+                                              query.ctr > 0.05
+                                                ? "text-green-600"
+                                                : "text-gray-600"
+                                            }`}
+                                          >
+                                            {(query.ctr * 100).toFixed(2)}%
+                                          </span>
+                                        </TableCell>
+                                        <TableCell className="text-right border-r border-slate-100 last:border-r-0">
+                                          <span
+                                            className={`font-medium ${
+                                              query.position <= 10
+                                                ? "text-green-600"
+                                                : "text-gray-600"
+                                            }`}
+                                          >
+                                            {query.position.toFixed(1)}
+                                          </span>
+                                        </TableCell>
+                                      </TableRow>
+                                    )
+                                  )}
                                 </TableBody>
                               </Table>
                             </CardContent>
@@ -2381,8 +2725,13 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
                         <CardContent className="pt-6">
                           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
                             <Globe className="h-12 w-12 mb-3 opacity-20" />
-                            <p className="font-medium">Search Console not available</p>
-                            <p className="text-sm mt-2">Re-authenticate to grant Search Console permissions</p>
+                            <p className="font-medium">
+                              Search Console not available
+                            </p>
+                            <p className="text-sm mt-2">
+                              Re-authenticate to grant Search Console
+                              permissions
+                            </p>
                           </div>
                         </CardContent>
                       </Card>
@@ -2396,9 +2745,6 @@ if(location.hash.includes(':~:text='))gtag('event','ai_overview_click',{page_pat
     </div>
   );
 }
-
-
-
 
 //  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 //                    <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
