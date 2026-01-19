@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { BrandTable } from "@/components/Brands/BrandTable";
 import { brandAPI } from "@/lib/api/brand.api";
-import { TargetBrandTable } from "@/components/Brands/TargetBrandGrid";
+import { TargetBrandGrid } from "@/components/Brands/TargetBrandGrid";
 import { Brand } from "../../../lib/models/brand.model";
 import {
   BadgeCheck,
@@ -277,9 +277,9 @@ export default function BrandPage() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="bg-slate-900 hover:bg-black text-white px-8 h-12 rounded-xl shadow-lg shadow-slate-200 flex items-center gap-2 group transition-all active:scale-95"
+                    className="bg-black text-white px-8 h-12 rounded-xl shadow-lg shadow-slate-100 flex items-center justify-center group transition-all active:scale-95 "
                   >
-                    <BadgeCheck className="w-4 h-4 text-emerald-400" />
+                    <BadgeCheck className="w-4 h-4 text-white" />
                     Add to Tracking
                     <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                   </Button>
@@ -306,7 +306,7 @@ export default function BrandPage() {
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <TargetBrandTable
+              <TargetBrandGrid
                 data={targetBrands}
                 loading={isLoading}
                 onRefresh={refreshBrands}
@@ -328,11 +328,7 @@ export default function BrandPage() {
                 </div>
               </div>
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                {/* <TargetBrandTable
-                  data={allBrands}
-                  loading={isAllBrandsLoading}
-                  onRefresh={refreshAllBrands}
-                /> */}
+
                 <DashBrandTable data={allBrands} loading={isAllBrandsLoading} />
               </div>
             </div>

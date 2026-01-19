@@ -64,14 +64,9 @@ export function AiOverviewStats({ pages, devices, loading }: AiOverviewStatsProp
                                                     <span className="text-xs font-medium text-slate-900 line-clamp-1">
                                                         {page.title}
                                                     </span>
-                                                    <a
-                                                        href={page.path.startsWith('http') ? page.path : `https://${page.path}`}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="text-[10px] text-slate-500 flex items-center gap-1 hover:text-blue-500 hover:underline"
-                                                    >
-                                                        {page.path} <ExternalLink className="h-2 w-2" />
-                                                    </a>
+                                                    <span className="text-[10px] text-slate-500">
+                                                        {page.path}
+                                                    </span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right font-bold text-slate-700">

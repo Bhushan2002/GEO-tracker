@@ -4,10 +4,16 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'r
 import { Loader } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
+interface WebTrafficChartProps {
+  loading: boolean;
+  chartData: any[];
+  formatDate: (dateValue: any) => string;
+}
+
 /**
  * Line chart comparing total website traffic vs AI-driven traffic trends over time.
  */
-function WebTrafficChart(loading: boolean, chartData: any[], formatDate: (dateString: string) => string) {
+function WebTrafficChart({ loading, chartData, formatDate }: WebTrafficChartProps) {
   return (
     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 ">

@@ -67,10 +67,6 @@ import {
   Layout,
   Smartphone,
   Info,
-  RefreshCw,
-  TrafficCone,
-  LucideTrafficCone,
-  Group,
   FileSpreadsheet,
   Search,
 } from "lucide-react";
@@ -85,16 +81,21 @@ import { AIGrowthRateChart } from "@/components/Charts/AIGrowthRateChart";
 import { AIDeviceBreakdownChart } from "@/components/Charts/AIDeviceBreakdownChart";
 import { cn } from "@/lib/utils";
 import { AiDemographicsChart } from "@/components/Charts/AiDemographicsChart";
-import FirstZeroTouchChart from "@/components/Charts/FirstZeroTouchChart";
 import CitationsPieChart from "@/components/Charts/CitationsPieChart";
-import { Dialog, DialogTitle } from "@radix-ui/react-dialog";
-import { DialogContent, DialogHeader } from "@/components/ui/dialog";
+
 import { AiOverviewStats } from "@/components/Charts/AiOverviewStats";
 import { RangeCalendar } from "@/components/RangeCalendar";
-import { subDays, format } from "date-fns";
-import { DateRange } from "react-day-picker";
-import { ButtonGroup } from "@/components/ui/button-group";
+
+
 import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
+import AiOverviewInstructionDialog from '../../../components/AiOverviewInstructionDialog';
+import WebTrafficChart from "@/components/Charts/WebTrafficChart";
+import { ZeroTouchChart } from "@/components/Charts/ZeroTouchChart";
+import FirstTouchChart from "@/components/Charts/FirstTouchChart";
+import { TrafficByModel } from "@/components/Charts/TrafficByModel";
+import AiModelPerformanceTable from "@/components/Charts/AiModelPerformanceTable";
+import LandingPageTable from "@/components/Charts/LandingPageTable";
+import useAnalyticsData from "@/hooks/useAnalyticsData";
 
 /**
  * Analytics page integrating Google Analytics data.
@@ -102,160 +103,69 @@ import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
  */
 export default function GoogleAnalyticsPage() {
   const { activeWorkspace } = useWorkspace();
-  const [gaAccounts, setGaAccounts] = useState<any[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [aiModelsData, setAiModelsData] = useState<any[]>([]);
-  const [firstTouchData, setFirstTouchData] = useState<any[]>([]);
-  const [zeroTouchData, setZeroTouchData] = useState<any[]>([]);
-  const [aiLandingPageData, setAiLandingPageData] = useState<any[]>([]);
-  const [keyMetrics, setKeyMetrics] = useState({
-    activeUsers: 0,
-    engagedSessions: 0,
-    keyEvents: 0,
-    aiOverviewClicks: 0,
-  });
-  const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
 
-  // property selection state
-  const [propertiesMap, setPropertiesMap] = useState<Record<string, any[]>>({});
-  const [loadingProperties, setLoadingProperties] = useState<
-    Record<string, boolean>
-  >({});
+  // Use the custom hook for all analytics data management
+  const {
+    gaAccounts,
+    selectedAccountId,
+    loading,
+    initialLoading,
+    isQuotaExceeded,
+    chartData,
+    aiModelsData,
+    firstTouchData,
+    zeroTouchData,
+    aiLandingPageData,
+    keyMetrics,
+    aiOverviewStats,
+    conversionRateData,
+    topicClusterData,
+    aiGrowthData,
+    aiDeviceData,
+    demographicsData,
+    propertiesMap,
+    loadingProperties,
+    activeView,
+    dateRange,
+    limit,
+    gscAccount,
+    searchConsoleData,
+    scLoading,
+    scSites,
+    scChartData,
+    scTopQueries,
+    scLimit,
+    setGaAccounts,
+    setSelectedAccountId,
+    setDateRange,
+    setActiveView,
+    setLimit,
+    setScLimit,
+    loadGAAccounts,
+    loadGscAccount,
+    loadAccountData,
+    loadSearchConsoleData,
+    fetchPropertiesForAccount,
+    setGscAccount,
+    setSearchConsoleData,
+    setScChartData,
+    setScTopQueries,
+    setScSites,
+    setGscProperties,
+    isSettingsOpen,
+    setIsSettingsOpen,
+    exporting,
+    setExporting,
+    activeSetupAccount,
+    setActiveSetupAccount,
+    showInstallInstructions,
+    setShowInstallInstructions,
+  } = useAnalyticsData();
 
-  const [conversionRateData, setConversionRateData] = useState<any[]>([]);
-  const [topicClusterData, setTopicClusterData] = useState<any[]>([]);
-  const [aiGrowthData, setAiGrowthData] = useState<any[]>([]);
-  const [aiDeviceData, setAiDeviceData] = useState<any[]>([]);
-  const [demographicsData, setDemographicsData] = useState<any[]>([]);
-  // const [missingAudience, setMissingAudience] = useState(false);
-  const [searchConsoleData, setSearchConsoleData] = useState<any>(null);
-  const [scLoading, setScLoading] = useState(false);
-  const [scSites, setScSites] = useState<any[]>([]);
+  // Local state for additional UI
   const [selectedSite, setSelectedSite] = useState<string>("");
-  const [scChartData, setScChartData] = useState<any[]>([]);
-  const [scLimit, setScLimit] = useState<string>("50");
-  const [scTopQueries, setScTopQueries] = useState<any[]>([]);
-  const [isGtmDialogOpen, setIsGtmDialogOpen] = useState(false);
-  const [gtmContainers, setGtmContainers] = useState<any[]>([]);
-  const [selectedGtmContainer, setSelectedGtmContainer] = useState<string>("");
-  const [activeSetupAccount, setActiveSetupAccount] = useState<any>(null);
-  const [aiOverviewStats, setAiOverviewStats] = useState<{
-    pages: any[];
-    devices: any[];
-  }>({ pages: [], devices: [] });
-  const [activeView, setActiveView] = useState<
-    "ai-analytics" | "search-console"
-  >("ai-analytics");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 30),
-    to: new Date(),
-  });
-  const [limit, setLimit] = useState<string>("10");
-
-  // GSC property management state
-  const [gscAccount, setGscAccount] = useState<any>(null);
-  const [gscProperties, setGscProperties] = useState<any[]>([]);
+  const [gscProperties, setGscPropertiesLocal] = useState<any[]>([]);
   const [loadingGscProperties, setLoadingGscProperties] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showInstallInstructions, setShowInstallInstructions] = useState(false);
-  const [installationGtmId, setInstallationGtmId] = useState("");
-
-  // OPTIMIZATION: Memoize loadGAAccounts to prevent recreation
-  const loadGAAccounts = useCallback(async () => {
-    if (!activeWorkspace?._id) {
-      setGaAccounts([]);
-      setInitialLoading(false);
-      return;
-    }
-
-    try {
-      // No cache - fetch fresh data
-      const response = await api.get("/api/ga-accounts");
-      setGaAccounts(response.data);
-
-      if (response.data.length > 0) {
-        setSelectedAccountId((prev) => {
-          if (!prev) return response.data[0]._id;
-          const exists = response.data.find((a: any) => a._id === prev);
-          return exists ? prev : response.data[0]._id;
-        });
-      }
-    } catch (error: any) {
-      console.error("Failed to load GA accounts:", error);
-      toast.error(error.response?.data?.message || "Failed to load accounts");
-      setGaAccounts([]);
-    } finally {
-      setInitialLoading(false);
-    }
-  }, [activeWorkspace?._id]);
-
-  // Load Search Console Account (separate from GA)
-  const loadGscAccount = useCallback(async () => {
-    if (!activeWorkspace?._id) return;
-
-    try {
-      const response = await api.get("/api/search-console-accounts");
-      setGscAccount(response.data);
-    } catch (error) {
-      console.error("Failed to load GSC account:", error);
-      setGscAccount(null);
-    }
-  }, [activeWorkspace?._id]);
-
-  useEffect(() => {
-    if (activeWorkspace?._id) {
-      // Reset ALL state to ensure clean transition and prevent stale data
-      // This ensures complete data isolation between workspaces
-
-      // GA Accounts & Selection
-      setGaAccounts([]);
-      setSelectedAccountId("");
-
-      // Chart & Analytics Data
-      setChartData([]);
-      setAiModelsData([]);
-      setFirstTouchData([]);
-      setZeroTouchData([]);
-      setAiLandingPageData([]);
-      setConversionRateData([]);
-      setAiGrowthData([]);
-      setAiDeviceData([]);
-      setTopicClusterData([]);
-      setDemographicsData([]);
-
-      // Key Metrics
-      setKeyMetrics({
-        activeUsers: 0,
-        engagedSessions: 0,
-        keyEvents: 0,
-        aiOverviewClicks: 0,
-      });
-
-      // Search Console Data - CRITICAL for workspace isolation
-      setSearchConsoleData(null);
-      setScChartData([]);
-      setScTopQueries([]);
-      setScSites([]);
-      setSelectedSite("");
-      setGscAccount(null);
-      setScLoading(false);
-
-      // AI Overview Stats
-      setAiOverviewStats({ pages: [], devices: [] });
-
-      // Other flags
-      setIsQuotaExceeded(false);
-      setScLimit("50");
-
-      setInitialLoading(true);
-      loadGAAccounts();
-      loadGscAccount(); // Load GSC separately
-    }
-  }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
 
   // Handle OAuth callback - force refresh when account is connected
   useEffect(() => {
@@ -264,276 +174,18 @@ export default function GoogleAnalyticsPage() {
     const gscConnected = urlParams.get("gsc_connected");
 
     if (connected === "true" && activeWorkspace?._id) {
-      // Remove the query parameter from URL
       window.history.replaceState({}, "", window.location.pathname);
-
-      // Force reload accounts
       loadGAAccounts();
       loadGscAccount();
       toast.success("Google Analytics connected successfully!");
     }
 
     if (gscConnected === "true" && activeWorkspace?._id) {
-      // Remove the query parameter from URL
       window.history.replaceState({}, "", window.location.pathname);
-
-      // Force reload GSC account
       loadGscAccount();
       toast.success("Search Console connected successfully!");
     }
   }, [activeWorkspace?._id, loadGAAccounts, loadGscAccount]);
-
-  const loadAccountData = useCallback(
-    async (accountId: string) => {
-      if (!accountId || isQuotaExceeded) {
-        return;
-      }
-
-      setLoading(true);
-      // setMissingAudience(false); // Reset the warning
-
-      const startDate = dateRange?.from
-        ? format(dateRange.from, "yyyy-MM-dd")
-        : "30daysAgo";
-      const endDate = dateRange?.to
-        ? format(dateRange.to, "yyyy-MM-dd")
-        : "today";
-      const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
-      try {
-        // OPTIMIZATION: Fetch ALL data in parallel instead of sequentially
-        const results = await Promise.allSettled([
-          api.get(
-            `/api/analytics-by-account?accountId=${accountId}${dateParams}`
-          ),
-          api.get(
-            `/api/ai-models-by-account?accountId=${accountId}${dateParams}`
-          ),
-          api.get(
-            `/api/analytics/ai-overview-stats?accountId=${accountId}${dateParams}`
-          ),
-          api.get(`/api/analytics/first-touch?accountId=${accountId}`),
-          api.get(
-            `/api/analytics/zero-touch?accountId=${accountId}${dateParams}`
-          ),
-          api.get(
-            `/api/analytics/ai-landing-pages?accountId=${accountId}${dateParams}&limit=${limit}`
-          ),
-          api.get(
-            `/api/analytics/ai-conversions?accountId=${accountId}${dateParams}`
-          ),
-          api.get(`/api/analytics/ai-growth-mom?accountId=${accountId}`),
-          api.get(
-            `/api/analytics/ai-device-split?accountId=${accountId}${dateParams}`
-          ),
-          api.get(
-            `/api/analytics/demographics?accountId=${accountId}${dateParams}`
-          ),
-          api.get(
-            `/api/analytics/topic-clusters?accountId=${accountId}${dateParams}`
-          ),
-        ]);
-        // Extract data from settled promises, using empty arrays as fallbacks
-        const endpoints = [
-          "analytics-by-account",
-          "ai-models-by-account",
-          "ai-overview-stats",
-          "first-touch",
-          "zero-touch",
-          "ai-landing-pages",
-          "ai-conversions",
-          "ai-growth-mom",
-          "ai-device-split",
-          "demographics",
-          "topic-clusters",
-        ];
-
-        const [
-          analyticsRes,
-          aiModelsRes,
-          aiStatsRes,
-          firstTouchRes,
-          zeroTouchRes,
-          landingPagesRes,
-          convRes,
-          growthRes,
-          deviceRes,
-          demoRes,
-          topicRes,
-        ] = results.map((result, index) => {
-          if (result.status === "fulfilled") {
-            return result.value;
-          } else {
-            // Check if the error is about missing AI audience or permissions
-            const errorMsg =
-              result.reason?.response?.data?.error ||
-              result.reason?.message ||
-              "";
-            const errorStatus = result.reason?.response?.status;
-            const needsPermissions =
-              result.reason?.response?.data?.needsPermissions;
-
-            console.error(` ${endpoints[index]} failed:`, {
-              status: errorStatus,
-              error: errorMsg,
-              fullError: result.reason,
-            });
-
-            // Handle permission errors
-            if (
-              errorStatus === 403 ||
-              needsPermissions ||
-              errorMsg.includes("permission")
-            ) {
-              console.warn(`Permission error for ${endpoints[index]}`);
-              if (endpoints[index] === "first-touch") {
-                toast.error(
-                  "GA4 Permission Required: Please reconnect with Editor or Admin role to create audiences"
-                );
-              }
-            }
-            // Handle audience-related errors
-            else if (
-              errorMsg.includes("AI Traffic audience") ||
-              errorMsg.includes("audience") ||
-              errorMsg.includes("Could not create") ||
-              errorMsg.toLowerCase().includes("audience")
-            ) {
-              // setMissingAudience(true);
-            }
-
-            console.warn(`Failed to load ${endpoints[index]}:`, errorMsg);
-            return {
-              data:
-                endpoints[index] === "analytics-by-account"
-                  ? {
-                      chartData: [],
-                      metrics: {
-                        activeUsers: 0,
-                        engagedSessions: 0,
-                        keyEvents: 0,
-                      },
-                    }
-                  : [],
-            };
-          }
-        });
-
-        // Process analytics data
-        const mainData = analyticsRes.data?.chartData || [];
-        const metrics = analyticsRes.data?.metrics || {
-          activeUsers: 0,
-          engagedSessions: 0,
-          keyEvents: 0,
-        };
-
-        // Process AI models data
-        const allowedModels = [
-          "ChatGPT",
-          "Copilot",
-          "Perplexity",
-          "Gemini",
-          "Claude",
-        ];
-        const formattedAIModels = allowedModels.map((modelName) => {
-          const existingData = aiModelsRes.data?.find(
-            (item: any) => item.model === modelName
-          );
-          if (existingData) return existingData;
-          return {
-            model: modelName,
-            users: 0,
-            sessions: 0,
-            conversionRate: "0%",
-          };
-        });
-
-        const fTouch = firstTouchRes.data || [];
-        const zTouch = zeroTouchRes.data || [];
-        const landingPages = landingPagesRes.data?.landingPageData || [];
-
-        // OPTIMIZATION: Batch state updates to reduce re-renders
-        setChartData(mainData);
-        setKeyMetrics(metrics);
-        setAiModelsData(formattedAIModels);
-        setAiOverviewStats(aiStatsRes.data || { pages: [], devices: [] });
-        setFirstTouchData(fTouch);
-        setZeroTouchData(zTouch);
-        setAiLandingPageData(landingPages);
-        setConversionRateData(convRes.data || []);
-        setAiGrowthData(growthRes.data || []);
-        setAiDeviceData(deviceRes.data || []);
-        setTopicClusterData(topicRes.data || []);
-        setDemographicsData(demoRes.data || []);
-
-        setIsQuotaExceeded(false);
-      } catch (error: any) {
-        const isQuotaError =
-          error.response?.status === 429 || error.message?.includes("quota");
-
-        if (isQuotaError) {
-          setIsQuotaExceeded(true);
-          // Use warn instead of error to avoid the development overlay
-          console.warn("GA Quota limit reached:", error.message);
-          toast.error(
-            "Analytics quota exceeded. This view will refresh once the quota is available."
-          );
-        } else {
-          console.error("Failed to load GA account data:", error);
-          toast.error("Failed to fetch analytics data");
-        }
-      } finally {
-        setLoading(false);
-      }
-    },
-    [isQuotaExceeded, dateRange]
-  ); // Search Console loads independently via separate effect
-
-  // Trigger data load when account or date range changes
-  useEffect(() => {
-    if (selectedAccountId && dateRange?.from && dateRange?.to) {
-      loadAccountData(selectedAccountId);
-    }
-  }, [selectedAccountId, dateRange, loadAccountData]);
-
-  // NEW: Dedicated function to reload ONLY landing pages when limit changes
-  const loadLandingPagesOnly = useCallback(
-    async (accountId: string) => {
-      if (!accountId) return;
-
-      // Use a separate loading state or just strict local update?
-      // Ideally we might want a local loading state for the table, but for now we'll just update the data.
-      // If we want a spinner on the table, we'd need a separate `isTableLoading` state.
-
-      try {
-        const startDate = dateRange?.from
-          ? format(dateRange.from, "yyyy-MM-dd")
-          : "30daysAgo";
-        const endDate = dateRange?.to
-          ? format(dateRange.to, "yyyy-MM-dd")
-          : "today";
-        const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
-
-        const res = await api.get(
-          `/api/analytics/ai-landing-pages?accountId=${accountId}${dateParams}&limit=${limit}`
-        );
-        setAiLandingPageData(res.data?.landingPageData || []);
-      } catch (error) {
-        console.error("Failed to reload landing pages:", error);
-      }
-    },
-    [limit, dateRange]
-  );
-
-  // Effect to trigger ONLY the landing page reload when limit changes (debounced)
-  useEffect(() => {
-    if (!selectedAccountId || initialLoading) return;
-
-    const timer = setTimeout(() => {
-      loadLandingPagesOnly(selectedAccountId);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [limit, selectedAccountId, loadLandingPagesOnly, initialLoading]);
 
   const loadSearchConsoleSites = useCallback(async (accountId: string) => {
     try {
@@ -545,7 +197,7 @@ export default function GoogleAnalyticsPage() {
       console.error("Failed to load Search Console sites:", error);
       toast.error("Failed to load Search Console sites");
     }
-  }, []);
+  }, [setScSites]);
 
   const linkSearchConsoleSite = async (accountId: string, siteUrl: string) => {
     try {
@@ -557,63 +209,6 @@ export default function GoogleAnalyticsPage() {
       toast.error("Failed to link Search Console");
     }
   };
-
-  const loadSearchConsoleData = useCallback(
-    async (accountId: string) => {
-      setScLoading(true);
-
-      const startDate = dateRange?.from
-        ? format(dateRange.from, "yyyy-MM-dd")
-        : "30daysAgo";
-      const endDate = dateRange?.to
-        ? format(dateRange.to, "yyyy-MM-dd")
-        : "today";
-      const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
-
-      try {
-        // Fetch BOTH chart data and top queries
-        const [chartResponse, queriesResponse] = await Promise.all([
-          api.get(
-            `/api/search-console/queries?accountId=${accountId}${dateParams}`
-          ),
-          api.get(
-            `/api/search-console/top-queries?accountId=${accountId}&limit=${scLimit}${dateParams}`
-          ),
-        ]);
-
-        setScChartData(chartResponse.data.chartData || []);
-        setSearchConsoleData({ totals: chartResponse.data.totals });
-        setScTopQueries(queriesResponse.data.queries || []);
-      } catch (error: any) {
-        console.error("Search Console data error:", error);
-
-        const errorMsg = error.response?.data?.error || "";
-        const needsPropertySelection =
-          error.response?.data?.needsPropertySelection;
-
-        // If property not selected, try to load available properties
-        if (
-          needsPropertySelection ||
-          errorMsg.includes("not selected") ||
-          errorMsg.includes("not configured")
-        ) {
-          console.log("Property not selected, loading available sites...");
-          loadSearchConsoleSites(accountId);
-        }
-        // Silently handle other errors - no toast message for non-critical failures
-      } finally {
-        setScLoading(false);
-      }
-    },
-    [scLimit, dateRange, loadSearchConsoleSites]
-  );
-
-  // Load Search Console data when GSC account, limit, or date changes
-  useEffect(() => {
-    if (gscAccount?._id && gscAccount?.siteUrl && !isQuotaExceeded) {
-      loadSearchConsoleData(gscAccount._id);
-    }
-  }, [scLimit, gscAccount, isQuotaExceeded, dateRange, loadSearchConsoleData]);
 
   const handleConnectAccount = () => {
     const client_id = process.env.NEXT_PUBLIC_GA_CLIENT_ID;
@@ -635,63 +230,48 @@ export default function GoogleAnalyticsPage() {
     toast.info("Redirecting to Google sign-in...");
     window.location.href = authUrl;
   };
-  // const fetchGtmContainers = async (accountId: string) => {
-  //   setGtmLoading(true);
+
+  // const handleGtmSetup = async (dbAccountId: string, measurementId: string) => {
+  //   if (!selectedGtmContainer) return;
+
+  //   // Find the full container object to get the internal gtmAccountId
+  //   const container = gtmContainers.find(
+  //     (c) => c.publicId === selectedGtmContainer
+  //   );
+  //   if (!container) return;
+
   //   try {
-  //     const res = await api.get(`/api/gtm/containers?accountId=${accountId}`);
-  //     setGtmContainers(res.data);
-  //     setIsGtmDialogOpen(true);
-  //   } catch (error) {
-  //     toast.error("Failed to load GTM containers. Please reconnect account with permissions.");
-  //   } finally {
-  //     setGtmLoading(false);
+  //     const response = await api.post("/api/gtm/setup", {
+  //       dbAccountId,
+  //     });
+
+  //     const result = response.data;
+
+  //     // Show appropriate message based on status
+  //     if (result.status === "Configured and Published") {
+  //       toast.success(result.message || "Success! GTM tracking is now live!");
+
+  //       // Show installation instructions
+  //       setInstallationGtmId(container.publicId); // Use the public GTM ID (GTM-XXXXX)
+  //       setShowInstallInstructions(true);
+  //     } else {
+  //       // Partial success - configured but not published
+  //       toast.success(result.message || "GTM configured successfully!");
+  //       if (result.warning) {
+  //         setTimeout(() => {
+  //           toast.warning(result.warning, { duration: 8000 });
+  //         }, 500);
+  //       }
+  //     }
+
+  //     setIsGtmDialogOpen(false);
+  //   } catch (e: any) {
+  //     console.error(e);
+  //     const errorMsg =
+  //       e.response?.data?.error || "Setup failed. Check console for details.";
+  //     toast.error(errorMsg);
   //   }
   // };
-
-  const handleGtmSetup = async (dbAccountId: string, measurementId: string) => {
-    if (!selectedGtmContainer) return;
-
-    // Find the full container object to get the internal gtmAccountId
-    const container = gtmContainers.find(
-      (c) => c.publicId === selectedGtmContainer
-    );
-    if (!container) return;
-
-    try {
-      // setGtmLoading(true);
-      // toast.info("Configuring GTM...");
-
-      const response = await api.post("/api/gtm/setup", {
-        dbAccountId,
-      });
-
-      const result = response.data;
-
-      // Show appropriate message based on status
-      if (result.status === "Configured and Published") {
-        toast.success(result.message || "Success! GTM tracking is now live!");
-
-        // Show installation instructions
-        setInstallationGtmId(container.publicId); // Use the public GTM ID (GTM-XXXXX)
-        setShowInstallInstructions(true);
-      } else {
-        // Partial success - configured but not published
-        toast.success(result.message || "GTM configured successfully!");
-        if (result.warning) {
-          setTimeout(() => {
-            toast.warning(result.warning, { duration: 8000 });
-          }, 500);
-        }
-      }
-
-      setIsGtmDialogOpen(false);
-    } catch (e: any) {
-      console.error(e);
-      const errorMsg =
-        e.response?.data?.error || "Setup failed. Check console for details.";
-      toast.error(errorMsg);
-    }
-  };
 
   const handleDeleteAccount = async (accountId: string) => {
     if (!confirm("Are you sure you want to remove this account?")) return;
@@ -706,97 +286,27 @@ export default function GoogleAnalyticsPage() {
       // If the deleted account was selected, clear the selection
       if (selectedAccountId === accountId) {
         setSelectedAccountId("");
-        setChartData([]);
-        setAiModelsData([]);
       }
     } catch (error) {
       console.error("Failed to delete account:", error);
       toast.error("Failed to remove account");
     }
   };
-  const fetchPropertiesForAccount = useCallback(
-    async (accountId: string) => {
-      if (propertiesMap[accountId]) return;
-      setLoadingProperties((prev) => ({ ...prev, [accountId]: true }));
-      try {
-        const res = await api.get(`/api/ga-accounts/${accountId}/properties`);
-        const properties = res.data;
-        setPropertiesMap((prev) => ({ ...prev, [accountId]: properties }));
 
-        // Auto-select logic: If only 1 property exists and none is selected, select it automatically
-        if (properties && properties.length === 1) {
-          const account = gaAccounts.find((a) => a._id === accountId);
-          if (account && !account.propertyId) {
-            const singleProp = properties[0];
-            try {
-              await api.patch(`/api/ga-accounts/${accountId}`, {
-                propertyId: singleProp.id,
-                propertyName: singleProp.name,
-              });
-              // Toast removed for seamless auto-selection
-
-              // Update local state immediately
-              setGaAccounts((prev) =>
-                prev.map((acc) => {
-                  if (acc._id === accountId) {
-                    return {
-                      ...acc,
-                      propertyId: singleProp.id,
-                      propertyName: singleProp.name,
-                    };
-                  }
-                  return acc;
-                })
-              );
-
-              // Trigger data load if this is the active account
-              if (selectedAccountId === accountId) {
-                loadAccountData(accountId);
-              }
-            } catch (err) {
-              console.error("Auto-select property failed:", err);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch properties", error);
-        toast.error("Could not load properties");
-      } finally {
-        setLoadingProperties((prev) => ({ ...prev, [accountId]: false }));
-      }
-    },
-    [gaAccounts, propertiesMap, selectedAccountId, loadAccountData]
-  );
-
-  // Auto-fetch properties if selected account doesn't have a property set
-  useEffect(() => {
-    if (selectedAccountId && gaAccounts.length > 0) {
-      const account = gaAccounts.find((a) => a._id === selectedAccountId);
-      if (account && !account.propertyId) {
-        // Fetch properties to see if we can auto-select one
-        fetchPropertiesForAccount(selectedAccountId);
-      }
-    }
-  }, [selectedAccountId, gaAccounts, fetchPropertiesForAccount]);
 
   // Handle property change for GA account
-  // When a property is switched, we need to:
-  // 1. Update the account in the database
-  // 2. Clear audience data (audiences are property-specific)
-  // 3. Update local state
-  // 4. Reload analytics data for the new property
   const handlePropertyChange = async (
     accountId: string,
     propertyId: string,
     forceSwitch = false
   ) => {
     const properties = propertiesMap[accountId];
-    const selectedProp = properties?.find((p) => p.id === propertyId);
+    const selectedProp = properties?.find((p: any) => p.id === propertyId);
 
     if (!selectedProp) return;
 
     try {
-      const response = await api.patch(`/api/ga-accounts/${accountId}`, {
+      await api.patch(`/api/ga-accounts/${accountId}`, {
         propertyId: selectedProp.id,
         propertyName: selectedProp.name,
         forceSwitch,
@@ -805,19 +315,17 @@ export default function GoogleAnalyticsPage() {
       toast.success("Property updated successfully");
 
       // Update local state to reflect change immediately
-      setGaAccounts((prev) =>
-        prev.map((acc) => {
+      setGaAccounts((prev: any[]) =>
+        prev.map((acc: any) => {
           if (acc._id === accountId) {
             return {
               ...acc,
               propertyId: selectedProp.id,
               propertyName: selectedProp.name,
-              // Clear audience data when switching properties
               aiAudienceId: null,
               aiAudienceName: null,
             };
           }
-          // If this property was used by another account, clear it
           if (
             acc.propertyId === selectedProp.id &&
             acc._id !== accountId &&
@@ -835,40 +343,24 @@ export default function GoogleAnalyticsPage() {
         })
       );
 
-      // If this is the currently selected account, reload data immediately
+      // If this is the currently selected account, reload data
       if (selectedAccountId === accountId) {
-        // Clear existing data first to show loading state
-        setChartData([]);
-        setAiModelsData([]);
-        setAiLandingPageData([]);
-
-        // Reload fresh data for the new property
         await loadAccountData(accountId);
       }
     } catch (error: any) {
       console.error("Failed to update property", error);
-      console.log("Error response:", error.response);
-      console.log("Error status:", error.response?.status);
-      console.log("Error data:", error.response?.data);
 
-      // Check if this is a conflict error that can be resolved by force switching
       if (
         error.response?.status === 409 &&
         error.response?.data?.canForceSwitch
       ) {
         const conflictingAccount = error.response.data.conflictingAccountName;
-        console.log("Showing confirmation dialog for:", conflictingAccount);
-
         const confirmed = confirm(
           `This property is currently connected to "${conflictingAccount}".\n\n` +
-            `Would you like to switch it to this account? This will disconnect it from "${conflictingAccount}".`
+          `Would you like to switch it to this account? This will disconnect it from "${conflictingAccount}".`
         );
 
-        console.log("User confirmed:", confirmed);
-
         if (confirmed) {
-          // Retry with forceSwitch flag
-          console.log("Retrying with forceSwitch=true");
           return handlePropertyChange(accountId, propertyId, true);
         } else {
           toast.info("Property change cancelled");
@@ -882,6 +374,7 @@ export default function GoogleAnalyticsPage() {
       }
     }
   };
+
 
   // NEW: Independent OAuth handler for GSC
   const handleConnectGscAccount = () => {
@@ -901,8 +394,8 @@ export default function GoogleAnalyticsPage() {
     window.location.href = authUrl;
   };
 
-  // NEW: Fetch GSC properties for property selection
-  // NEW: Fetch GSC properties for property selection
+
+  // Fetch GSC properties for property selection
   const fetchGscProperties = useCallback(async (accountId: string) => {
     setLoadingGscProperties(true);
     try {
@@ -912,7 +405,7 @@ export default function GoogleAnalyticsPage() {
       const sites = res.data.sites || [];
       const message = res.data.message;
 
-      setGscProperties(sites);
+      setGscPropertiesLocal(sites);
 
       // Show helpful message if no sites found
       if (sites.length === 0 && message) {
@@ -940,7 +433,7 @@ export default function GoogleAnalyticsPage() {
     }
   }, []);
 
-  // NEW: Auto-fetch GSC properties if account connected but no site selected
+  // Auto-fetch GSC properties if account connected but no site selected
   useEffect(() => {
     if (gscAccount && gscAccount._id && !gscAccount.siteUrl) {
       fetchGscProperties(gscAccount._id);
@@ -1165,11 +658,11 @@ export default function GoogleAnalyticsPage() {
                                     (propertiesMap[account._id]?.length
                                       ? propertiesMap[account._id]
                                       : [
-                                          {
-                                            id: account.propertyId,
-                                            name: account.propertyName,
-                                          },
-                                        ]
+                                        {
+                                          id: account.propertyId,
+                                          name: account.propertyName,
+                                        },
+                                      ]
                                     ).map((prop) => (
                                       <SelectItem
                                         key={prop.id}
@@ -1190,155 +683,7 @@ export default function GoogleAnalyticsPage() {
                   </div>
 
                   {/* AI Overview Tracking Instructions Dialog - MOVED Outside Loop */}
-                  <Dialog
-                    open={showInstallInstructions}
-                    onOpenChange={setShowInstallInstructions}
-                  >
-                    <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle className="text-2xl">
-                          AI Overview Tracking Setup
-                        </DialogTitle>
-                        <p className="text-sm text-slate-600 mt-2">
-                          Add this simple code to your client's
-                          website to track AI Overview clicks.
-                        </p>
-                      </DialogHeader>
-
-                      <div className="space-y-8 pt-4">
-                        {/* Step 1 */}
-                        <div className="group relative rounded-lg border border-slate-200 bg-slate-50 p-5">
-                            <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 border-4 border-white text-white font-bold shadow-sm">
-                                1
-                            </div>
-                            <h3 className="mb-2 font-bold text-slate-900 ml-3">Find GA4 Tracking Code</h3>
-                            <p className="text-sm text-slate-600 ml-3">
-                                Check the <code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-xs font-semibold">&lt;head&gt;</code> section of your client's website for the Google Analytics script.
-                            </p>
-                        </div>
-
-                        {/* Step 2 */}
-                        <div className="group relative rounded-lg border border-slate-200 bg-slate-50 p-5">
-                            <div className="absolute -left-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 border-4 border-white text-white font-bold shadow-sm">
-                                2
-                            </div>
-                            <h3 className="mb-2 font-bold text-slate-900 ml-3">Insert Tracking Script</h3>
-                            <p className="text-sm text-slate-600 ml-3 mb-4">
-                                Paste the snippet below immediately after the line <code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-xs font-semibold">gtag('config', 'G-XXXX');</code>.
-                            </p>
-
-                            <div className="relative rounded-md bg-slate-900 mx-3">
-                                <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-slate-300 font-mono">
-{`// AI Overview Detection (Performance API)
-(function(){try{var n=performance.getEntriesByType('navigation')[0];
-var u=n?n.name:document.URL;
-if(u.includes(':~:text=')){
-  var r=0,s=function(){
-    var p={page_location:u,page_path:new URL(u).pathname+new URL(u).hash};
-    if(typeof gtag!=='undefined'){gtag('event','ai_overview_click',p);}
-    else if(window.dataLayer){dataLayer.push({'event':'ai_overview_click',...p});}
-    else if(r++<50){setTimeout(s,200);}
-  };s();
-}}catch(e){}})();`}
-                                </pre>
-                                <Button
-                                  size="sm"
-                                  variant="secondary" 
-                                  className="absolute right-2 top-2 h-7 px-2 text-xs hover:bg-slate-700 hover:text-white bg-slate-800 text-slate-400 border border-slate-700"
-                                  onClick={() => {
-                                      navigator.clipboard.writeText(`(function(){try{var n=performance.getEntriesByType('navigation')[0];
-var u=n?n.name:document.URL;
-if(u.includes(':~:text=')){
-  var r=0,s=function(){
-    var p={page_location:u,page_path:new URL(u).pathname+new URL(u).hash};
-    if(typeof gtag!=='undefined'){gtag('event','ai_overview_click',p);}
-    else if(window.dataLayer){dataLayer.push({'event':'ai_overview_click',...p});}
-    else if(r++<50){setTimeout(s,200);}
-  };s();
-}}catch(e){}})();`);
-                                      toast.success("Snippet copied to clipboard");
-                                  }}
-                                >
-                                  Copy Snippet
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Complete Example */}
-                        <div className="space-y-3 pt-2">
-                           <h3 className="font-bold text-base text-slate-700 ml-1">
-                                Complete Example Reference:
-                           </h3>
-                           <div className="relative rounded-md bg-slate-50 border border-slate-200">
-                               <pre className="overflow-x-auto p-4 text-xs leading-relaxed text-slate-600 font-mono">
-{`<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-  
-  // AI Overview Detection
-  (function(){try{var n=performance.getEntriesByType('navigation')[0];
-  var u=n?n.name:document.URL;
-  if(u.includes(':~:text=')){
-    var r=0,s=function(){
-      var p={page_location:u,page_path:new URL(u).pathname+new URL(u).hash};
-      if(typeof gtag!=='undefined'){gtag('event','ai_overview_click',p);}
-      else if(window.dataLayer){dataLayer.push({'event':'ai_overview_click',...p});}
-      else if(r++<50){setTimeout(s,200);}
-    };s();
-  }}catch(e){}})();
-</script>`}
-                               </pre>
-                               <Button
-                                 size="sm"
-                                 variant="outline"
-                                 className="absolute right-2 top-2 h-7 px-2 text-xs bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                                 onClick={() => {
-                                     navigator.clipboard.writeText(`<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXXXXX');
-  
-  // AI Overview Detection
-  (function(){try{var n=performance.getEntriesByType('navigation')[0];
-  var u=n?n.name:document.URL;
-  if(u.includes(':~:text=')){
-    var r=0,s=function(){
-      var p={page_location:u,page_path:new URL(u).pathname+new URL(u).hash};
-      if(typeof gtag!=='undefined'){gtag('event','ai_overview_click',p);}
-      else if(window.dataLayer){dataLayer.push({'event':'ai_overview_click',...p});}
-      else if(r++<50){setTimeout(s,200);}
-    };s();
-  }}catch(e){}})();
-</script>`);
-                                     toast.success("Complete example copied");
-                                 }}
-                               >
-                                 Copy Full Example
-                               </Button>
-                           </div>
-                        </div>
-
-                      </div>
-                      
-                      <div className="mt-8 rounded-lg border border-blue-100 bg-blue-50/50 p-4">
-                          <h4 className="mb-2 font-semibold text-blue-900 flex items-center gap-2">
-                              <span className="text-xs uppercase tracking-wider font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Validation</span>
-                              How to verify?
-                          </h4>
-                          <ul className="list-disc list-inside text-sm text-blue-800 space-y-1 ml-1">
-                              <li>Open the browser console (F12)</li>
-                              <li>Go to the <strong>Network</strong> tab</li>
-                              <li>Filter for "collect" requests</li>
-                              <li>Click an AI Overview link and ensure an event is fired</li>
-                          </ul>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <AiOverviewInstructionDialog showInstallInstructions={showInstallInstructions} setShowInstallInstructions={setShowInstallInstructions} />
 
                   {/* SEARCH CONSOLE SECTION - Independent Integration */}
                   <div className="space-y-4 mt-8">
@@ -1374,9 +719,9 @@ if(u.includes(':~:text=')){
                               <p className="text-[10px] font-semibold text-slate-500 tracking-tight">
                                 {gscAccount.siteUrl
                                   ? `Active Property • ${gscAccount.siteUrl
-                                      .replace("sc-domain:", "")
-                                      .replace("https://", "")
-                                      .replace("http://", "")}`
+                                    .replace("sc-domain:", "")
+                                    .replace("https://", "")
+                                    .replace("http://", "")}`
                                   : "No property selected"}
                               </p>
                             </div>
@@ -1662,81 +1007,8 @@ if(u.includes(':~:text=')){
                     </div>
 
                     {/* Website Traffic Chart */}
+                    <WebTrafficChart loading={loading} chartData={chartData} formatDate={formatDate} />
 
-                    <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                      <CardHeader className="border-b border-slate-100  px-5 ">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                              Website Traffic Trends
-                            </CardTitle>
-                            <CardDescription className="text-[10px] text-slate-500 font-medium">
-                              Daily active users comparing Total vs AI traffic
-                            </CardDescription>
-                          </div>
-                          <InfoTooltip>
-                            <TooltipTrigger>
-                              <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Shows daily active user trends comparing total
-                              website traffic with AI-referred traffic
-                            </TooltipContent>
-                          </InfoTooltip>
-                        </div>
-                      </CardHeader>
-
-                      <CardContent className="pt-6">
-                        {loading ? (
-                          <div className="flex items-center justify-center h-64">
-                            <Loader className="h-8 w-8 animate-spin text-gray-400" />
-                          </div>
-                        ) : (
-                          <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={chartData}>
-                              <CartesianGrid
-                                strokeDasharray="3 3"
-                                stroke="#e5e7eb"
-                              />
-                              <XAxis
-                                dataKey="name"
-                                stroke="#6b7280"
-                                tick={{ fontSize: 12 }}
-                                tickFormatter={formatDate}
-                              />
-                              <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
-                              <Tooltip
-                                contentStyle={{
-                                  backgroundColor: "white",
-                                  border: "1px solid #e5e7eb",
-                                  borderRadius: "6px",
-                                }}
-                                labelFormatter={formatDate}
-                              />
-                              <Legend />
-                              <Line
-                                type="monotone"
-                                dataKey="users"
-                                stroke="#1e40af"
-                                strokeWidth={3}
-                                name="Total Users"
-                                dot={{ fill: "#1e40af", r: 1 }}
-                                activeDot={{ r: 3 }}
-                              />
-                              <Line
-                                type="monotone"
-                                dataKey="aiUsers"
-                                stroke="#059669"
-                                strokeWidth={3}
-                                name="AI Traffic"
-                                dot={{ fill: "#059669", r: 1 }}
-                                activeDot={{ r: 3 }}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        )}
-                      </CardContent>
-                    </Card>
                   </div>
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-2">
@@ -1745,10 +1017,9 @@ if(u.includes(':~:text=')){
                         AI Overview Performance
                       </h3>
                       <span className="text-sm text-muted-foreground hidden sm:inline-block">
-                        • GTM tracked citations & features
+                        • AI Overview event data
                       </span>
                     </div>
-
                     <AiOverviewStats
                       pages={aiOverviewStats.pages}
                       devices={aiOverviewStats.devices}
@@ -1758,24 +1029,6 @@ if(u.includes(':~:text=')){
 
                   {/* 2. User Journey and Conversion */}
                   <div className="space-y-4">
-                    {/* AI Audience Warning */}
-                    {/* {missingAudience && (
-                      <Card className="border-amber-200 bg-amber-50/50">
-                        <CardHeader>
-                          <CardTitle className="text-amber-900 text-sm flex items-center gap-2">
-                            <Info className="h-4 w-4" />
-                            AI Traffic Audience Required
-                          </CardTitle>
-                          <CardDescription className="text-amber-800 text-xs">
-                            The "AI Traffic" audience is being created in your Google Analytics property.
-                            This may take a few minutes. Once created, first touch and zero touch attribution data will be available.
-                            <br /><br />
-                            <strong>Note:</strong> The audience needs to collect data for at least 24-48 hours before showing meaningful results.
-                          </CardDescription>
-                        </CardHeader>
-                      </Card>
-                    )} */}
-
                     <div className="flex items-center gap-2 mb-2">
                       <MousePointerClick className="h-5 w-5 text-muted-foreground" />
                       <h3 className="text-lg font-semibold text-foreground">
@@ -1788,151 +1041,17 @@ if(u.includes(':~:text=')){
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* First touch chart */}
-                      <FirstZeroTouchChart
+                      <FirstTouchChart
                         data={firstTouchData}
                         loading={loading}
                         formatDate={formatDate}
                       />
                       {/* Zero touch chart */}
-                      <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <CardHeader className="border-b border-slate-100  px-5 ">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                                Zero Touch Attribution
-                              </CardTitle>
-                              <CardDescription className="text-[10px] text-slate-500 font-medium">
-                                Brand awareness & indirect influence
-                              </CardDescription>
-                            </div>
-                            <InfoTooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Tracks impressions and brand searches where
-                                users don't directly click but are influenced by
-                                brand awareness
-                              </TooltipContent>
-                            </InfoTooltip>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                          {loading ? (
-                            <div className="flex items-center justify-center h-[300px]">
-                              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-                            </div>
-                          ) : zeroTouchData.length > 0 ? (
-                            <ResponsiveContainer width="100%" height={320}>
-                              <LineChart
-                                data={zeroTouchData}
-                                margin={{
-                                  top: 20,
-                                  right: 30,
-                                  left: 0,
-                                  bottom: 0,
-                                }}
-                              >
-                                <defs>
-                                  <linearGradient
-                                    id="colorImpressions"
-                                    x1="0"
-                                    y1="0"
-                                    x2="0"
-                                    y2="1"
-                                  >
-                                    <stop
-                                      offset="5%"
-                                      stopColor="#9333ea"
-                                      stopOpacity={0.1}
-                                    />
-                                    <stop
-                                      offset="95%"
-                                      stopColor="#9333ea"
-                                      stopOpacity={0}
-                                    />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid
-                                  strokeDasharray="3 3"
-                                  stroke="#f0f0f0"
-                                  vertical={false}
-                                />
-                                <XAxis
-                                  dataKey="date"
-                                  stroke="#94a3b8"
-                                  fontSize={12}
-                                  tickLine={false}
-                                  axisLine={false}
-                                  tickFormatter={formatDate}
-                                  dy={10}
-                                />
-                                <YAxis
-                                  stroke="#94a3b8"
-                                  fontSize={12}
-                                  tickLine={false}
-                                  axisLine={false}
-                                  dx={-10}
-                                />
-                                <Tooltip
-                                  contentStyle={{
-                                    backgroundColor:
-                                      "rgba(255, 255, 255, 0.95)",
-                                    border: "none",
-                                    borderRadius: "8px",
-                                    boxShadow:
-                                      "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                                    padding: "12px",
-                                  }}
-                                  cursor={{
-                                    stroke: "#cbd5e1",
-                                    strokeWidth: 1,
-                                    strokeDasharray: "4 4",
-                                  }}
-                                  labelFormatter={formatDate}
-                                />
-                                <Legend wrapperStyle={{ paddingTop: "20px" }} />
-                                <Line
-                                  type="monotone"
-                                  dataKey="impressions"
-                                  stroke="#9333ea"
-                                  strokeWidth={3}
-                                  name="Impressions"
-                                  dot={{
-                                    fill: "#9333ea",
-                                    r: 0,
-                                    strokeWidth: 0,
-                                    stroke: "#fff",
-                                  }}
-                                  activeDot={{ r: 4, strokeWidth: 0 }}
-                                  fill="url(#colorImpressions)"
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="brandSearches"
-                                  stroke="#ec4899"
-                                  strokeWidth={3}
-                                  name="Brand Searches"
-                                  dot={{
-                                    fill: "#ec4899",
-                                    r: 0,
-                                    strokeWidth: 0,
-                                    stroke: "#fff",
-                                  }}
-                                  activeDot={{ r: 4, strokeWidth: 0 }}
-                                />
-                              </LineChart>
-                            </ResponsiveContainer>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 bg-gray-50/50 rounded-lg border-2 border-dashed border-gray-200">
-                              <Users className="h-10 w-10 mb-3 opacity-20" />
-                              <p className="font-medium">
-                                No zero touch data available
-                              </p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
+                      <ZeroTouchChart
+                        data={zeroTouchData}
+                        loading={loading}
+                        formatDate={formatDate}
+                      />
 
                       {/* AI Conversion Rate Charttt */}
                       <div className="col-span-1 lg:col-span-2">
@@ -2024,305 +1143,26 @@ if(u.includes(':~:text=')){
 
                     {/* Traffic by AI Model Bar */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                      <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <CardHeader className="border-b border-slate-100  px-5 ">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                                Traffic by AI model
-                              </CardTitle>
-                              <CardDescription className="text-[10px] text-slate-500 font-medium">
-                                Users from AI sources
-                              </CardDescription>
-                            </div>
-                            <InfoTooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Bar chart showing the number of active users
-                                coming from each AI model over the last 30 days
-                              </TooltipContent>
-                            </InfoTooltip>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                          {loading ? (
-                            <div className="flex items-center justify-center h-64">
-                              <Loader className="h-8 w-8 animate-spin text-gray-400" />
-                            </div>
-                          ) : (
-                            <ResponsiveContainer width="100%" height={300}>
-                              <BarChart
-                                data={aiModelsData.filter(
-                                  (item) => item.users > 0
-                                )}
-                              >
-                                <CartesianGrid
-                                  strokeDasharray="3 3"
-                                  stroke="#e5e7eb"
-                                />
-                                <XAxis
-                                  dataKey="model"
-                                  tick={{ fontSize: 12 }}
-                                />
-                                <YAxis tick={{ fontSize: 12 }} />
-                                <Tooltip />
-                                <Bar dataKey="users" fill="#1e40af" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          )}
-                        </CardContent>
-                      </Card>
 
-                      <Card className="col-span-1 bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <CardHeader className="border-b border-slate-100  px-5 ">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                                AI Models Performance
-                              </CardTitle>
-                              <CardDescription className="text-[10px] text-slate-500 font-medium">
-                                Detailed metrics for each AI model
-                              </CardDescription>
-                            </div>
-                            <InfoTooltip>
-                              <TooltipTrigger>
-                                <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                Detailed performance metrics including active
-                                users, sessions, and conversion rates for each
-                                AI model
-                              </TooltipContent>
-                            </InfoTooltip>
-                          </div>
-                        </CardHeader>
+                      {/* Traffic by AI Modeles Bar */}
+                      <TrafficByModel loading={loading} aiModelsData={aiModelsData} />
 
-                        <CardContent className="pt-6">
-                          {loading ? (
-                            <div className="flex items-center justify-center h-64">
-                              <Loader className="h-8 w-8 animate-spin text-gray-400" />
-                            </div>
-                          ) : (
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>AI Model</TableHead>
-                                  <TableHead>Active Users</TableHead>
-                                  <TableHead>Sessions</TableHead>
-                                  <TableHead>Cv Rate</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {aiModelsData.filter((row) => row.users > 0)
-                                  .length > 0 ? (
-                                  aiModelsData
-                                    .filter((row) => row.users > 0)
-                                    .map((row, i) => (
-                                      <TableRow key={i}>
-                                        <TableCell className="font-medium">
-                                          {row.model}
-                                        </TableCell>
-                                        <TableCell>{row.users || 0}</TableCell>
-                                        <TableCell>
-                                          {row.sessions || 0}
-                                        </TableCell>
-                                        <TableCell>
-                                          {row.conversionRate || "0%"}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))
-                                ) : (
-                                  <TableRow>
-                                    <TableCell
-                                      colSpan={4}
-                                      className="text-center text-muted-foreground py-8"
-                                    >
-                                      No AI model data available
-                                    </TableCell>
-                                  </TableRow>
-                                )}
-                              </TableBody>
-                            </Table>
-                          )}
-                        </CardContent>
-                      </Card>
+                      {/* AI Model Performance Table */}
+                      <AiModelPerformanceTable
+                        loading={loading}
+                        aiModelsData={aiModelsData}
+                      />
                     </div>
 
-                    {/* Landing Pages */}
-                    <Card className=" bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                      <CardHeader className="border-b border-slate-100  px-5 ">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-                              AI Traffic Landing pages
-                            </CardTitle>
-                            <CardDescription className="text-[10px] text-slate-500 font-medium">
-                              Top pages where AI-referred user land
-                            </CardDescription>
-                          </div>
-                          <InfoTooltip>
-                            <TooltipTrigger>
-                              <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Shows the top landing pages and entry points for
-                              users coming from AI sources with their traffic
-                              distribution
-                            </TooltipContent>
-                          </InfoTooltip>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-6">
-                        {loading ? (
-                          <div className="flex items-center justify-center h-64">
-                            <Loader className="h-8 w-8 animate-spin text-purple-600" />
-                          </div>
-                        ) : aiLandingPageData.length > 0 ? (
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between px-2">
-                              <div className="text-sm font-medium text-gray-700">
-                                Total Pages:{" "}
-                                <span className="text-purple-600">
-                                  {aiLandingPageData.length}
-                                </span>
-                              </div>
-                              <div className="text-sm font-medium text-gray-700">
-                                Total Users:{" "}
-                                <span className="text-purple-600">
-                                  {aiLandingPageData.reduce(
-                                    (sum, item) => sum + item.users,
-                                    0
-                                  )}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-700">
-                                  Rows:
-                                </span>
-                                <Select
-                                  value={limit}
-                                  onValueChange={(val) => setLimit(val)}
-                                >
-                                  <SelectTrigger className="w-[70px] h-8 text-xs">
-                                    <SelectValue placeholder="10" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="10">10</SelectItem>
-                                    <SelectItem value="25">25</SelectItem>
-                                    <SelectItem value="50">50</SelectItem>
-                                    <SelectItem value="100">100</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
+                    {/* Landing Pages table*/}
 
-                            <div
-                              className={cn(
-                                "border rounded-lg overflow-hidden",
-                                parseInt(limit) > 10 &&
-                                  "max-h-[500px] overflow-y-auto"
-                              )}
-                            >
-                              <Table>
-                                <TableHeader
-                                  className={cn(
-                                    "bg-purple-50",
-                                    parseInt(limit) > 10 &&
-                                      "sticky top-0 z-10 shadow-sm"
-                                  )}
-                                >
-                                  <TableRow className="bg-purple-50 hover:bg-purple-50">
-                                    <TableHead className="font-semibold">
-                                      #
-                                    </TableHead>
-                                    <TableHead className="font-semibold">
-                                      Landing Page
-                                    </TableHead>
-                                    <TableHead className="font-semibold">
-                                      Source
-                                    </TableHead>
-                                    <TableHead className="font-semibold text-right">
-                                      Users
-                                    </TableHead>
-                                    <TableHead className="font-semibold text-right">
-                                      Share
-                                    </TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {aiLandingPageData.map((item, index) => {
-                                    const totalUsers = aiLandingPageData.reduce(
-                                      (sum, i) => sum + i.users,
-                                      0
-                                    );
-                                    const percentage = (
-                                      (item.users / totalUsers) *
-                                      100
-                                    ).toFixed(1);
+                    <LandingPageTable
+                      loading={loading}
+                      aiLandingPageData={aiLandingPageData}
+                      limit={limit}
+                      setLimit={setLimit}
+                    />
 
-                                    return (
-                                      <TableRow
-                                        key={index}
-                                        className="hover:bg-purple-50/50 transition-colors"
-                                      >
-                                        <TableCell className="font-medium text-gray-600">
-                                          {index + 1}
-                                        </TableCell>
-                                        <TableCell className="max-w-md">
-                                          <div className="flex items-center gap-2">
-                                            <span className="truncate font-medium text-sm">
-                                              {item.page === "(not set)"
-                                                ? "Homepage"
-                                                : item.page}
-                                            </span>
-                                          </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            {item.source}
-                                          </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          <span className="font-semibold text-gray-900">
-                                            {item.users}
-                                          </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                          <div className="flex items-center justify-end gap-2">
-                                            <div className="w-24 bg-gray-200 rounded-full h-2">
-                                              <div
-                                                className="bg-purple-600 h-2 rounded-full transition-all"
-                                                style={{
-                                                  width: `${percentage}%`,
-                                                }}
-                                              />
-                                            </div>
-                                            <span className="text-sm font-medium text-gray-600 w-12 text-right">
-                                              {percentage}%
-                                            </span>
-                                          </div>
-                                        </TableCell>
-                                      </TableRow>
-                                    );
-                                  })}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-[350px] text-gray-500">
-                            <p className="text-lg font-medium">
-                              No AI landing page data available
-                            </p>
-                            <p className="text-sm mt-2">
-                              Check back later for AI traffic insights
-                            </p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
                   </div>
 
                   {/* 4. Technical and Demographics */}
@@ -2691,22 +1531,20 @@ if(u.includes(':~:text=')){
                                         </TableCell>
                                         <TableCell className="text-right border-r border-slate-100 last:border-r-0">
                                           <span
-                                            className={`font-medium ${
-                                              query.ctr > 0.05
-                                                ? "text-green-600"
-                                                : "text-gray-600"
-                                            }`}
+                                            className={`font-medium ${query.ctr > 0.05
+                                              ? "text-green-600"
+                                              : "text-gray-600"
+                                              }`}
                                           >
                                             {(query.ctr * 100).toFixed(2)}%
                                           </span>
                                         </TableCell>
                                         <TableCell className="text-right border-r border-slate-100 last:border-r-0">
                                           <span
-                                            className={`font-medium ${
-                                              query.position <= 10
-                                                ? "text-green-600"
-                                                : "text-gray-600"
-                                            }`}
+                                            className={`font-medium ${query.position <= 10
+                                              ? "text-green-600"
+                                              : "text-gray-600"
+                                              }`}
                                           >
                                             {query.position.toFixed(1)}
                                           </span>
@@ -2745,66 +1583,3 @@ if(u.includes(':~:text=')){
     </div>
   );
 }
-
-//  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//                    <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-//                     <CardHeader className="border-b border-slate-100 px-5">
-//                       <div className="flex items-center justify-between">
-//                        <div>
-//                           <CardTitle className="font-bold text-[11px] uppercase tracking-wider text-slate-900">
-//                             AI Overview Trends
-//                           </CardTitle>
-//                           <CardDescription className="text-[10px] text-slate-500 font-medium">
-//                             Daily clicks from Google AI Overviews
-//                           </CardDescription>
-//                         </div>
-//                         <InfoTooltip>
-//                           <TooltipTrigger>
-//                             <Info className="h-4 w-4 text-slate-400 hover:text-slate-600 cursor-auto" />
-//                           </TooltipTrigger>
-//                           <TooltipContent>
-//                             Tracks the daily volume of users landing on your site specifically via Google's "AI Overview" text fragments.
-//                           </TooltipContent>
-//                         </InfoTooltip>
-//                       </div>
-//                     </CardHeader>
-
-//                     <CardContent className="pt-6">
-//                       {loading ? (
-//                         <div className="flex items-center justify-center h-[300px]">
-//                           <Loader className="h-8 w-8 animate-spin text-slate-400" />
-//                         </div>
-//                       ) : (
-//                         <ResponsiveContainer width="100%" height={300}>
-//                           <LineChart data={chartData}>
-//                             <CartesianGrid strokeDasharray="3 3" stroke="#f3e8ff" />
-//                             <XAxis
-//                               dataKey="name"
-//                               stroke="#9ca3af"
-//                               tick={{ fontSize: 12 }}
-//                               tickFormatter={formatDate}
-//                             />
-//                             <YAxis stroke="#9ca3af" tick={{ fontSize: 12 }} allowDecimals={false} />
-//                             <Tooltip
-//                               contentStyle={{
-//                                 backgroundColor: "white",
-//                                 border: "1px solid #e9d5ff",
-//                                 borderRadius: "8px",
-//                               }}
-//                             />
-//                             <Legend />
-//                             <Line
-//                               type="monotone"
-//                               dataKey="aiOverview"
-//                               stroke="#9333ea" /* Purple Color */
-//                               strokeWidth={3}
-//                               name="AI Overview Clicks"
-//                               dot={{ fill: "#9333ea", r: 2 }}
-//                               activeDot={{ r: 5 }}
-//                             />
-//                           </LineChart>
-//                         </ResponsiveContainer>
-//                       )}
-//                     </CardContent>
-//                   </Card>
-//                 </div>

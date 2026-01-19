@@ -41,13 +41,13 @@ export async function GET(request: NextRequest) {
 
         const property = `properties/${account.propertyId}`;
         const dateRanges = [{ startDate: startDate, endDate: endDate }];
-        
+
         console.log("🔍 Checking AI Overview data for property:", account.propertyId);
-        
+
         // Method 1: Try event-based detection (requires client to add tracking code)
         let pagesRes, devicesRes;
         let detectionMethod = "event";
-        
+
         try {
             const eventFilter = {
                 filter: {
@@ -61,17 +61,31 @@ export async function GET(request: NextRequest) {
             };
 
             // Try event-based detection first
+            // NOTE: Using the EXACT same query structure as analytics-by-account (which works)
+            // Just changing dimension from "date" to "pagePath"
             pagesRes = await analyticsData.properties.runReport({
                 property,
                 requestBody: {
                     dateRanges,
                     dimensions: [{ name: "pagePath" }, { name: "pageTitle" }],
                     metrics: [{ name: "eventCount" }],
-                    dimensionFilter: eventFilter,
+                    dimensionFilter: {
+                        filter: {
+                            fieldName: "eventName",
+                            stringFilter: {
+                                matchType: "EXACT",
+                                value: "ai_overview_click",
+                                caseSensitive: false
+                            },
+                        },
+                    },
                     orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
                     limit: '10',
                 },
             });
+
+            // DEBUG: Log raw GA4 response
+            console.log("🔍 RAW GA4 Pages Response:", JSON.stringify(pagesRes.data, null, 2));
 
             devicesRes = await analyticsData.properties.runReport({
                 property,
@@ -82,12 +96,12 @@ export async function GET(request: NextRequest) {
                     dimensionFilter: eventFilter,
                 },
             });
-            
+
             // If no data found with events, try URL-based detection
             if (!pagesRes.data.rows || pagesRes.data.rows.length === 0) {
                 console.log("⚠️ No event data found, trying URL-based detection...");
                 detectionMethod = "url";
-                
+
                 const urlFilter = {
                     filter: {
                         fieldName: "landingPagePlusQueryString",
@@ -98,12 +112,12 @@ export async function GET(request: NextRequest) {
                         },
                     },
                 };
-                
+
                 pagesRes = await analyticsData.properties.runReport({
                     property,
                     requestBody: {
                         dateRanges,
-                        dimensions: [{ name: "landingPagePlusQueryString" }, { name: "pageTitle" }],
+                        dimensions: [{ name: "landingPagePlusQueryString" }],
                         metrics: [{ name: "sessions" }],
                         dimensionFilter: urlFilter,
                         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
@@ -126,11 +140,18 @@ export async function GET(request: NextRequest) {
             throw error;
         }
 
-        const pages = pagesRes.data.rows?.map((row: any) => ({
-            path: row.dimensionValues?.[0]?.value || "(not set)",
-            title: row.dimensionValues?.[1]?.value || "(not set)",
-            clicks: parseInt(row.metricValues?.[0]?.value || "0"),
-        })) || [];
+        const pages = pagesRes.data.rows?.map((row: any) => {
+            const path = row.dimensionValues?.[0]?.value || "(not set)";
+            // Create a readable title from the path
+            const title = path === "/" ? "Home Page" :
+                path.split('/').filter(Boolean).pop()?.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || path;
+
+            return {
+                path: path,
+                title: title,
+                clicks: parseInt(row.metricValues?.[0]?.value || "0"),
+            };
+        }) || [];
 
         const devices = devicesRes.data.rows?.map((row: any) => ({
             name: row.dimensionValues?.[0]?.value || "unknown",
@@ -149,9 +170,9 @@ export async function GET(request: NextRequest) {
             endDate
         });
 
-        return NextResponse.json({ 
-            pages, 
-            devices, 
+        return NextResponse.json({
+            pages,
+            devices,
             totalClicks,
             detectionMethod,
             message: totalClicks === 0 ? "No AI Overview traffic detected. Make sure GTM tracking is set up." : undefined

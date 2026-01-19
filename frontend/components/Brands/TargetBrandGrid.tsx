@@ -26,13 +26,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 
-interface BrandTableProps {
+interface TargetBrandGridProps {
   data: any[];
   loading: boolean;
   onRefresh?: () => void;
 }
 
-export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) {
+export function TargetBrandGrid({ data, loading, onRefresh }: TargetBrandGridProps) {
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [selectedBrand, setSelectedBrand] = useState<any | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -80,11 +80,11 @@ export function TargetBrandTable({ data, loading, onRefresh }: BrandTableProps) 
               }}
             >
               {/* Top colored border on hover */}
-              <div 
+              <div
                 className="absolute top-0 left-0 right-0 h-0 group-hover:h-0.5 transition-all duration-300 z-10"
                 style={{ backgroundColor: brand.color || '#94a3b8' }}
               />
-              
+
               {/* Compact Card Header */}
               <div className="p-5 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg border border-slate-100 bg-white shadow-sm flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform">

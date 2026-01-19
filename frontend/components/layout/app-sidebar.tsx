@@ -23,6 +23,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
@@ -58,6 +59,7 @@ const generalItems = [
     href: "/analytics",
     icon: ChartBar,
   },
+
 ];
 
 const preferencesItems = [
@@ -102,6 +104,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel className="px-2 text-xs font-medium text-sidebar-foreground/50 mb-2 group-data-[collapsible=icon]:hidden">
             Pages
+            {/* <SidebarTrigger className="md:hidden" /> */}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

@@ -135,6 +135,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch AI Overview clicks using event-based detection (requires GA4 event rule setup)
     // Falls back to URL pattern detection if events don't exist
+    // This is the SINGLE source of truth for AI Overview clicks data
     let aiOverviewReport;
     try {
       aiOverviewReport = await analyticsData.properties.runReport({
@@ -146,8 +147,8 @@ export async function GET(request: NextRequest) {
           dimensionFilter: {
             filter: {
               fieldName: "eventName",
-              stringFilter: { 
-                matchType: "EXACT", 
+              stringFilter: {
+                matchType: "EXACT",
                 value: "ai_overview_click",
                 caseSensitive: false
               },
@@ -155,7 +156,7 @@ export async function GET(request: NextRequest) {
           },
         },
       });
-      
+
       // If no event data, try URL-based detection as fallback
       if (!aiOverviewReport.data.rows || aiOverviewReport.data.rows.length === 0) {
         console.log("⚠️ No AI Overview event data, trying URL detection...");
@@ -168,8 +169,8 @@ export async function GET(request: NextRequest) {
             dimensionFilter: {
               filter: {
                 fieldName: "landingPagePlusQueryString",
-                stringFilter: { 
-                  matchType: "CONTAINS", 
+                stringFilter: {
+                  matchType: "CONTAINS",
                   value: "#:~:text=",
                   caseSensitive: false
                 },
@@ -183,7 +184,6 @@ export async function GET(request: NextRequest) {
       // Set empty data if tracking fails
       aiOverviewReport = { data: { rows: [] } };
     }
-
 
 
     // Fetch AI traffic specifically
@@ -278,6 +278,9 @@ export async function GET(request: NextRequest) {
     }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
+    // Calculate total AI Overview clicks from the map (same data used for chart)
+    const totalAiOverviewClicks = Array.from(aiOverviewMap.values()).reduce((sum, val) => sum + val, 0);
+
     const metrics = {
       activeUsers:
         response.data.rows?.reduce(
@@ -297,7 +300,7 @@ export async function GET(request: NextRequest) {
             sum + parseInt(row.metricValues?.[2]?.value || "0"),
           0
         ) || 0,
-      aiOverviewClicks: aiOverviewReport.data.rows?.reduce((sum: number, row: any) => sum + parseInt(row.metricValues?.[0]?.value || "0"), 0) || 0,
+      aiOverviewClicks: totalAiOverviewClicks,
     };
 
     return NextResponse.json({

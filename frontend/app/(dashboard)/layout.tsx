@@ -1,7 +1,7 @@
 "use client";
 
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
 import { WorkspaceProvider, useWorkspace } from "@/lib/contexts/workspace-context";
 import * as React from "react";
 
