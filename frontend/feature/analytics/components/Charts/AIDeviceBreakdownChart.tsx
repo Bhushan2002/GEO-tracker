@@ -17,7 +17,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Loader } from "lucide-react";
-import InfoButton from "../InfoButton";
+import InfoButton from "../../../../components/InfoButton";
 
 interface AIDeviceBreakdownChartProps {
   data: any[];
@@ -56,7 +56,7 @@ export function AIDeviceBreakdownChart({ data, loading }: AIDeviceBreakdownChart
               Mobile vs Desktop split for AI-driven sessions
             </CardDescription>
           </div>
-          <InfoButton content="Device breakdown showing the distribution of AI-referred traffic between mobile, desktop, and other devices"/>
+          <InfoButton content="Device breakdown showing the distribution of AI-referred traffic between mobile, desktop, and other devices" />
         </div>
       </CardHeader>
 

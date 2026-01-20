@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/tooltip";
 import {
     Bot,
-    Loader,
     TrendingUp,
     Activity,
     ExternalLink,
@@ -23,6 +22,7 @@ import {
     Target,
     ChevronDown
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -142,9 +142,26 @@ export default function ModelsPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-3 text-foreground/40">
-                <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
-                <p className="text-sm font-medium">Crunching analytics...</p>
+            <div className="min-h-screen bg-white p-6">
+                <div className="max-w-[1600px] mx-auto space-y-8">
+                    <div className="flex items-center gap-4 mb-8">
+                        <Skeleton className="h-10 w-10 rounded-xl" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-6 w-48 rounded" />
+                            <Skeleton className="h-4 w-96 rounded" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Skeleton className="h-40 w-full rounded-xl" />
+                        <Skeleton className="h-40 w-full rounded-xl" />
+                        <Skeleton className="h-40 w-full rounded-xl" />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <Skeleton className="lg:col-span-2 h-[300px] w-full rounded-xl" />
+                        <Skeleton className="h-[300px] w-full rounded-xl" />
+                    </div>
+                    <Skeleton className="h-[400px] w-full rounded-xl" />
+                </div>
             </div>
         );
     }
@@ -283,7 +300,7 @@ export default function ModelsPage() {
                                                 {activeData && activeData.allSources?.map((source, idx) => (
                                                     <div key={idx} className="flex items-center gap-2.5 pl-2 pr-4 py-2 rounded-full bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all cursor-default">
                                                         {/* Favicon */}
-                                                        <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-50 flex-shrink-0">
+                                                        <div className="w-5 h-5 rounded-full overflow-hidden bg-slate-50 shrink-0">
                                                             <img
                                                                 src={`https://www.google.com/s2/favicons?domain=${source.domain}&sz=64`}
                                                                 alt={source.domain}
@@ -531,7 +548,7 @@ export default function ModelsPage() {
                                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-900 leading-none m-0">
                                         {selectedModel} Responses
                                     </h3>
-                                    <div className="h-4 w-[1px] bg-slate-200 mx-2" />
+                                    <div className="h-4 w-px bg-slate-200 mx-2" />
                                     <span className="text-[10px] font-medium text-slate-400/80 tracking-wide uppercase">
                                         Click cards for details
                                     </span>

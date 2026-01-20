@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import InfoButton from "../InfoButton";
+import InfoButton from "../../../../components/InfoButton";
 
 interface TopicClustersTreemapProps {
   data: { name: string; size: number }[];
@@ -70,7 +70,7 @@ const CustomizedContent = (props: any) => {
           pointerEvents: "none",
         }}
       />
-      
+
       {/* Text labels */}
       {showFullText && (
         <>
@@ -79,7 +79,7 @@ const CustomizedContent = (props: any) => {
             y={y + height / 2 - 8}
             textAnchor="middle"
             fill="#fff"
-            
+
             fontSize={14}
             fontWeight="700"
             style={{ textShadow: "0 0 1px rgb(0,0,0)" }}
@@ -121,8 +121,8 @@ const CustomTooltip = ({ active, payload }: any) => {
       <div className="bg-neutral-900/95 backdrop-blur-md border border-neutral-800 p-3 rounded-xl shadow-xl z-50 min-w-[180px]">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 mb-1">
-            <div 
-              className="w-2 h-2 rounded-full" 
+            <div
+              className="w-2 h-2 rounded-full"
               style={{ backgroundColor: COLORS[payload[0].payload.index % COLORS.length] }}
             />
             <span className="text-[11px] font-bold text-neutral-100 uppercase tracking-tight">
@@ -162,8 +162,8 @@ export function TopicClustersTreemap({ data }: TopicClustersTreemapProps) {
               Which content sections attract the most AI traffic?
             </CardDescription>
           </div>
-         
-          <InfoButton content="Treemap visualization showing which content topics and sections attract the most AI-referred traffic"/>
+
+          <InfoButton content="Treemap visualization showing which content topics and sections attract the most AI-referred traffic" />
         </div>
       </CardHeader>
       <CardContent className="pt-6">
@@ -186,7 +186,7 @@ export function TopicClustersTreemap({ data }: TopicClustersTreemapProps) {
                 content={<CustomizedContent />}
                 animationDuration={800}
               >
-                <Tooltip 
+                <Tooltip
                   content={<CustomTooltip />}
                   cursor={{ fill: "transparent" }}
                 />

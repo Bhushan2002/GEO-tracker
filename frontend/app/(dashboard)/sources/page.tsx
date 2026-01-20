@@ -1,8 +1,8 @@
 "use client";
 import React, { useMemo, useState } from "react";
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-    Loader,
     Search,
     FileText,
     ExternalLink,
@@ -15,8 +15,8 @@ import {
     ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import CitationsPieChart from "@/components/Charts/CitationsPieChart";
-import { SourceUsageChart } from "@/components/Charts/SourceUsageChart";
+import CitationsPieChart from "@/feature/analytics/components/Charts/CitationsPieChart";
+import { SourceUsageChart } from "@/feature/analytics/components/Charts/SourceUsageChart";
 import {
     Popover,
     PopoverContent,
@@ -427,9 +427,14 @@ function SourcesPage() {
                         <div className="p-6 flex flex-col flex-1">
                             <div className="flex-1 w-full min-h-[240px]">
                                 {isLoading ? (
-                                    <div className="h-full flex flex-col items-center justify-center gap-3 text-foreground/40 min-h-[200px]">
-                                        <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-                                        <p className="text-sm font-medium italic">Analyzing usage trends...</p>
+                                    <div className="space-y-4 p-4">
+                                        <Skeleton className="h-8 w-full rounded-lg" />
+                                        <Skeleton className="h-[200px] w-full rounded-lg" />
+                                        <div className="flex gap-4 justify-center">
+                                            <Skeleton className="h-4 w-20 rounded-full" />
+                                            <Skeleton className="h-4 w-20 rounded-full" />
+                                            <Skeleton className="h-4 w-20 rounded-full" />
+                                        </div>
                                     </div>
                                 ) : (
                                     <SourceUsageChart data={usageChartData.points} sources={usageChartData.top5} />
@@ -464,9 +469,8 @@ function SourcesPage() {
                         <div className="p-6 flex flex-col flex-1">
                             <div className="flex-1 w-full flex items-center justify-center">
                                 {isLoading ? (
-                                    <div className="h-full flex flex-col items-center justify-center gap-3 text-foreground/40 min-h-[200px]">
-                                        <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-                                        <p className="text-sm font-medium italic">Analyzing sources...</p>
+                                    <div className="flex items-center justify-center h-full">
+                                        <Skeleton className="h-[200px] w-[200px] rounded-full" />
                                     </div>
                                 ) : (
                                     <CitationsPieChart

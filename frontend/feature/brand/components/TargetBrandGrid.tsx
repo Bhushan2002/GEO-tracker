@@ -12,6 +12,7 @@ import {
   ChevronRight,
   MoreVertical,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -59,9 +60,21 @@ export function TargetBrandGrid({ data, loading, onRefresh }: TargetBrandGridPro
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40">
-        <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-        <p className="text-sm font-medium">Loading brands...</p>
+      <div className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-3/4 rounded" />
+                  <Skeleton className="h-3 w-1/2 rounded" />
+                </div>
+              </div>
+              <Skeleton className="h-9 w-full rounded-xl" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

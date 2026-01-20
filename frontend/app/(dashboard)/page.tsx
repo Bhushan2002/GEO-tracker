@@ -1,33 +1,33 @@
 "use client";
 
-import { DashBrandTable } from "@/components/Brands/DashboardBrandTable";
+import { DashBrandTable } from "@/feature/brand/components/DashboardBrandTable";
 import { ModelResponsesTable } from "@/components/ModelResponsesTable";
-import PieChartComponent from "@/components/Charts/pieChart";
-import CitationsPieChart from "@/components/Charts/CitationsPieChart";
+import PieChartComponent from "@/feature/analytics/components/Charts/pieChart";
+import CitationsPieChart from "@/feature/analytics/components/Charts/CitationsPieChart";
 
-import { VisibilityChart } from "@/components/Charts/VisibilityChart";
+import { VisibilityChart } from "@/feature/analytics/components/Charts/VisibilityChart";
 
-import { PositionChart } from "@/components/Charts/PositionChart";
+import { PositionChart } from "@/feature/analytics/components/Charts/PositionChart";
 import Link from "next/link";
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { SentimentChart } from "@/components/Charts/SentimentChart";
+import { SentimentChart } from "@/feature/analytics/components/Charts/SentimentChart";
 import { useWorkspace } from "@/lib/contexts/workspace-context";
 import {
   Globe,
   ChevronRight,
   Eye,
-  Loader,
   ChartArea,
   MessageCircle,
   LayoutDashboard
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
-import DomainTable from "@/components/Charts/DomainTable";
+import DomainTable from "@/feature/analytics/components/Charts/DomainTable";
 
 /**
  * Main dashboard overview page.
@@ -247,9 +247,9 @@ export default function Overview() {
             </div>
             <div className="p-6 pt-2 flex-1 min-h-0 flex items-center justify-center relative overflow-hidden">
               {isLoading ? (
-                <div className="flex flex-col items-center gap-3 text-foreground/40">
-                  <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
-                  <p className="text-sm font-medium">Crunching analytics...</p>
+                <div className="space-y-4 p-4">
+                  <Skeleton className="h-8 w-full rounded-lg" />
+                  <Skeleton className="h-[250px] w-full rounded-lg" />
                 </div>
               ) : (
                 <div
@@ -279,9 +279,16 @@ export default function Overview() {
             </div>
             <div className="p-0 flex-1 overflow-auto min-h-0">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-full gap-3 text-foreground/40">
-                  <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-                  <p className="text-sm font-medium">Ranking market leaders...</p>
+                <div className="p-4 space-y-3">
+                  {[...Array(10)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4 rounded" />
+                        <Skeleton className="h-3 w-1/2 rounded" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="animate-in fade-in duration-500">
@@ -308,9 +315,8 @@ export default function Overview() {
               </div>
               <div className="p-5 flex items-center justify-center min-h-[300px]">
                 {isLoading ? (
-                  <div className="flex flex-col items-center gap-3 text-foreground/40">
-                    <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-                    <p className="text-sm font-medium">Analyzing sources...</p>
+                  <div className="flex items-center justify-center h-full">
+                    <Skeleton className="h-[200px] w-[200px] rounded-full" />
                   </div>
                 ) : (
                   <div className="w-full h-full animate-in fade-in zoom-in-95 duration-500">
@@ -342,9 +348,17 @@ export default function Overview() {
 
           <div className="w-full">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40 bg-card rounded-xl border border-border border-dashed">
-                <Loader className="h-10 w-10 animate-spin text-foreground shrink-0" strokeWidth={1.5} />
-                <p className="text-sm font-medium">Fetching AI responses...</p>
+              <div className="space-y-4 p-6 bg-card rounded-xl border border-border">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex gap-4">
+                    <Skeleton className="h-16 w-16 rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-full rounded" />
+                      <Skeleton className="h-4 w-3/4 rounded" />
+                      <Skeleton className="h-3 w-1/2 rounded" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="animate-in fade-in duration-1000">

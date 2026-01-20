@@ -1,12 +1,12 @@
 
 import { toast } from 'sonner';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogContent,
   AlertDialogTitle,
   AlertDialogDescription,
-} from "./ui/alert-dialog";
+} from "@/components/ui/alert-dialog";
 import React from 'react'
 
 function AiOverviewInstructionDialog({ showInstallInstructions, setShowInstallInstructions }: { showInstallInstructions: boolean, setShowInstallInstructions: (val: boolean) => void }) {

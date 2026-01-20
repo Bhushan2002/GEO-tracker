@@ -36,7 +36,7 @@ export default function useAnalyticsData() {
         from: subDays(new Date(), 30),
         to: new Date(),
     });
-    const [activeView, setActiveView] = useState<"ai-analytics" | "search-console">("ai-analytics");
+    const [activeView, setActiveView] = useState<"ai-analytics" | "search-console" | "ai-overview">("ai-analytics");
     const [limit, setLimit] = useState<string>("10");
 
     // Analytics Data States

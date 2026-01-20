@@ -20,7 +20,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { Loader } from "lucide-react";
-import InfoButton from "../InfoButton";
+import InfoButton from "../../../../components/InfoButton";
 
 interface AIGrowthRateChartProps {
   data: any[];
@@ -73,7 +73,7 @@ export function AIGrowthRateChart({ data, loading }: AIGrowthRateChartProps) {
               Month-by-month percentage growth of AI sessions
             </CardDescription>
           </div>
-          <InfoButton content=" Month-over-month growth rate of AI traffic with trend analysis showing growth trajectory"/>
+          <InfoButton content=" Month-over-month growth rate of AI traffic with trend analysis showing growth trajectory" />
         </div>
       </CardHeader>
 

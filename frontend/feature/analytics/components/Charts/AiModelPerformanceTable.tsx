@@ -1,7 +1,7 @@
-import { TooltipContent, TooltipTrigger, Tooltip as InfoTooltip } from "../ui/tooltip";
+import { TooltipContent, TooltipTrigger, Tooltip as InfoTooltip } from "../../../../components/ui/tooltip";
 import { Info, Loader, Table as TableIcon } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../ui/table";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../../../components/ui/card";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../../../../components/ui/table";
 
 export default function AiModelPerformanceTable({
     loading,

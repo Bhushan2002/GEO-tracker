@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { ChevronRight, Loader } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 
@@ -24,9 +25,16 @@ function DomainTable({ domainTableData, isLoading }: { domainTableData: any[], i
       </div>
       <div className="flex-1 overflow-auto min-h-[300px]">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-foreground/40">
-            <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-            <p className="text-sm font-medium">Fetching domain insights...</p>
+          <div className="p-4 space-y-3">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 h-12">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <Skeleton className="h-4 flex-1 rounded" />
+                <Skeleton className="h-4 w-16 rounded hidden md:block" />
+                <Skeleton className="h-4 w-28 rounded hidden md:block" />
+                <Skeleton className="h-6 w-24 rounded-md hidden md:block" />
+              </div>
+            ))}
           </div>
         ) : (
           <div className="animate-in fade-in duration-700">

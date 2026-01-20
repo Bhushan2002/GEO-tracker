@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2, MousePointerClick } from "lucide-react";
-import InfoButton from "../InfoButton";
+import InfoButton from "../../../../components/InfoButton";
 /**
  * Line chart visualizing the first touch attribution data (New Users vs Conversions).
  */

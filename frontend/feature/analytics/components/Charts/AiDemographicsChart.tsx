@@ -18,7 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import InfoButton from "../InfoButton";
+import InfoButton from "../../../../components/InfoButton";
 
 interface AiDemographicsChartProps {
   data: any[];
@@ -57,7 +57,7 @@ export function AiDemographicsChart({ data }: AiDemographicsChartProps) {
               Traffic distribution across top regions
             </CardDescription>
           </div>
-          <InfoButton content="Shows the distribution of AI model usage across different countries/regions with stacked bar breakdown"/>
+          <InfoButton content="Shows the distribution of AI model usage across different countries/regions with stacked bar breakdown" />
         </div>
       </CardHeader>
 

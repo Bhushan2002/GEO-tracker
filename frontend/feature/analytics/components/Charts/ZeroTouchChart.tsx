@@ -1,8 +1,8 @@
 "use client";
 
 import { Info, Loader2, Users } from "lucide-react";
-import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "../ui/card";
-import { TooltipContent, TooltipTrigger, Tooltip as InfoTooltip } from "../ui/tooltip";
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "../../../../components/ui/card";
+import { TooltipContent, TooltipTrigger, Tooltip as InfoTooltip } from "../../../../components/ui/tooltip";
 import {
     LineChart,
     Line,

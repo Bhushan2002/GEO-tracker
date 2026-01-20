@@ -1,8 +1,9 @@
 "use client";
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../../components/ui/table";
 import { cn } from "@/lib/utils";
-import { ArrowUp, ArrowDown, Minus, Loader } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /* ---- Brand Color Palette ---- */
 const BRAND_COLORS = [
@@ -30,10 +31,42 @@ const BRAND_COLORS = [
 export function DashBrandTable({ data = [], loading }: { data: any[], loading: boolean }) {
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center p-20 gap-3 text-foreground/40">
-        <Loader className="h-8 w-8 animate-spin text-foreground shrink-0" strokeWidth={2} />
-        <p className="text-sm font-medium">Updating rankings...</p>
-      </div>
+      <Table className="border-collapse">
+        <TableHeader className="bg-white">
+          <TableRow className="hover:bg-transparent border-b border-slate-200">
+            <TableHead className="w-12 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest border-r border-slate-100 py-2.5">#</TableHead>
+            <TableHead className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-5 border-r border-slate-100 py-2.5">Brand</TableHead>
+            <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] border-r border-slate-100 py-2.5">Visibility</TableHead>
+            <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] border-r border-slate-100 py-2.5">Sentiment</TableHead>
+            <TableHead className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest w-[18%] py-2.5">Position</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {[...Array(10)].map((_, i) => (
+            <TableRow key={i} className="border-b border-slate-100 h-12">
+              <TableCell className="text-center border-r border-slate-100">
+                <Skeleton className="h-4 w-6 mx-auto rounded" />
+              </TableCell>
+              <TableCell className="border-r border-slate-100 pl-5">
+                <div className="flex items-center gap-3.5">
+                  <Skeleton className="h-2 w-2 rounded-full" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-4 w-32 rounded" />
+                </div>
+              </TableCell>
+              <TableCell className="text-center border-r border-slate-100">
+                <Skeleton className="h-4 w-16 mx-auto rounded" />
+              </TableCell>
+              <TableCell className="text-center border-r border-slate-100">
+                <Skeleton className="h-6 w-12 mx-auto rounded-md" />
+              </TableCell>
+              <TableCell className="text-center">
+                <Skeleton className="h-4 w-8 mx-auto rounded" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     );
   }
 
@@ -106,7 +139,7 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
                 </TableCell>
                 <TableCell className="flex border-r border-slate-100 pl-5 space-x-2">
                   <div className="flex items-center gap-3.5 ">
-                    <div className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor: brandColor}} title="Brand Color"></div>
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: brandColor }} title="Brand Color"></div>
                   </div>
                   <div className="flex items-center gap-3.5">
                     <div className="h-8 w-8 rounded-full border border-slate-100 flex items-center justify-center bg-white shadow-sm overflow-hidden shrink-0 group-hover:scale-110 transition-transform duration-300">

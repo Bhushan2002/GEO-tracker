@@ -1,8 +1,8 @@
 'use client'
 import { Info, Loader } from "lucide-react";
 import { ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Bar, BarChart } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { TooltipContent, TooltipTrigger, Tooltip as InfoTooltip } from "../ui/tooltip";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
+import { TooltipContent, TooltipTrigger, Tooltip as InfoTooltip } from "../../../../components/ui/tooltip";
 
 interface TrafficByModelProps {
     loading: boolean;
