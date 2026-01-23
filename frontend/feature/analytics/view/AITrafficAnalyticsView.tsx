@@ -165,22 +165,6 @@ export function AITrafficAnalyticsView({
                     formatDate={formatDate}
                 />
             </div>
-            <div className="space-y-4">
-                <div className="flex items-center gap-2 mb-2">
-                    <Zap className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold text-foreground">
-                        AI Overview Performance
-                    </h3>
-                    <span className="text-sm text-muted-foreground hidden sm:inline-block">
-                        • AI Overview event data
-                    </span>
-                </div>
-                <AiOverviewStats
-                    pages={aiOverviewStats.pages}
-                    devices={aiOverviewStats.devices}
-                    loading={loading}
-                />
-            </div>
 
             {/* 2. User Journey and Conversion */}
             <div className="space-y-4">

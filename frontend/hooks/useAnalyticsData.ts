@@ -17,6 +17,8 @@ export interface KeyMetrics {
 export interface AiOverviewStats {
     pages: any[];
     devices: any[];
+    countries: any[];
+    trend: any[];
 }
 
 export default function useAnalyticsData() {
@@ -51,7 +53,7 @@ export default function useAnalyticsData() {
         keyEvents: 0,
         aiOverviewClicks: 0,
     });
-    const [aiOverviewStats, setAiOverviewStats] = useState<AiOverviewStats>({ pages: [], devices: [] });
+    const [aiOverviewStats, setAiOverviewStats] = useState<AiOverviewStats>({ pages: [], devices: [], countries: [], trend: [] });
     const [conversionRateData, setConversionRateData] = useState<any[]>([]);
     const [topicClusterData, setTopicClusterData] = useState<any[]>([]);
     const [aiGrowthData, setAiGrowthData] = useState<any[]>([]);
@@ -190,7 +192,7 @@ export default function useAnalyticsData() {
             });
             setAiModelsData(formattedAIModels);
 
-            setAiOverviewStats(aiStats || { pages: [], devices: [] });
+            setAiOverviewStats(aiStats || { pages: [], devices: [], countries: [], trend: [] });
             setFirstTouchData(fTouch || []);
             setZeroTouchData(zTouch || []);
             setAiLandingPageData(landingPages?.landingPageData || []);

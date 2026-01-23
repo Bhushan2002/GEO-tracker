@@ -935,6 +935,7 @@ export default function GoogleAnalyticsPage() {
               {activeView === "ai-overview" && (
                 <AIOverviewView
                   aiOverviewStats={aiOverviewStats}
+                  gaAccountId={selectedAccountId}
                   loading={loading}
                 />
               )}
