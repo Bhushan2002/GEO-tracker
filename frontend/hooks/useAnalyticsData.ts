@@ -19,6 +19,7 @@ export interface AiOverviewStats {
     devices: any[];
     countries: any[];
     trend: any[];
+    totalUsers?: number;
 }
 
 export default function useAnalyticsData() {

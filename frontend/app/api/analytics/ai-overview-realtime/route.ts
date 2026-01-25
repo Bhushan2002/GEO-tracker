@@ -54,24 +54,36 @@ export async function GET(request : NextRequest){
             }
         }
     });
+    
+    console.log("Realtime API Response:", JSON.stringify(response.data, null, 2));
+    console.log("Rows count:", response.data.rows?.length || 0);
+    
     const minuteMap = new Map<number, number>();
     response.data.rows?.forEach((row: any)=>{
         const minuteAgo = parseInt(row.dimensionValues[0]?.value ||'0');
         const eventCount = parseInt(row.metricValues[0]?.value || '0');
-
+        console.log(`Minute ${minuteAgo}: ${eventCount} events`);
         minuteMap.set(minuteAgo, eventCount);
     });
 
     const timeline  = [];
     let totalActive = 0;
 
-    for (let i =4 ; i>=0;i--){
+    // Get all minutes that have data
+    const allMinutes = Array.from(minuteMap.keys()).sort((a, b) => b - a);
+    const maxMinute = allMinutes.length > 0 ? Math.max(...allMinutes) : 30;
+    
+    // Build timeline for last 30 minutes (or up to max minute with data)
+    for (let i = Math.min(30, maxMinute) ; i >= 0; i--){
         const count = minuteMap.get(i) || 0;
         timeline.push({minute: i, count: count});
         totalActive += count;
     }
 
-    return NextResponse.json({timeline: timeline, totalActiveUsers: totalActive});
+    console.log("Timeline:", timeline);
+    console.log("Total active users:", totalActive);
+
+    return NextResponse.json({timeline: timeline, activeUsers: totalActive});
     }catch(err: any){
         console.error("Error fetching real-time AI overview data:", err);
         return NextResponse.json({error: err.message}, {status: 500});

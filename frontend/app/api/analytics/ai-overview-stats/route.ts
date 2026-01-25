@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         console.log("🔍 Checking AI Overview data for property:", account.propertyId);
 
         // Method 1: Try event-based detection (requires client to add tracking code)
-        let pagesRes, devicesRes , countriesRes , trendRes;
+        let pagesRes, devicesRes , countriesRes , trendRes, totalUsersRes;
         let detectionMethod = "event";
 
         try {
@@ -59,6 +59,16 @@ export async function GET(request: NextRequest) {
                     },
                 },
             };
+
+            // Fetch total users metric
+            totalUsersRes = await analyticsData.properties.runReport({
+                property,
+                requestBody: {
+                    dateRanges,
+                    metrics: [{ name: "totalUsers" }],
+                    dimensionFilter: eventFilter,
+                },
+            });
 
             // Try event-based detection first
             // NOTE: Using the EXACT same query structure as analytics-by-account (which works)
@@ -206,6 +216,9 @@ export async function GET(request: NextRequest) {
 
         // Calculate total clicks for debugging
         const totalClicks = pages.reduce((sum, page) => sum + page.clicks, 0);
+        
+        // Extract total users from the API response
+        const totalUsers = parseInt(totalUsersRes?.data?.rows?.[0]?.metricValues?.[0]?.value || "0");
 
         // console.log("📊 AI Overview Stats Result:", {
         //     detectionMethod,
@@ -246,6 +259,7 @@ export async function GET(request: NextRequest) {
             countries,
             trend,
             totalClicks,
+            totalUsers,
             detectionMethod,
             message: totalClicks === 0 ? "No AI Overview traffic detected. Make sure GTM tracking is set up." : undefined
         });

@@ -59,6 +59,7 @@ import { RangeCalendar } from "@/components/RangeCalendar";
 import { exportAnalyticsToExcel } from "@/lib/utils/excel-export";
 import AiOverviewInstructionDialog from '@/feature/analytics/components/AiOverviewInstructionDialog';
 import useAnalyticsData from "@/hooks/useAnalyticsData";
+import { KeyMetrics } from '../../../hooks/useAnalyticsData';
 
 /**
  * Analytics page integrating Google Analytics data.
@@ -935,6 +936,7 @@ export default function GoogleAnalyticsPage() {
               {activeView === "ai-overview" && (
                 <AIOverviewView
                   aiOverviewStats={aiOverviewStats}
+                  keymetrics={keyMetrics}
                   gaAccountId={selectedAccountId}
                   loading={loading}
                 />
