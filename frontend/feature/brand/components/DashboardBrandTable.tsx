@@ -25,6 +25,16 @@ const BRAND_COLORS = [
 ];
 
 /**
+ * Generate a deterministic color for a brand based on its name.
+ * This ensures the same brand always gets the same color.
+ * Uses the same algorithm as the sync-colors API for consistency.
+ */
+const getBrandColorByName = (brandName: string): string => {
+  const hue = (brandName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 137.508) % 360;
+  return `hsl(${hue}, 70%, 60%)`;
+};
+
+/**
  * Comprehensive dashboard table for displaying brand rankings with logos, visibility scores, and sentiment indicators.
  * Handles logo fetching logic with fallbacks.
  */
@@ -71,8 +81,8 @@ export function DashBrandTable({ data = [], loading }: { data: any[], loading: b
   }
 
   const getBrandColor = (brand: any, index: number) => {
-    // Use brand's assigned color if available, otherwise assign from palette
-    return brand.color || BRAND_COLORS[index % BRAND_COLORS.length];
+    // Use brand's assigned color if available, otherwise use deterministic hash-based color
+    return brand.color || getBrandColorByName(brand.brand_name || 'unknown');
   };
 
   const getLogoUrl = (brand: any) => {

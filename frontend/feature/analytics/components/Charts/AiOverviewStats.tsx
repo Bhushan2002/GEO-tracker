@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import {
   PieChart,
   Pie,
@@ -296,46 +297,52 @@ export function AiOverviewStats({
               <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
             </div>
           ) : countries && countries.length > 0 ? (
-            <div className="h-[300px] w-full pr-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={countries.slice(0, 10)}
-                  margin={{ top: 0, right: 0, left: 40, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    horizontal={false}
-                    vertical={false}
-                    stroke="#e2e8f0"
-                  />
-                  <XAxis type="number" hide />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    axisLine={false}
-                    tickLine={false}
-                    width={100}
-                    tick={{ fontSize: 12, fill: "#64748b" }}
-                  />
-                  <RechartsTooltip
-                    cursor={{ fill: "rgba(0,0,0,0.05)" }}
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "none",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                    }}
-                  />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
-                    {countries.slice(0, 10).map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="space-y-6">
+        
+              
+              
+              {/* Top Countries Bar Chart */}
+              <div className="h-[300px] w-full pr-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={countries.slice(0, 10)}
+                    margin={{ top: 0, right: 0, left: 40, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      horizontal={false}
+                      vertical={false}
+                      stroke="#e2e8f0"
+                    />
+                    <XAxis type="number" hide />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      axisLine={false}
+                      tickLine={false}
+                      width={100}
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                    />
+                    <RechartsTooltip
+                      cursor={{ fill: "rgba(0,0,0,0.05)" }}
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border: "none",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                      }}
+                    />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                      {countries.slice(0, 10).map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           ) : (
             <div className="flex items-center justify-center h-64 text-slate-400 text-sm">

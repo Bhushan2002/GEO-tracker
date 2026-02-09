@@ -73,6 +73,7 @@ export default function GoogleAnalyticsPage() {
     gaAccounts,
     selectedAccountId,
     loading,
+    metricsLoading,
     initialLoading,
     isQuotaExceeded,
     chartData,
@@ -891,21 +892,7 @@ export default function GoogleAnalyticsPage() {
 
         {/* Analytics Charts */}
         {selectedAccountId &&
-          !isQuotaExceeded &&
-          (loading ? (
-            <div className="space-y-6 animate-in fade-in duration-500">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Skeleton className="h-32 w-full rounded-xl" />
-                <Skeleton className="h-32 w-full rounded-xl" />
-                <Skeleton className="h-32 w-full rounded-xl" />
-              </div>
-              <Skeleton className="h-[400px] w-full rounded-xl" />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Skeleton className="h-[300px] w-full rounded-xl" />
-                <Skeleton className="h-[300px] w-full rounded-xl" />
-              </div>
-            </div>
-          ) : (
+          !isQuotaExceeded && (
             <div className="space-y-10 animate-in fade-in duration-700 slide-in-from-bottom-4">
               {/* 1. Engagement and Quality Insights */}
 
@@ -914,6 +901,7 @@ export default function GoogleAnalyticsPage() {
               {activeView === "ai-analytics" && (
                 <AITrafficAnalyticsView
                   loading={loading}
+                  metricsLoading={metricsLoading}
                   keyMetrics={keyMetrics}
                   chartData={chartData}
                   aiOverviewStats={aiOverviewStats}
@@ -956,7 +944,7 @@ export default function GoogleAnalyticsPage() {
                 />
               )}
             </div>
-          ))}
+          )}
       </div>
     </div>
   );

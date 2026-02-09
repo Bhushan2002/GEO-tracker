@@ -17,12 +17,13 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import InfoButton from "../../../../components/InfoButton";
 
 /**
  * Bar chart displaying the conversion rate for different AI models.
  */
-export function AIConversionRateChart({ data }: { data: any[] }) {
+export function AIConversionRateChart({ data, loading }: { data: any[]; loading?: boolean }) {
   const COLORS = ["#1e40af", "#059669", "#dc2626", "#8b5cf6", "#f59e0b"];
 
   return (
@@ -42,24 +43,28 @@ export function AIConversionRateChart({ data }: { data: any[] }) {
       </CardHeader>
 
       <CardContent className="pt-6">
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="model" />
-            <YAxis unit="%" />
-            <Tooltip
-              formatter={(value: number) => [`${value}%`, "Conversion Rate"]}
-            />
-            <Bar dataKey="rate" radius={[4, 4, 0, 0]}>
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {loading ? (
+          <Skeleton className="h-[300px] w-full rounded-xl" />
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="model" />
+              <YAxis unit="%" />
+              <Tooltip
+                formatter={(value: number) => [`${value}%`, "Conversion Rate"]}
+              />
+              <Bar dataKey="rate" radius={[4, 4, 0, 0]}>
+                {data.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );

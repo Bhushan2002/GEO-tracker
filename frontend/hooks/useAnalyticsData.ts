@@ -30,7 +30,10 @@ export default function useAnalyticsData() {
     // Account & Loading States
     const [gaAccounts, setGaAccounts] = useState<any[]>([]);
     const [selectedAccountId, setSelectedAccountId] = useState<string>("");
-    const [loading, setLoading] = useState(false);
+    
+    // Loading States - Granular
+    const [loading, setLoading] = useState(false); // General loading/Secondary data
+    const [metricsLoading, setMetricsLoading] = useState(false); // Critical data (First Paint)
     const [initialLoading, setInitialLoading] = useState(true);
     const [isQuotaExceeded, setIsQuotaExceeded] = useState(false);
 
@@ -136,6 +139,8 @@ export default function useAnalyticsData() {
     const loadAccountData = useCallback(async (accountId: string) => {
         if (!accountId || isQuotaExceeded) return;
 
+        // Start both loading indicators
+        setMetricsLoading(true);
         setLoading(true);
 
         const startDate = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : "30daysAgo";
@@ -143,8 +148,26 @@ export default function useAnalyticsData() {
         const dateParams = `&startDate=${startDate}&endDate=${endDate}`;
 
         try {
+            // --- Phase 1: Critical Data (Above the fold) ---
+            // We await this first so the user sees something immediately.
+            const criticalResponse = await api.get(`/api/analytics-by-account?accountId=${accountId}${dateParams}`);
+            
+            const analyticsData = criticalResponse.data;
+            setChartData(analyticsData?.chartData || []);
+            setKeyMetrics(analyticsData?.metrics || {
+                activeUsers: 0,
+                engagedSessions: 0,
+                keyEvents: 0,
+                aiOverviewClicks: 0
+            });
+            
+            // Critical data loaded: release the top skeletons
+            setMetricsLoading(false);
+
+
+            // --- Phase 2: Secondary Data (Below the fold) ---
+            // These run in parallel in the background
             const results = await Promise.allSettled([
-                api.get(`/api/analytics-by-account?accountId=${accountId}${dateParams}`),
                 api.get(`/api/ai-models-by-account?accountId=${accountId}${dateParams}`),
                 api.get(`/api/analytics/ai-overview-stats?accountId=${accountId}${dateParams}`),
                 api.get(`/api/analytics/first-touch?accountId=${accountId}`),
@@ -163,26 +186,16 @@ export default function useAnalyticsData() {
                 return result.status === "fulfilled" ? result.value.data : null;
             };
 
-            const analyticsData = getData(0);
-            const aiModels = getData(1);
-            const aiStats = getData(2);
-            const fTouch = getData(3);
-            const zTouch = getData(4);
-            const landingPages = getData(5);
-            const conversions = getData(6);
-            const growth = getData(7);
-            const devices = getData(8);
-            const demographics = getData(9);
-            const topics = getData(10);
-
-            // Update States
-            setChartData(analyticsData?.chartData || []);
-            setKeyMetrics(analyticsData?.metrics || {
-                activeUsers: 0,
-                engagedSessions: 0,
-                keyEvents: 0,
-                aiOverviewClicks: 0
-            });
+            const aiModels = getData(0);
+            const aiStats = getData(1);
+            const fTouch = getData(2);
+            const zTouch = getData(3);
+            const landingPages = getData(4);
+            const conversions = getData(5);
+            const growth = getData(6);
+            const devices = getData(7);
+            const demographics = getData(8);
+            const topics = getData(9);
 
             // Format AI Models
             const allowedModels = ["ChatGPT", "Copilot", "Perplexity", "Gemini", "Claude"];
@@ -214,6 +227,8 @@ export default function useAnalyticsData() {
             } else {
                 toast.error("Failed to fetch analytics data");
             }
+            // If critical failed, ensure we stop the skeleton
+            setMetricsLoading(false);
         } finally {
             setLoading(false);
         }
@@ -321,6 +336,7 @@ export default function useAnalyticsData() {
         gaAccounts,
         selectedAccountId,
         loading,
+        metricsLoading,
         initialLoading,
         isQuotaExceeded,
         chartData,

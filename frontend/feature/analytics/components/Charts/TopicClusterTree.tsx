@@ -9,10 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import InfoButton from "../../../../components/InfoButton";
 
 interface TopicClustersTreemapProps {
   data: { name: string; size: number }[];
+  loading?: boolean;
 }
 
 const COLORS = [
@@ -149,7 +151,7 @@ interface TopicClustersTreemapProps {
 /** 
  * Treemap visualization of topic clusters showing user interest distribution.
  */
-export function TopicClustersTreemap({ data }: TopicClustersTreemapProps) {
+export function TopicClustersTreemap({ data, loading }: TopicClustersTreemapProps) {
   return (
     <Card className="bg-card rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 ">
@@ -167,7 +169,9 @@ export function TopicClustersTreemap({ data }: TopicClustersTreemapProps) {
         </div>
       </CardHeader>
       <CardContent className="pt-6">
-        {data.length === 0 ? (
+        {loading ? (
+          <Skeleton className="h-[400px] w-full rounded-xl" />
+        ) : data.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-[350px] text-gray-400 bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-200">
             <svg className="w-12 h-12 mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />

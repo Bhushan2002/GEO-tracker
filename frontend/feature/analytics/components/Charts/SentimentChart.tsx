@@ -34,6 +34,16 @@ const BRAND_COLORS = [
   "#FB923C", // orange-400
 ];
 
+/**
+ * Generate a deterministic color for a brand based on its name.
+ * This ensures the same brand always gets the same color.
+ * Uses the same algorithm as the sync-colors API for consistency.
+ */
+const getBrandColorByName = (brandName: string): string => {
+  const hue = (brandName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 137.508) % 360;
+  return `hsl(${hue}, 70%, 60%)`;
+};
+
 
 /* ---------- Custom Tooltip ---------- */
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -128,14 +138,11 @@ export function SentimentChart({ data }: SentimentChartProp) {
 
     const brandTotals: Record<string, { sum: number; count: number }> = {};
     const colors: Record<string, string> = {};
-    const brandIndex: Record<string, number> = {};
-    let currentIndex = 0;
 
     data.forEach((row) => {
       const value = parseFloat(row.sentiment_score) || 0;
       if (!brandTotals[row.name]) {
         brandTotals[row.name] = { sum: 0, count: 0 };
-        brandIndex[row.name] = currentIndex++;
       }
       brandTotals[row.name].sum += value;
       brandTotals[row.name].count += 1;
@@ -146,10 +153,10 @@ export function SentimentChart({ data }: SentimentChartProp) {
       }
     });
 
-    // Assign fallback colors to brands that don't have one
+    // Assign deterministic fallback colors to brands without database colors
     Object.keys(brandTotals).forEach((brandName) => {
       if (!colors[brandName]) {
-        colors[brandName] = BRAND_COLORS[brandIndex[brandName] % BRAND_COLORS.length];
+        colors[brandName] = getBrandColorByName(brandName);
       }
     });
 
@@ -231,7 +238,7 @@ export function SentimentChart({ data }: SentimentChartProp) {
         />
 
         {top5Brands.map((brand, index) => {
-          const color = brandColors[brand] || BRAND_COLORS[index % BRAND_COLORS.length];
+          const color = brandColors[brand] || getBrandColorByName(brand);
           const isPrimary = index < 3;
 
           return (

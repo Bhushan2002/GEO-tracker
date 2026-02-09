@@ -30,6 +30,15 @@ import { useDashboardData } from "@/lib/contexts/dashboard-data-context";
 import DomainTable from "@/feature/analytics/components/Charts/DomainTable";
 
 /**
+ * Generate a deterministic color for a brand based on its name.
+ * Uses the same algorithm as the backend sync-colors API.
+ */
+const getBrandColorByName = (brandName: string): string => {
+  const hue = (brandName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 137.508) % 360;
+  return `hsl(${hue}, 70%, 60%)`;
+};
+
+/**
  * Main dashboard overview page.
  * Displays high-level metrics, charts for visibility/sentiments/position, and top sources.
  */
@@ -42,6 +51,7 @@ export default function Overview() {
   const [sentimentsData, setSentimentsData] = useState<any[]>([]);
   const [positionData, setPositionData] = useState<any[]>([]);
   const [chartType, setChartType] = useState<'mentions' | 'sentiments' | 'position'>('mentions');
+  const [colorsSynced, setColorsSynced] = useState(false);
 
   useEffect(() => {
     const top10 = [...allBrands].sort((a: any, b: any) => {
@@ -56,31 +66,31 @@ export default function Overview() {
     console.log('Dashboard - allBrands sample:', allBrands.slice(0, 3).map(b => ({ name: b.brand_name, color: b.color })));
   }, [allBrands]);
 
-  // Create a color map from allBrands
+  // Create a color map from allBrands - with fallback to deterministic colors
   const brandColorMap = React.useMemo(() => {
     const map: Record<string, string> = {};
     allBrands.forEach(brand => {
-      if (brand.brand_name && brand.color) {
-        map[brand.brand_name] = brand.color;
+      if (brand.brand_name) {
+        // Use database color if available, otherwise generate deterministic color
+        map[brand.brand_name] = brand.color || getBrandColorByName(brand.brand_name);
       }
     });
-    console.log('Brand Color Map:', map);
     return map;
   }, [allBrands]);
 
   useEffect(() => {
-    // Inject colors into the history data
+    // Ensure colors are always set - use database color, map color, or generate deterministic color
     const enrichedMentions = brandHistory.map(item => ({
       ...item,
-      color: item.color || brandColorMap[item.name] || undefined
+      color: item.color || brandColorMap[item.name] || getBrandColorByName(item.name)
     }));
     const enrichedSentiments = brandHistory.map(item => ({
       ...item,
-      color: item.color || brandColorMap[item.name] || undefined
+      color: item.color || brandColorMap[item.name] || getBrandColorByName(item.name)
     }));
     const enrichedPosition = brandHistory.map(item => ({
       ...item,
-      color: item.color || brandColorMap[item.name] || undefined
+      color: item.color || brandColorMap[item.name] || getBrandColorByName(item.name)
     }));
 
     setMentionsData(enrichedMentions);

@@ -3,6 +3,7 @@ import { Info, Loader } from "lucide-react";
 import { ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip, Bar, BarChart } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
 import { TooltipContent, TooltipTrigger, Tooltip as InfoTooltip } from "../../../../components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TrafficByModelProps {
     loading: boolean;
@@ -37,15 +38,17 @@ export function TrafficByModel({ loading, aiModelsData }: TrafficByModelProps) {
                 </CardHeader>
                 <CardContent className="pt-6">
                     {loading ? (
-                        <div className="flex items-center justify-center h-64">
-                            <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                        <div className="h-[300px] w-full flex items-end justify-between px-2 gap-4">
+                            <Skeleton className="h-[60%] w-full rounded-t-md" />
+                            <Skeleton className="h-[40%] w-full rounded-t-md" />
+                            <Skeleton className="h-[80%] w-full rounded-t-md" />
+                            <Skeleton className="h-[30%] w-full rounded-t-md" />
+                            <Skeleton className="h-[50%] w-full rounded-t-md" />
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height={300}>
                             <BarChart
-                                data={aiModelsData.filter(
-                                    (item) => item.users > 0
-                                )}
+                                data={aiModelsData}
                             >
                                 <CartesianGrid
                                     strokeDasharray="3 3"

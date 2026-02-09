@@ -34,6 +34,16 @@ const BRAND_COLORS = [
   "#FB923C", // orange-400
 ];
 
+/**
+ * Generate a deterministic color for a brand based on its name.
+ * This ensures the same brand always gets the same color.
+ * Uses the same algorithm as the sync-colors API for consistency.
+ */
+const getBrandColorByName = (brandName: string): string => {
+  const hue = (brandName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 137.508) % 360;
+  return `hsl(${hue}, 70%, 60%)`;
+};
+
 
 /* ---------- Custom Tooltip ---------- */
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -131,8 +141,6 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
       const value = parseFloat(row.mentions) || 0;
       if (!brandTotals[row.name]) {
         brandTotals[row.name] = { sum: 0, count: 0 };
-        // Debug: Log first occurrence of each brand
-        console.log(`First occurrence of ${row.name}:`, { color: row.color, mentions: row.mentions });
       }
       brandTotals[row.name].sum += value;
       brandTotals[row.name].count += 1;
@@ -140,7 +148,13 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
       // Store brand color if available (prioritize database color)
       if (row.color && !colors[row.name]) {
         colors[row.name] = row.color;
-        console.log(`Assigned color to ${row.name}:`, row.color);
+      }
+    });
+
+    // Assign deterministic fallback colors to brands without database colors
+    Object.keys(brandTotals).forEach((brandName) => {
+      if (!colors[brandName]) {
+        colors[brandName] = getBrandColorByName(brandName);
       }
     });
 
@@ -226,8 +240,8 @@ export function VisibilityChart({ data }: VisibilityChartProp) {
         />
 
         {top5Brands.map((brand, index) => {
-          // Use the brand's assigned color from database, fallback to palette only if missing
-          const color = brandColors[brand] || BRAND_COLORS[index % BRAND_COLORS.length];
+          // Use the brand's assigned color (from database or deterministic hash)
+          const color = brandColors[brand] || getBrandColorByName(brand);
           const isPrimary = index < 3;
 
           return (

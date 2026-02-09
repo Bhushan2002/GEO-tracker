@@ -19,6 +19,7 @@ import {
     Info,
 } from "lucide-react";
 import { Tooltip as InfoTooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import WebTrafficChart from "@/feature/analytics/components/Charts/WebTrafficChart";
 import { AiOverviewStats } from "@/feature/analytics/components/Charts/AiOverviewStats";
 import FirstTouchChart from "@/feature/analytics/components/Charts/FirstTouchChart";
@@ -42,6 +43,7 @@ interface KeyMetrics {
 
 interface AITrafficAnalyticsViewProps {
     loading: boolean;
+    metricsLoading?: boolean; // New prop for critical metrics loading
     keyMetrics: KeyMetrics;
     chartData: any[];
     aiOverviewStats: { pages: any[]; devices: any[] };
@@ -61,6 +63,7 @@ interface AITrafficAnalyticsViewProps {
 
 export function AITrafficAnalyticsView({
     loading,
+    metricsLoading, // Destructure
     keyMetrics,
     chartData,
     aiOverviewStats,
@@ -77,6 +80,8 @@ export function AITrafficAnalyticsView({
     setLimit,
     formatDate,
 }: AITrafficAnalyticsViewProps) {
+    const topSectionLoading = metricsLoading !== undefined ? metricsLoading : loading;
+
     return (
         <>
             <div className="space-y-4">
@@ -100,9 +105,13 @@ export function AITrafficAnalyticsView({
                             <Users className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                            <div className="text-2xl font-bold text-slate-900">
-                                {(keyMetrics.aiOverviewClicks ?? 0).toLocaleString()}
-                            </div>
+                            {topSectionLoading ? (
+                                <Skeleton className="h-8 w-24 mb-1" />
+                            ) : (
+                                <div className="text-2xl font-bold text-slate-900">
+                                    {(keyMetrics.aiOverviewClicks ?? 0).toLocaleString()}
+                                </div>
+                            )}
                             <p className="text-xs text-slate-600/80 mt-1">
                                 Visits via "AI Overview" highlights
                             </p>
@@ -116,9 +125,13 @@ export function AITrafficAnalyticsView({
                             <Users className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                            <div className="text-2xl font-bold text-foreground">
-                                {keyMetrics.activeUsers}
-                            </div>
+                            {topSectionLoading ? (
+                                <Skeleton className="h-8 w-24 mb-1" />
+                            ) : (
+                                <div className="text-2xl font-bold text-foreground">
+                                    {keyMetrics.activeUsers}
+                                </div>
+                            )}
                             <p className="text-xs text-muted-foreground">
                                 Total active users in period
                             </p>
@@ -132,9 +145,13 @@ export function AITrafficAnalyticsView({
                             <MousePointerClick className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                            <div className="text-2xl font-bold text-foreground">
-                                {keyMetrics.engagedSessions}
-                            </div>
+                            {topSectionLoading ? (
+                                <Skeleton className="h-8 w-24 mb-1" />
+                            ) : (
+                                <div className="text-2xl font-bold text-foreground">
+                                    {keyMetrics.engagedSessions}
+                                </div>
+                            )}
                             <p className="text-xs text-muted-foreground">
                                 Sessions longer than 10s
                             </p>
@@ -148,9 +165,13 @@ export function AITrafficAnalyticsView({
                             <Zap className="h-4 w-4 text-slate-400" />
                         </div>
                         <CardContent className="pt-6">
-                            <div className="text-2xl font-bold text-foreground">
-                                {keyMetrics.keyEvents}
-                            </div>
+                            {topSectionLoading ? (
+                                <Skeleton className="h-8 w-24 mb-1" />
+                            ) : (
+                                <div className="text-2xl font-bold text-foreground">
+                                    {keyMetrics.keyEvents}
+                                </div>
+                            )}
                             <p className="text-xs text-muted-foreground">
                                 Conversions and important actions
                             </p>
@@ -160,7 +181,7 @@ export function AITrafficAnalyticsView({
 
                 {/* Website Traffic Chart */}
                 <WebTrafficChart
-                    loading={loading}
+                    loading={topSectionLoading}
                     chartData={chartData}
                     formatDate={formatDate}
                 />
@@ -176,7 +197,7 @@ export function AITrafficAnalyticsView({
                     <span className="text-sm text-muted-foreground hidden sm:inline-block">
                         • Attribution analysis
                     </span>
-                </div>
+                </div>  
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* First touch chart */}
@@ -194,7 +215,7 @@ export function AITrafficAnalyticsView({
 
                     {/* AI Conversion Rate Charttt */}
                     <div className="col-span-1 lg:col-span-2">
-                        <AIConversionRateChart data={conversionRateData} />
+                        <AIConversionRateChart data={conversionRateData} loading={loading} />
                     </div>
                 </div>
             </div>
@@ -214,7 +235,7 @@ export function AITrafficAnalyticsView({
                 {/* Topic Clusters & Growth */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="col-span-2">
-                        <TopicClustersTreemap data={topicClusterData} />
+                        <TopicClustersTreemap data={topicClusterData} loading={loading} />
                     </div>
                     <AIGrowthRateChart data={aiGrowthData} loading={loading} />
 

@@ -35,6 +35,16 @@ const BRAND_COLORS = [
   "#FB923C", // orange-400
 ];
 
+/**
+ * Generate a deterministic color for a brand based on its name.
+ * This ensures the same brand always gets the same color.
+ * Uses the same algorithm as the sync-colors API for consistency.
+ */
+const getBrandColorByName = (brandName: string): string => {
+  const hue = (brandName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) * 137.508) % 360;
+  return `hsl(${hue}, 70%, 60%)`;
+};
+
 /* ---------- Tooltip ---------- */
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload || payload.length === 0) return null;
@@ -96,8 +106,6 @@ export function PositionChart({ data }: PositionChartProp) {
     /* ---- Compute avg rank per brand ---- */
     const stats: Record<string, { sum: number; count: number }> = {};
     const colors: Record<string, string> = {};
-    const brandIndex: Record<string, number> = {};
-    let currentIndex = 0;
 
     data.forEach((row) => {
       if (row.lastRank == null) return;
@@ -106,7 +114,6 @@ export function PositionChart({ data }: PositionChartProp) {
 
       if (!stats[row.name]) {
         stats[row.name] = { sum: 0, count: 0 };
-        brandIndex[row.name] = currentIndex++;
       }
       stats[row.name].sum += rank;
       stats[row.name].count += 1;
@@ -117,10 +124,10 @@ export function PositionChart({ data }: PositionChartProp) {
       }
     });
 
-    // Assign fallback colors to brands that don't have one
+    // Assign deterministic fallback colors to brands without database colors
     Object.keys(stats).forEach((brandName) => {
       if (!colors[brandName]) {
-        colors[brandName] = BRAND_COLORS[brandIndex[brandName] % BRAND_COLORS.length];
+        colors[brandName] = getBrandColorByName(brandName);
       }
     });
 
@@ -235,7 +242,7 @@ export function PositionChart({ data }: PositionChartProp) {
         />
 
         {brands.map((brand, index) => {
-          const color = brandColors[brand] || BRAND_COLORS[index % BRAND_COLORS.length];
+          const color = brandColors[brand] || getBrandColorByName(brand);
           return (
             <Line
               key={brand}

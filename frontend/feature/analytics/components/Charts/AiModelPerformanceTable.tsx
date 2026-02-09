@@ -2,6 +2,7 @@ import { TooltipContent, TooltipTrigger, Tooltip as InfoTooltip } from "../../..
 import { Info, Loader, Table as TableIcon } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../../../../components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../../../../components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AiModelPerformanceTable({
     loading,
@@ -39,8 +40,15 @@ export default function AiModelPerformanceTable({
 
                 <CardContent className="pt-6">
                     {loading ? (
-                        <div className="flex items-center justify-center h-64">
-                            <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                        <div className="space-y-4">
+                             {[...Array(5)].map((_, i) => (
+                                <div key={i} className="flex items-center space-x-4">
+                                    <Skeleton className="h-4 w-[100px]" />
+                                    <Skeleton className="h-4 w-[50px]" />
+                                    <Skeleton className="h-4 w-[50px]" />
+                                    <Skeleton className="h-4 w-[40px]" />
+                                </div>
+                             ))}
                         </div>
                     ) : (
                         <Table>
@@ -53,10 +61,8 @@ export default function AiModelPerformanceTable({
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {aiModelsData.filter((row) => row.users > 0)
-                                    .length > 0 ? (
+                                {aiModelsData.length > 0 ? (
                                     aiModelsData
-                                        .filter((row) => row.users > 0)
                                         .map((row, i) => (
                                             <TableRow key={i}>
                                                 <TableCell className="font-medium">
@@ -67,7 +73,7 @@ export default function AiModelPerformanceTable({
                                                     {row.sessions || 0}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {row.conversionRate || "0%"}
+                                                    {row.conversionRate || "0.00%"}
                                                 </TableCell>
                                             </TableRow>
                                         ))
