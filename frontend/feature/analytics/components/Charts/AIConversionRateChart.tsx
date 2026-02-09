@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import InfoButton from "../../../../components/InfoButton";
 
 /**
- * Bar chart displaying the conversion rate for different AI models.
+ * Bar chart displaying the conversion rate for different AI models
  */
 export function AIConversionRateChart({ data, loading }: { data: any[]; loading?: boolean }) {
   const COLORS = ["#1e40af", "#059669", "#dc2626", "#8b5cf6", "#f59e0b"];
