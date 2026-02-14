@@ -3,6 +3,7 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 import { updateGAAccountSchema, validateRequestBody } from "@/lib/validation/schemas";
+import { z } from "zod";
 
 // GET specific GA account with tokens
 export async function GET(
