@@ -4,7 +4,9 @@ import { Prompt } from "@/lib/models/prompt.model";
 import { PromptRun } from "@/lib/models/promptRun.model";
 import { ModelResponse } from "@/lib/models/modelResponse.model";
 import { Brand } from "@/lib/models/brand.model";
-import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { getWorkspaceId } from "@/lib/workspace-utils";
+import { updatePromptTagsSchema, validateRequestBody } from "@/lib/validation/schemas";
+import { workspaceError, badRequest, notFound, handleValidationError, internalError, handleError } from "@/lib/utils/error-response";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,7 +28,7 @@ export async function GET(
         const { id: promptId } = await context.params;
 
         if (!promptId) {
-            return NextResponse.json({ message: "Prompt ID is required" }, { status: 400 });
+            return badRequest("Prompt ID is required");
         }
 
         const workspaceId = await getWorkspaceId(request);
@@ -35,7 +37,7 @@ export async function GET(
         await connectDatabase();
 
         const prompt = await Prompt.findOne({ _id: promptId, workspaceId });
-        if (!prompt) return NextResponse.json({ message: "Prompt not found" }, { status: 404 });
+        if (!prompt) return notFound("Prompt not found");
 
         // Get all runs
         const allPromptRuns = await PromptRun.find({
@@ -237,7 +239,13 @@ export async function PATCH(
 
         const { id } = await context.params;
         const body = await request.json();
-        const { tags } = body;
+        const validation = validateRequestBody(updatePromptTagsSchema, body);
+        
+        if (!validation.success) {
+            return handleValidationError(validation.error);
+        }
+        
+        const { tags } = validation.data;
 
         const workspaceId = await getWorkspaceId(request as NextRequest);
         if (!workspaceId) return workspaceError();

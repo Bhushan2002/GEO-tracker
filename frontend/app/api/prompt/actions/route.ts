@@ -3,6 +3,7 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { Prompt } from "@/lib/models/prompt.model";
 import { initScheduler, executePromptTask } from "@/lib/services/cronSchedule";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { promptActionSchema, validateRequestBody } from "@/lib/validation/schemas";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,11 +15,13 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, action } = body;
-
-    if (!id || !action) {
-      return NextResponse.json({ message: "Missing id or action" }, { status: 400 });
+    const validation = validateRequestBody(promptActionSchema, body);
+    
+    if (!validation.success) {
+      return NextResponse.json(validation.error, { status: 400 });
     }
+    
+    const { id, action } = validation.data;
 
     await connectDatabase();
     const workspaceId = await getWorkspaceId(request);

@@ -3,31 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { SearchConsoleAccount } from "@/lib/models/searchConsoleAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { refreshTokenIfNeeded } from "@/lib/services/oauth-token-refresh";
 
 /**
  * Search Console Queries API - Fetch query-level search performance
  * Filtered for long-tail queries (4+ words)
  */
-
-async function refreshTokenIfNeeded(account: any) {
-  const now = new Date();
-  if (account.expiresAt > now) return account.accessToken;
-
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.NEXT_PUBLIC_GA_CLIENT_ID,
-    process.env.GA_CLIENT_SECRET,
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
-  );
-
-  oauth2Client.setCredentials({ refresh_token: account.refreshToken });
-  const { credentials } = await oauth2Client.refreshAccessToken();
-
-  account.accessToken = credentials.access_token;
-  account.expiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
-  await account.save();
-
-  return credentials.access_token;
-}
 
 export async function GET(request: NextRequest) {
   try {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { updateGAAccountSchema, validateRequestBody } from "@/lib/validation/schemas";
 
 // GET specific GA account with tokens
 export async function GET(
@@ -42,14 +43,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ac
     if (!workspaceId) return workspaceError();
 
     const body = await req.json();
-
-    const { propertyId, propertyName, forceSwitch } = body;
-    if (!propertyId || !propertyName) {
-      return NextResponse.json(
-        { error: "Property ID and Property Name are required" },
-        { status: 400 }
-      )
+    const validation = validateRequestBody(updateGAAccountSchema.extend({
+      forceSwitch: z.boolean().optional()
+    }), body);
+    
+    if (!validation.success) {
+      return NextResponse.json(validation.error, { status: 400 });
     }
+    
+    const { propertyId, propertyName, forceSwitch } = validation.data;
     await connectDatabase();
     const { accountId } = await params;
 

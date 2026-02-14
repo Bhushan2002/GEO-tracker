@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { SearchConsoleAccount } from "@/lib/models/searchConsoleAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { linkSearchConsoleSchema, validateRequestBody } from "@/lib/validation/schemas";
 
 /**
  * Link a Search Console site to the workspace
@@ -9,13 +10,14 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
  */
 export async function POST(request: NextRequest) {
   try {
-    const { accountId, siteUrl } = await request.json();
-
-    if (!accountId || !siteUrl) {
-      return NextResponse.json({
-        error: "Account ID and Site URL required"
-      }, { status: 400 });
+    const body = await request.json();
+    const validation = validateRequestBody(linkSearchConsoleSchema, body);
+    
+    if (!validation.success) {
+      return NextResponse.json(validation.error, { status: 400 });
     }
+    
+    const { accountId, siteUrl } = validation.data;
 
     await connectDatabase();
     const workspaceId = await getWorkspaceId(request);

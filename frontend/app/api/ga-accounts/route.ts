@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
-import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { getWorkspaceId } from "@/lib/workspace-utils";
+import { workspaceError, badRequest, notFound, handleError } from "@/lib/utils/error-response";
 
 /**
  * Workspace-specific GA Accounts API.
@@ -22,11 +23,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(accounts);
   } catch (error: any) {
-    console.error("Failed to fetch GA accounts:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch accounts", details: error.message },
-      { status: 500 }
-    );
+    return handleError(error, "fetching GA accounts");
   }
 }
 
@@ -41,16 +38,13 @@ export async function DELETE(request: NextRequest) {
     const accountId = searchParams.get('id');
 
     if (!accountId) {
-      return NextResponse.json(
-        { error: "Account ID is required" },
-        { status: 400 }
-      );
+      return badRequest("Account ID is required");
     }
 
     // Ensure the account belongs to the current workspace
     const account = await GAAccount.findOne({ _id: accountId, workspaceId });
     if (!account) {
-      return NextResponse.json({ error: "Account not found in this workspace" }, { status: 404 });
+      return notFound("Account not found in this workspace");
     }
 
     // Perform soft delete by setting isActive to false
@@ -58,10 +52,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("Failed to delete GA account:", error);
-    return NextResponse.json(
-      { error: "Failed to delete account", details: error.message },
-      { status: 500 }
-    );
+    return handleError(error, "deleting GA account");
   }
 }

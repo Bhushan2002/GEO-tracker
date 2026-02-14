@@ -27,7 +27,7 @@ import { ZeroTouchChart } from "@/feature/analytics/components/Charts/ZeroTouchC
 import { AIConversionRateChart } from "@/feature/analytics/components/Charts/AIConversionRateChart";
 import { TopicClustersTreemap } from "@/feature/analytics/components/Charts/TopicClusterTree";
 import { AIGrowthRateChart } from "@/feature/analytics/components/Charts/AIGrowthRateChart";
-import CitationsPieChart from "@/feature/analytics/components/Charts/CitationsPieChart";
+import CitationsPieChart from "@/feature/dashboard/components/CitationsPieChart";
 import { TrafficByModel } from "@/feature/analytics/components/Charts/TrafficByModel";
 import AiModelPerformanceTable from "@/feature/analytics/components/Charts/AiModelPerformanceTable";
 import LandingPageTable from "@/feature/analytics/components/Charts/LandingPageTable";

@@ -10,9 +10,10 @@ export const brandAPI = {
 
   /**
    * Retrieves general brand data.
+   * Fetches up to 100 brands (maximum allowed by pagination).
    */
   getBrands() {
-    return api.get("/api/brands");
+    return api.get("/api/brands?limit=100");
   },
 
   /**
@@ -28,9 +29,10 @@ export const brandAPI = {
 
   /**
    * Fetches the list of user-configured Target Brands.
+   * Fetches up to 100 brands (maximum allowed by pagination).
    */
   getTargetBrand() {
-    return api.get("/api/target-brands");
+    return api.get("/api/target-brands?limit=100");
   },
 
   /**

@@ -55,7 +55,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import BrandRankTable from "@/feature/prompt/components/BrandRankTable";
-import CitationsPieChart from "@/feature/analytics/components/Charts/CitationsPieChart";
+import CitationsPieChart from "@/feature/dashboard/components/CitationsPieChart";
 
 const COLORS = ["#60A5FA", "#34D399", "#818CF8", "#FACC15", "#FB7185", "#22D3EE"];
 

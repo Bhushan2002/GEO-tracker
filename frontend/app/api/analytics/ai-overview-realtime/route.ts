@@ -3,6 +3,7 @@ import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
 import { google } from "googleapis";
 import { NextRequest, NextResponse } from "next/server";
+import { refreshTokenIfNeeded } from "@/lib/services/oauth-token-refresh";
 
 export async function GET(request : NextRequest){
     try{
@@ -23,13 +24,14 @@ export async function GET(request : NextRequest){
         if (!account){
             return NextResponse.json({error: "GA Account not found"}, {status: 404});
         }
-        // Refresh Token Logic
+        // Use centralized token refresh utility
+    const accessToken = await refreshTokenIfNeeded(account);
+
     const oauth2Client = new google.auth.OAuth2(
       process.env.NEXT_PUBLIC_GA_CLIENT_ID,
       process.env.GA_CLIENT_SECRET
     );
-    oauth2Client.setCredentials({ refresh_token: account.refreshToken });
-    const { credentials } = await oauth2Client.refreshAccessToken();
+    oauth2Client.setCredentials({ access_token: accessToken });
 
     const analyticsData = google.analyticsdata({
       version: "v1beta",

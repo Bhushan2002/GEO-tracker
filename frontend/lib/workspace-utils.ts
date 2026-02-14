@@ -4,6 +4,7 @@ import { Workspace } from "./models/workspace.model";
 import mongoose from "mongoose";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { workspaceError as standardWorkspaceError } from "./utils/error-response";
 
 export async function getWorkspaceId(req: NextRequest): Promise<mongoose.Types.ObjectId | null> {
     const workspaceId = req.headers.get("x-workspace-id");
@@ -23,11 +24,12 @@ export async function getWorkspaceId(req: NextRequest): Promise<mongoose.Types.O
     }
 }
 
+/**
+ * Returns standardized workspace error response
+ * @deprecated Use workspaceError from error-response.ts directly
+ */
 export function workspaceError(reason?: string) {
-    return NextResponse.json(
-        { message: reason || "Valid Workspace ID is required" },
-        { status: 400 }
-    );
+    return standardWorkspaceError();
 }
 
 

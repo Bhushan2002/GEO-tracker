@@ -17,9 +17,10 @@ export const PromptAPI = {
 
   /**
    * Retrieves all prompts for the current workspace.
+   * Fetches up to 100 prompts (maximum allowed by pagination).
    */
   getAll() {
-    return api.get<Prompt[]>("/api/prompt");
+    return api.get<Prompt[]>("/api/prompt?limit=100");
   },
 
   /**

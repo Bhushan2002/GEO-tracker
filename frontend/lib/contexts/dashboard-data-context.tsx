@@ -72,7 +72,8 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     const fetchPrompts = useCallback(async () => {
         try {
             const res = await PromptAPI.getAll();
-            setPrompts(res.data);
+            // Handle paginated response: { data: [], pagination: {} }
+            setPrompts(res.data.data || []);
         } catch (error) {
             console.error("Failed to load prompts", error);
         }
@@ -81,7 +82,8 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     const fetchBrands = useCallback(async () => {
         try {
             const res = await brandAPI.getTargetBrand();
-            setTargetBrands(res.data);
+            // Handle paginated response: { data: [], pagination: {} }
+            setTargetBrands(res.data.data || []);
         } catch (error) {
             console.error("Failed to load brands", error);
         }
@@ -90,7 +92,8 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     const fetchResponses = useCallback(async () => {
         try {
             const res = await ModelResponseAPI.getModelResponses();
-            setModelResponses(res.data);
+            // Handle paginated response: { data: [], pagination: {} }
+            setModelResponses(res.data.data || []);
         } catch (error) {
             console.error("Failed to load model responses", error);
         }
@@ -99,7 +102,8 @@ export function DashboardDataProvider({ children }: { children: React.ReactNode 
     const fetchAllBrands = useCallback(async () => {
         try {
             const res = await brandAPI.getBrands();
-            setAllBrands(res.data);
+            // Handle paginated response: { data: [], pagination: {} }
+            setAllBrands(res.data.data || []);
         } catch (error) {
             console.error("Failed to load all brands", error);
         }

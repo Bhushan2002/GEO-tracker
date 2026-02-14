@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { encrypt } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { loginSchema, validateRequestBody } from "@/lib/validation/schemas";
 
 /**
  * Login API.
@@ -9,7 +10,14 @@ import { cookies } from "next/headers";
  */
 export async function POST(request: NextRequest) {
     try {
-        const { username, password } = await request.json();
+        const body = await request.json();
+        const validation = validateRequestBody(loginSchema, body);
+        
+        if (!validation.success) {
+            return NextResponse.json(validation.error, { status: 400 });
+        }
+        
+        const { username, password } = validation.data;
 
         // Simple environment-based authentication
         const adminUser = process.env.ADMIN_USERNAME || "admin";

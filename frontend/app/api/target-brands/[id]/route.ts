@@ -3,6 +3,7 @@ import { connectDatabase } from "@/lib/db/mongodb";
 import { TargetBrand } from "@/lib/models/targetBrand.model";
 import { initScheduler } from "@/lib/services/cronSchedule";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { updateTargetBrandSchema, validateRequestBody } from "@/lib/validation/schemas";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,7 +37,13 @@ export async function PATCH(
 ) {
   const { id } = await context.params;
   const body = await request.json();
-  const { action } = body; // 'start' or 'stop'
+  const validation = validateRequestBody(updateTargetBrandSchema, body);
+  
+  if (!validation.success) {
+    return NextResponse.json(validation.error, { status: 400 });
+  }
+  
+  const { action } = validation.data;
 
   try {
     const workspaceId = await getWorkspaceId(request);

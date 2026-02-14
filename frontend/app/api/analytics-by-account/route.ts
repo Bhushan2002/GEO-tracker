@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { GAAccount } from "@/lib/models/gaAccount.model";
 import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { refreshTokenIfNeeded } from "@/lib/services/oauth-token-refresh";
 
 
 /**
@@ -10,29 +11,6 @@ import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
  * Fetches overall traffic metrics (Users, Sessions, Key Events) and overlays AI-specific user counts.
  * Provides data primarily for the main Analytics Overview chart.
  */
-
-async function refreshTokenIfNeeded(account: any) {
-  const now = new Date();
-  if (account.expiresAt > now) {
-    return account.accessToken;
-  }
-
-  const oauth2Client = new google.auth.OAuth2(
-    process.env.NEXT_PUBLIC_GA_CLIENT_ID,
-    process.env.GA_CLIENT_SECRET,
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/callback/google`
-  );
-
-  oauth2Client.setCredentials({ refresh_token: account.refreshToken });
-  const { credentials } = await oauth2Client.refreshAccessToken();
-
-  // Update token in database
-  account.accessToken = credentials.access_token;
-  account.expiresAt = new Date(credentials.expiry_date || Date.now() + 3600 * 1000);
-  await account.save();
-
-  return credentials.access_token;
-}
 
 export async function GET(request: NextRequest) {
   try {

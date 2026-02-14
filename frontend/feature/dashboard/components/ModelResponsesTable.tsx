@@ -11,7 +11,7 @@ import {
   AlertDialogContent,
   AlertDialogTitle,
   AlertDialogDescription,
-} from "./ui/alert-dialog";
+} from "../../../components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { Bot, Loader, ChevronRight, Smile, CheckCircle2, User } from "lucide-react";
 

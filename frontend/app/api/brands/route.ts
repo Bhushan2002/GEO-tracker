@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { Brand } from "@/lib/models/brand.model";
-import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { getWorkspaceId } from "@/lib/workspace-utils";
 import { Vibrant } from "node-vibrant/browser";
 import axios from "axios";
+import { createBrandSchema, validateRequestBody } from "@/lib/validation/schemas";
+import { getPaginationParams, paginateQuery } from "@/lib/utils/pagination";
+import { workspaceError, handleValidationError, conflict, handleError } from "@/lib/utils/error-response";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -46,6 +49,7 @@ const extractBrandColor = async (brandName: string): Promise<string> => {
 /**
  * Brands API - GET.
  * Fetches all brands associated with the current workspace.
+ * Supports pagination via ?page=1&limit=20 query parameters.
  * Sorts by rank and name for consistent display.
  */
 export async function GET(req: NextRequest) {
@@ -54,17 +58,23 @@ export async function GET(req: NextRequest) {
     const workspaceId = await getWorkspaceId(req);
     if (!workspaceId) return workspaceError();
 
-    const brands = await Brand.find({ workspaceId }).sort({
-      lastRank: 1,
-      brand_name: 1,
-    });
+    // Get pagination parameters
+    const { page, limit } = getPaginationParams(req);
 
-    return NextResponse.json(brands, { status: 200 });
-  } catch (e) {
-    return NextResponse.json(
-      { message: "Error fetching brands" },
-      { status: 500 }
+    // Fetch paginated brands
+    const result = await paginateQuery(
+      Brand,
+      { workspaceId },
+      page,
+      limit,
+      {
+        sort: { lastRank: 1, brand_name: 1 }
+      }
     );
+
+    return NextResponse.json(result, { status: 200 });
+  } catch (e) {
+    return handleError(e, "fetching brands");
   }
 }
 
@@ -79,8 +89,14 @@ export async function POST(req: NextRequest) {
     const workspaceId = await getWorkspaceId(req);
     if (!workspaceId) return workspaceError();
 
-    const { brand_name, prominence_score, context, associated_links ,color} =
-      await req.json();
+    const body = await req.json();
+    const validation = validateRequestBody(createBrandSchema, body);
+    
+    if (!validation.success) {
+      return handleValidationError(validation.error);
+    }
+    
+    const { brand_name, prominence_score, context, associated_links, color } = validation.data;
 
     const existingBrand = await Brand.findOne({ brand_name, workspaceId });
 

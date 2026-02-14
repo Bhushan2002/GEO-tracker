@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDatabase } from "@/lib/db/mongodb";
 import { Workspace } from "@/lib/models/workspace.model";
+import { createWorkspaceSchema, validateRequestBody } from "@/lib/validation/schemas";
+import { handleValidationError, handleError } from "@/lib/utils/error-response";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -44,7 +46,7 @@ export async function GET() {
 
         return NextResponse.json(workspaces, { status: 200 });
     } catch (err: any) {
-        return NextResponse.json({ message: err.message }, { status: 500 });
+        return handleError(err, "fetching workspaces");
     }
 }
 
@@ -55,11 +57,14 @@ export async function GET() {
 export async function POST(req: NextRequest) {
     try {
         await connectDatabase();
-        const { name, type } = await req.json();
-
-        if (!name) {
-            return NextResponse.json({ message: "Workspace name is required" }, { status: 400 });
+        const body = await req.json();
+        const validation = validateRequestBody(createWorkspaceSchema, body);
+        
+        if (!validation.success) {
+            return handleValidationError(validation.error);
         }
+        
+        const { name, type } = validation.data;
 
         const workspace = await Workspace.create({
             name,
@@ -69,6 +74,6 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(workspace, { status: 201 });
     } catch (err: any) {
-        return NextResponse.json({ message: err.message }, { status: 400 });
+        return handleError(err, "creating workspace");
     }
 }

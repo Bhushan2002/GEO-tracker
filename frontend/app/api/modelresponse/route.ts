@@ -4,7 +4,9 @@ import { ModelResponse } from "@/lib/models/modelResponse.model";
 import { Brand } from "@/lib/models/brand.model";
 import { PromptRun } from "@/lib/models/promptRun.model";
 import { Prompt } from "@/lib/models/prompt.model";
-import { getWorkspaceId, workspaceError } from "@/lib/workspace-utils";
+import { getWorkspaceId } from "@/lib/workspace-utils";
+import { getPaginationParams, paginateQuery } from "@/lib/utils/pagination";
+import { workspaceError, handleError } from "@/lib/utils/error-response";
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,6 +14,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Model Responses API - GET.
  * Fetches raw model responses with populated prompt details and identified brands.
+ * Supports pagination via ?page=1&limit=20 query parameters.
  * Used for detailed analysis views and debugging.
  */
 export async function GET(req: NextRequest) {
@@ -26,30 +29,36 @@ export async function GET(req: NextRequest) {
     const workspaceId = await getWorkspaceId(req);
     if (!workspaceId) return workspaceError();
 
-    const modelResponse = await ModelResponse.find({ workspaceId })
-      .populate({
-        path: 'identifiedBrands',
-        select: 'brand_name mentions prominence_score rank_position sentiment sentiment_score sentiment_text associated_domain'
-      })
-      .populate({
-        path: 'promptRunId',
-        populate: {
-          path: 'promptId',
-          select: 'promptText topic tags'
-        }
-      })
-      .sort({ createdAt: -1 })
-      .lean();
+    // Get pagination parameters
+    const { page, limit } = getPaginationParams(req);
 
-    if (!modelResponse || modelResponse.length === 0) {
-      return NextResponse.json([], { status: 200 });
-    }
+    // Fetch paginated model responses
+    const result = await paginateQuery(
+      ModelResponse,
+      { workspaceId },
+      page,
+      limit,
+      {
+        sort: { createdAt: -1 },
+        populate: [
+          {
+            path: 'identifiedBrands',
+            select: 'brand_name mentions prominence_score rank_position sentiment sentiment_score sentiment_text associated_domain'
+          },
+          {
+            path: 'promptRunId',
+            populate: {
+              path: 'promptId',
+              select: 'promptText topic tags'
+            }
+          }
+        ],
+        lean: true
+      }
+    );
 
-    // console.log(`Found ${modelResponse.length} model responses`);
-
-    return NextResponse.json(modelResponse, { status: 200 });
+    return NextResponse.json(result, { status: 200 });
   } catch (err) {
-    console.error('Error fetching model responses:', err);
-    return NextResponse.json({ message: "Error fetching model responses", error: String(err) }, { status: 400 });
+    return handleError(err, "fetching model responses");
   }
 }
