@@ -14,7 +14,7 @@ export interface OAuthAccount {
   refreshToken: string;
   accessToken?: string;
   expiresAt?: Date;
-  save: () => Promise<void>;
+  save: () => Promise<any>;
 }
 
 /**

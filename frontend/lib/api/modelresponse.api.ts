@@ -1,5 +1,6 @@
 import { ModelResponse } from '@/types';
 import { api } from './api';
+import { PaginatedResponse } from '@/lib/utils/pagination';
 
 /**
  * Service for fetching raw AI Model Responses.
@@ -11,6 +12,6 @@ export const ModelResponseAPI = {
      * Useful for the raw data view.
      */
     getModelResponses() {
-        return api.get<ModelResponse[]>('/api/modelresponse?limit=100');
+        return api.get<PaginatedResponse<ModelResponse>>('/api/modelresponse?limit=100');
     }
 };

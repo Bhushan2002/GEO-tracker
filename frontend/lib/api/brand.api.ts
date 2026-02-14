@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { PaginatedResponse } from "@/lib/utils/pagination";
 
 /**
  * Service for Brand Intelligence and Target Brand management.
@@ -13,7 +14,7 @@ export const brandAPI = {
    * Fetches up to 100 brands (maximum allowed by pagination).
    */
   getBrands() {
-    return api.get("/api/brands?limit=100");
+    return api.get<PaginatedResponse<any>>("/api/brands?limit=100");
   },
 
   /**
@@ -32,7 +33,7 @@ export const brandAPI = {
    * Fetches up to 100 brands (maximum allowed by pagination).
    */
   getTargetBrand() {
-    return api.get("/api/target-brands?limit=100");
+    return api.get<PaginatedResponse<any>>("/api/target-brands?limit=100");
   },
 
   /**

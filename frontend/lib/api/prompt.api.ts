@@ -1,5 +1,6 @@
 import { Prompt } from "@/types";
 import { api } from "./api";
+import { PaginatedResponse } from "@/lib/utils/pagination";
 
 /**
  * Service for handling all Prompt-related API interactions.
@@ -20,7 +21,7 @@ export const PromptAPI = {
    * Fetches up to 100 prompts (maximum allowed by pagination).
    */
   getAll() {
-    return api.get<Prompt[]>("/api/prompt?limit=100");
+    return api.get<PaginatedResponse<Prompt>>("/api/prompt?limit=100");
   },
 
   /**
